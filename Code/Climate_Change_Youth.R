@@ -18,7 +18,7 @@ setwd("..")  # Moves up to the project root
 getwd()
 
 # Import confidential dummy datasets
-d_chis_2023 <- haven::read_dta('Data/dummyfile_2023_teen_stata/TEEN.dta') %>%
+d_chis_2023 <- haven::read_dta('Data/dummyfile_2023_teen_stata/TEEN.dta') %>% ## ED: had question about whether the other datasets on google drive are same?
     rename_all(tolower) %>%
     mutate(year = 2023)
 
@@ -108,7 +108,7 @@ chis_data_filtered <- chis_design$variables[complete.cases(
     chis_design$variables[, c("tf45", "year", "srage_p", "srsex")]), ]
 
 # Recode tf45: Convert "2" to 1 and "1" to 0 (assumed binary outcome)
-chis_data_filtered$tf45 <- ifelse(chis_data_filtered$tf45 == "2", 1, 0)
+chis_data_filtered$tf45 <- ifelse(chis_data_filtered$tf45 == "2", 1, 0) ## ED: depends on what 2 is in your dataset
 
 # Assign the cleaned dataset for further analysis
 data <- chis_data_filtered
@@ -170,7 +170,7 @@ chis_data_filtered$fips_cnt
 # Aggregate and average anxiety scores by county
 result <- group_by(chis_data_filtered, fips_cnt)
 
-result <- summarize(result, ClimateAnxiety = mean(tf45))
+result <- summarize(result, ClimateAnxiety = mean(tf45)) ## ED: this doesn't use weights for the means
 
 # COUNTYFP and fips_cnt need to be standardized - both three digit ints
 
@@ -235,7 +235,7 @@ ggplot(la_heatmap) +
 
 #### UNIVARIATE ANALYSES
 # Define mental health variables of interest
-mental_health_issues <- c(
+mental_health_issues <- c( ## ED: seems like we can cut these
     "te68_13",  # Reasons use e-cigs: Reduce stress, anxiety, or pain
     "tf11",     # Received psychological/emotional counseling in the past 12 months
     "ti11",     # Needed help for emotional problems in the past 12 months
@@ -287,7 +287,7 @@ for (i in 1:length(characteristics)) {
         data = data,
         family = "binomial",
         weights = data$RAKEDW0
-        );
+        ); ## ED: the standard errors are wrong here
     
     # Extract coefficients, confidence intervals, and p-values for all levels
     ORs <- exp(coef(univariate_model))  # Odds ratios
@@ -366,7 +366,7 @@ for (i in 1:length(characteristics)) {
         data = data,
         family = "binomial",
         weights = data$RAKEDW0
-        );
+        ); ## ED: standard errors are wrong here
     
     # Extract odds ratio, confidence intervals, and p-value
     OR <- exp(coef(univariate_model)[2])  # Odds ratio for the variable
@@ -496,7 +496,7 @@ for (i in 1:length(characteristics)) {
         data = data,
         family = "binomial",
         weights = data$RAKEDW0
-        );
+        ); ## ED: Standard errors wrong
     
     # Extract coefficients, confidence intervals, and p-values for all levels
     ORs <- exp(coef(univariate_model))  # Odds ratios
@@ -617,11 +617,11 @@ for (i in 1:nrow(climate_distress_trend)) {
     climate_distress_trend$Total_Respondents[i] <- nrow(data_year)
     
     # Calculate number of respondents with climate distress (tf45 == 1)
-    climate_distress_trend$Climate_Distress_Count[i] <- sum(data_year$tf45 == 1, na.rm = TRUE)
+    climate_distress_trend$Climate_Distress_Count[i] <- sum(data_year$tf45 == 1, na.rm = TRUE) ## ED: Standard errors wrong
     
     # Calculate percentage of respondents with climate distress
     climate_distress_trend$Climate_Distress_Percentage[i] <- 
-        (climate_distress_trend$Climate_Distress_Count[i] / climate_distress_trend$Total_Respondents[i]) * 100
+        (climate_distress_trend$Climate_Distress_Count[i] / climate_distress_trend$Total_Respondents[i]) * 100 ## ED: needs weights
 }
 
 # Print the summary table
@@ -676,7 +676,7 @@ for (var in subgroups) {
     cat("\n### Analyzing interaction effect for:", var, "###\n")
     
     # Fit logistic regression model with interaction term (Year * Subgroup)
-    model <- glm(tf45 ~ factor(year) * factor(data[[var]]), data = data, family = binomial)
+    model <- glm(tf45 ~ factor(year) * factor(data[[var]]), data = data, family = binomial) ## ED: doesn't account for weights
     
     # Display summary
     print(summary(model))
@@ -864,7 +864,7 @@ multivariate_model <- glm(
     data = data,
     family = "binomial",
     weights = data$RAKEDW0
-);
+); ## ED: doesn't account for weights
 
  summary(multivariate_model)
 tbl_multi <- tbl_regression(
