@@ -2,5 +2,9 @@
 .Rhistory
 .RData
 .Ruserdata
-Data
 .DS_Store
+Data/prism
+Data/california_census_2010
+Data/tl_2024_us_county
+
+
