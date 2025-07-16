@@ -157,12 +157,13 @@ print(demo_table)
 
 #### ANALYSIS #1- SPATIAL HEATMAP #####################################################################################
 
-# Load shapefile of the city
-city_shapefile <- sf::st_read("Data/tl_2024_us_county/tl_2024_us_county.shp")
+# # Load shapefile of the city
+# city_shapefile <- sf::st_read("Data/tl_2024_us_county/tl_2024_us_county.shp")
+# 
+# # Filter by California
+# california_shapefile <- city_shapefile[city_shapefile$STATEFP %in% '06',]
 
-# Filter by California
-california_shapefile <- city_shapefile[city_shapefile$STATEFP %in% '06',]
-
+california_shapefile <- readRDS("Data/ca_county.rds")
 # Generate city data
 # Average the anxiety scores by county
 chis_data_filtered$fips_cnt
@@ -1063,24 +1064,3 @@ for (var in categorical_vars) {
     prop_tbl <- prop.table(tbl, 2)  # Column-wise proportions to show directionality
     print(as.data.frame(prop_tbl))
 }
-
-
-library(ggplot2)
-ggplot(tf45_age_sex_df, aes(x = Age, y = Proportion_Yes, color = as.factor(Sex), group = interaction(Year, Sex))) +
-    geom_line() +
-    facet_wrap(~ Year) +
-    scale_color_manual(values = c("1" = "blue", "2" = "pink"), labels = c("1" = "Male", "2" = "Female")) +
-    labs(title = "Proportion of 'Yes' for tf45 by Age, Sex, and Year",
-         color = "Sex") +
-    theme_minimal()
-ar", y = "Proportion Yes", x = "Age")
-
-
-# Import these other files
-chis_2023_f <- haven::read_dta('/Users/danielzhao/Desktop/Psychiatry/Climate Change Youth/teen_2023_stata/TEENF.dta')
-
-# How does climate change anxiety change over time?
-
-# Do the predictive variables change?
-
-# Take ae 
