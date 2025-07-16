@@ -13,7 +13,7 @@ jobs:
         os: [ubuntu-22.04, macos-latest, windows-latest]
         
     env:
-      RENV_CONFIG_REPOS_OVERRIDE: https://cloud.r-project.org
+      RENV_CONFIG_REPOS_OVERRIDE: https://packagemanager.posit.co/cran/latest
       RENV_CONFIG_INSTALL_STAGED: false
       RENV_CONFIG_CACHE_SYMLINKS: FALSE
       RENV_ROBOCOPY_SAFETY: false
@@ -42,15 +42,24 @@ jobs:
           libudunits2-dev libgdal-dev gdal-bin \
           libgeos-dev libproj-dev
     
+    - name: Cache R packages
+      uses: actions/cache@v4
+      with:
+        path: renv/library
+        key: ${{ runner.os }}-renv-${{ hashFiles('renv.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-renv-
+
     - name: Install renv and restore environment
       shell: Rscript {0}
       run: |
-        options(pkgType = "binary", repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
+        options(repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
         install.packages("renv")
         tryCatch({
           renv::restore(prompt = FALSE)
         }, error = function(e) {
           message("RENV RESTORE ERROR: ", conditionMessage(e))
+          renv::status()
           quit(status = 1)
         })
 
