@@ -20,8 +20,6 @@ library(raster)
 library(lubridate)
 library(stringr)
 library(terra)
-library(spdep)
-library(spatialreg)
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))  # Sets to script location
 setwd("..")  # Moves up to the project root

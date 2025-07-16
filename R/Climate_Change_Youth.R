@@ -3,25 +3,22 @@
 ### Import and read stuff in ######################################################################
 # Load required libraries (ensure they are installed)
 library(dplyr)       # Data manipulation
-library(haven)       # Reading .dta files
 library(survey)      # Survey data analysis
 library(ggplot2)     # Data visualization
 library(sf)          # Spatial data handling and mapping
 library(prism)       # Prism data visualization, for temperatures
 library(purrr)       # Functional programming
 library(gtsummary)   # for summary tables
-library(RColorBrewer)# map colors
 library(lme4)        # Linear mixed-effects models
 library(forcats)     # Factor manipulation
 library(rstudioapi)  # For setting working directory to script location
 library(glue)
-library(exactextractr)
-library(raster)
 library(lubridate)
 library(stringr)
 library(terra)
 library(spdep)
 library(spatialreg)
+library(grid)
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))  # Sets to script location
 setwd("..")  # Moves up to the project root
