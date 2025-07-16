@@ -11,6 +11,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        
+    env:
+      RENV_CONFIG_REPOS_OVERRIDE: https://cloud.r-project.org
 
     steps:
     - name: Checkout code
@@ -19,19 +22,23 @@ jobs:
     - name: Set up R
       uses: r-lib/actions/setup-r@v2
 
-    - name: Install system dependencies (Linux only)
+    - name: Install system dependencies
+      if: runner.os == 'macOS'
+      run: brew install --cask xquartz
+      
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           libcurl4-openssl-dev libssl-dev libxml2-dev \
           libharfbuzz-dev libfribidi-dev libfreetype6-dev \
-          libpng-dev libtiff5-dev libjpeg-dev
+          libpng-dev libtiff5-dev libjpeg-dev \
+          libudunits2-dev
 
     - name: Install renv and restore environment
       run: |
         Rscript -e 'install.packages("renv", repos = "https://cloud.r-project.org")'
-        Rscript -e 'renv::restore(prompt = FALSE)'
+        Rscript -e 'options(pkgType = "binary"); renv::restore(prompt = FALSE)'
 
     - name: Run testthat tests
       run: |
