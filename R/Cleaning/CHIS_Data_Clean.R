@@ -29,7 +29,6 @@ library(terra)
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))  # Sets to script location
 setwd("..")  # Moves up to the project root
 getwd()
-prism::prism_set_dl_dir(path = "Data/prism", create = TRUE)
 
 # Import confidential dummy datasets
 d_chis_2023 <- haven::read_dta('Data/dummyfile_2023_teen_stata/TEEN_with_format.dta') %>%
