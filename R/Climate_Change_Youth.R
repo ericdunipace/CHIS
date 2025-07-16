@@ -31,11 +31,13 @@ getwd()
 source("R/Functions.R")
 
 #### load data ####
-chis <- readRDS("Data/chis_combined.Rds") %>% 
-  mutate(s_depPCA = (depPCA - weighted.mean(depPCA, fnwgt0)) / matrixStats::weightedSd(depPCA, fnwgt0))
+chis <- readRDS("Data/chis_combined.Rds") 
+
 california_shapefile <- sf::st_read("Data/tl_2024_us_county/tl_2024_us_county.shp") %>% 
   filter(STATEFP == "06") %>%
   rename(county = NAME)
+
+census_shapefile <- readRDS("Data/ca_tract_2010.rds")
 
 #### Outcome Variables ####
 mental_health_issues <- c(
@@ -91,8 +93,6 @@ chis_design <- svrepdesign(
   mse = TRUE
 )
 
-# no missing values???
-# mean(complete.cases( chis_design$variables[, c("tf45", "year", "srage_p", "srsex")]))
 
 #### TABLE 1 - DEMOGRAPHICS #########################################################################
 
@@ -168,20 +168,28 @@ demo_table %>%
 
 #### ANALYSIS #1- SPATIAL HEATMAP #####################################################################################
 
+# Goal: To create a spatial heatmap of climate anxiety across California counties
 
 
 # Aggregate and average anxiety scores by county
-result_year <- chis_design$variables %>% 
-  group_by(year, fips_cnt) %>% 
+result_year <- chis %>% 
+  group_by(year, county) %>% 
   summarize(ClimateAnxiety = weighted.mean(tf45 == "Yes",fnwgt0,na.rm = TRUE))
 
-result <- chis_design$variables %>% 
-  group_by(fips_cnt) %>% 
+result <- chis %>% 
+  group_by(county) %>% 
   summarize(ClimateAnxiety = weighted.mean(tf45 == "Yes",fnwgt0,na.rm = TRUE))
+
+# get prism vars for map
+census_temp <- prism_to_map("tmax", census_shapefile, 2021:2023, "census", cutoff = 32)
+census_heatwave <- prism_to_map("tmax", census_shapefile, 2021:2023, "census", heatwave = TRUE, cutoff = 32)
 
 # Left join 
-california_heatmap_year <- full_join(california_shapefile, result_year, by = c("county"= "fips_cnt"))
-california_heatmap <- full_join(california_shapefile, result, by = c("county"= "fips_cnt"))
+california_heatmap_year <- full_join(california_shapefile, result_year, by = "county")
+california_heatmap <- full_join(california_shapefile, result, by = "county")
+
+county_centers_year <- st_centroid(california_heatmap_year)
+county_centers <- st_centroid(california_heatmap)
 
 # check for all missing counties, not just mariposa
 mariposa <- california_heatmap_year %>% filter(county == "Mariposa")
@@ -189,6 +197,14 @@ mariposa <- mariposa %>% bind_rows(mariposa, mariposa)
 california_heatmap_year <- california_heatmap_year %>% 
   filter(county != "Mariposa") %>% 
   bind_rows(mariposa) 
+
+census_temp_mean <- census_temp %>% 
+  group_by(tract10) %>% 
+  summarize(tmax = mean(tmax))
+
+census_heatwave_mean <- census_heatwave %>% 
+  group_by(tract10) %>% 
+  summarize(days_above32 = mean(days_above32))
 
 missing_counties <- california_heatmap_year %>% 
   group_by(county) %>%
@@ -208,15 +224,16 @@ for(i in unique(missing_counties$county)) {
 }
 
 
-
-ggplot(california_heatmap) +
-  geom_sf(aes(fill = ClimateAnxiety)) +
-  geom_sf_text(aes(label = county), size = 3) +
-  scale_fill_distiller(type = "seq", 
-                       palette = "OrRd",
-                       direction = 1) +
-  # scale_fill_gradientn(colors = c("green", "yellow", "orange", "red")) +
-  theme_minimal() + 
+county_plot_heatwave <- ggplot(california_heatmap) +
+  geom_sf(data = census_heatwave_mean %>% 
+            mutate(`heatwave days` = days_above32)
+            , aes(fill = `heatwave days`), color = NA) +
+  geom_sf(fill = NA, color = "black") +
+  geom_sf(data = county_centers %>% 
+            mutate(`Climate Anxiety` = ClimateAnxiety), 
+          aes(size = `Climate Anxiety`), color = "gray30") +
+  scale_fill_distiller(palette = "Spectral")+
+  theme_minimal() +
   theme(
     panel.grid = element_blank(),         # Remove gridlines
     axis.title = element_blank(),         # Remove axis titles
@@ -224,53 +241,89 @@ ggplot(california_heatmap) +
     axis.ticks = element_blank()          # Remove axis ticks
   )
 
-ggplot(california_heatmap) +
-  geom_sf(aes(fill = ClimateAnxiety)) +
-  scale_fill_distiller(type = "seq", 
-                       palette = "OrRd",
-                       direction = 1) +
-  geom_sf_text(aes(label = county), size = 0) +
-  # scale_fill_gradientn(colors = c("green", "yellow", "orange", "red")) +
-  theme_minimal() + 
+county_plot_year_heatwave <- ggplot(california_heatmap_year %>% filter(complete.cases(year)) %>% mutate(`Climate Anxiety` = ClimateAnxiety)) +
+  geom_sf(data = census_heatwave %>% 
+            mutate(year = as.numeric(year),
+                   `Heatwave Days` = days_above32
+                   )
+          , aes(fill = `Heatwave Days`), color = NA) +
+  geom_sf(fill = NA, color = "black") +
+  geom_sf(data = county_centers_year %>% 
+            filter(complete.cases(year)) %>% 
+            mutate(`Climate Anxiety` = ClimateAnxiety), 
+          aes(size = `Climate Anxiety`), color = "gray30") +
+  scale_fill_distiller(palette = "Spectral") +
+  theme_minimal() +
   theme(
     panel.grid = element_blank(),         # Remove gridlines
     axis.title = element_blank(),         # Remove axis titles
     axis.text = element_blank(),          # Remove axis text (longitude/latitude labels)
     axis.ticks = element_blank()          # Remove axis ticks
-  ) 
+  ) + 
+  facet_wrap(~year, ncol = 2) +
+  theme(legend.box = "horizontal")
 
-# Plot heatmap - labelled
-ggplot(california_heatmap_year) +
-  geom_sf(aes(fill = ClimateAnxiety)) +
-  geom_sf_text(aes(label = county), size = 3) +
-  scale_fill_distiller(type = "seq", 
-                       palette = "OrRd",
-                       direction = 1) +
-  # scale_fill_gradientn(colors = c("green", "yellow", "orange", "red")) +
-  theme_minimal() + 
+county_plot_tmax <- ggplot(california_heatmap) +
+  geom_sf(data = census_temp_mean %>% 
+            mutate(`Avg. Tmax` = tmax)
+          , aes(fill = `Avg. Tmax`), color = NA) +
+  geom_sf(fill = NA, color = "black") +
+  geom_sf(data = county_centers %>% 
+            mutate(`Climate Anxiety` = ClimateAnxiety), 
+          aes(size = `Climate Anxiety`), color = "gray30") +
+  scale_fill_distiller(palette = "Spectral")+
+  theme_minimal() +
   theme(
     panel.grid = element_blank(),         # Remove gridlines
     axis.title = element_blank(),         # Remove axis titles
     axis.text = element_blank(),          # Remove axis text (longitude/latitude labels)
     axis.ticks = element_blank()          # Remove axis ticks
-  ) + facet_grid(~year)
+  )
 
-# Plot heatmap - unlabelled (there are too many labels so we can manually label select counties)
-ggplot(california_heatmap_year) +
-  geom_sf(aes(fill = ClimateAnxiety)) +
-  scale_fill_distiller(type = "seq", 
-                       palette = "OrRd",
-                       direction = 1) +
-  geom_sf_text(aes(label = county), size = 0) +
-  # scale_fill_gradientn(colors = c("green", "yellow", "orange", "red")) +
-  theme_minimal() + 
+county_plot_year_tmax <- 
+  ggplot(california_heatmap_year %>% 
+          filter(complete.cases(year)) %>%
+           mutate(`Climate Anxiety` = ClimateAnxiety)
+         ) +
+  geom_sf(data = census_temp %>% 
+            mutate(year = as.numeric(year),
+                   `Avg. Tmax` = tmax
+            )
+          , aes(fill = `Avg. Tmax`), color = NA) +
+  geom_sf(fill = NA, color = "black") +
+  geom_sf(data = county_centers_year %>% 
+            filter(complete.cases(year)) %>% 
+            mutate(`Climate Anxiety` = ClimateAnxiety), 
+          aes(size = `Climate Anxiety`), color = "gray30") +
+  scale_fill_distiller(palette = "Spectral") +
+  theme_minimal() +
   theme(
     panel.grid = element_blank(),         # Remove gridlines
     axis.title = element_blank(),         # Remove axis titles
     axis.text = element_blank(),          # Remove axis text (longitude/latitude labels)
     axis.ticks = element_blank()          # Remove axis ticks
-  ) + facet_grid(~year)
+  ) + 
+  facet_wrap(~year, ncol = 2) +
+  theme(legend.box = "horizontal")
 
+final_tmax_plot <- lemon::reposition_legend(
+  county_plot_year_tmax,
+  position = "center",
+  panel = "panel-2-2")
+
+final_heatwave_plot <- lemon::reposition_legend(
+  county_plot_year_heatwave,
+  position = "center",
+  panel = "panel-2-2")
+
+
+pdf("Outputs/heatwave_map.pdf", width = 6, height = 6)
+grid.draw(final_heatwave_plot)
+dev.off()
+
+pdf("Outputs/tmax_map.pdf", width = 6, height = 6)
+grid.draw(final_tmax_plot)
+dev.off()
 
 ### ANALYSIS #1B - SPATIAL HEATMAP - LOS ANGELES ####################################################################
 ### STILL IN PROGRESS - NO NEED TO RUN THIS CODE
@@ -332,54 +385,51 @@ left_join(la_shapefile, chis_data_la_year, by = c("county" = "fips_cnt")) %>%
 #### ANALYSIS #2- CLIMATE CHANGE/MENTAL HEALTH #####################################################################################
 # Goal: To assess if climate anxiety is associated with worsened mental health symptoms (eg, nervousness, distress, depressed)
 
-lmer(s_depPCA ~ scale(srage) + racecn_p + srsex +
-       as.factor(year) + 
-       # te68_3 + ti11 + tf9 + tf2 + te83 + te69 + te64 + 
-       # te22 + td45 + 
-       tf11 +
-       scale(ppt_prior_yr_mean_delta) +  
-       scale(vpdmax_prior_yr_mean_delta) + 
-       scale(tmax_prior_yr_mean_delta) +
-       I(tf45 == "Yes") + 
-       (1 | ccpreg19) +
-       (1 | county),
+glmer(I(tf45 == "Yes") ~ scale(srage) + racecn_p + srsex +
+        as.factor(year) + 
+        # te68_3 + tf9 + tf2 + te83 + te69 + te64 +
+        # te22 + td45 +
+        # tf11 +
+        # ti11 +
+        scale(ppt_prior_yr_mean_delta) +  
+        scale(vpdmax_prior_yr_mean_delta) + 
+        scale(tmax_prior_yr_mean_delta)
+      + (1 | county),
+      family = "binomial",
      data = chis_design$variables, weights = chis_design$pweights/sum(chis_design$pweights) * nrow(chis),
-     control = lmerControl(
-       optimizer ='bobyqa')) %>% summary()
+     control=glmerControl(optimizer="bobyqa",
+                          optCtrl=list(maxfun=100000))
+     ) %>% summary()
 
 
-test <- lmer.svyrep.design(s_depPCA ~ scale(srage) + racecn_p + srsex +
+test <- glmer.svyrep.design(I(tf45 == "Yes") ~ scale(srage) + racecn_p + srsex +
                              as.factor(year) + 
-                             te68_3 + tf9 + tf2 + te83 + te69 + te64 +
-                             te22 + td45 +
-                             tf11 +
+                             # te68_3 + tf9 + tf2 + te83 + te69 + te64 +
+                             # te22 + td45 +
+                             # tf11 +
                              # ti11 +
                              scale(ppt_prior_yr_mean_delta) +  
                              scale(vpdmax_prior_yr_mean_delta) + 
-                             scale(tmax_prior_yr_mean_delta) +
-                             I(tf45 == "Yes") + 
-                             (1 | ccpreg19) +
-                             (1 | county),
+                             scale(tmax_prior_yr_mean_delta)
+                              + (1 | tract10),
+                            , family = "binomial",
                    design = chis_design,
-                   control = lmerControl(
-                     optimizer ='bobyqa')
+                   control=glmerControl(optimizer="bobyqa",
+                                                            optCtrl=list(maxfun=100000))
 )
 
-glm.test <- svyglm(s_depPCA ~ scale(srage) + racecn_p + srsex +
-                             as.factor(year) + 
-                             te68_3 + tf9 + tf2 + te83 + te69 + te64 +
-                             te22 + td45 +
-                             tf11 +
-                             # ti11 +
-                             scale(ppt_prior_yr_mean_delta) +  
-                             scale(vpdmax_prior_yr_mean_delta) + 
-                             scale(tmax_prior_yr_mean_delta) +
-                             I(tf45 == "Yes") + 
-                             ccpreg19 + county,
+glm.test <- svyglm(I(tf45 == "Yes") ~ scale(srage) + racecn_p + srsex +
+                     as.factor(year) + 
+                     scale(ppt_prior_yr_mean_delta) +  
+                     scale(vpdmax_prior_yr_mean_delta) + 
+                     scale(tmax_prior_yr_mean_delta) +
+                     scale(tmax_prior_yr_count35_delta) 
+                           # + as.factor(tract10)
+                   , family = "gaussian",
                            design = chis_design
 )
 
 glm.test %>% summary()
-test %>% summary 
+test %>% summary
 
 

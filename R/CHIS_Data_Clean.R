@@ -51,27 +51,20 @@ d_chis_2021 <- haven::read_dta('Data/dummyfile_2021_teen_stata/TEEN_with_format.
 my_chis_list <- list(d_chis_2021, d_chis_2022, d_chis_2023) # work with confidential data
 # my_chis_list <- list(chis_2021, chis_2022, chis_2023) # work with PUF data
 
-sapply(c("tmean","tmax","ppt","vpdmax"), function(x) prism::get_prism_annual(type = x, years = 2000:2023,keepZip = FALSE))
+# Load shapefile of the county
+ca_counties <- sf::st_read("Data/tl_2024_us_county/tl_2024_us_county.shp") %>% 
+  filter(STATEFP == "06") %>%
+  rename(county = NAME)
 
-sapply(c("tmean","tmax","ppt","vpdmax"), function(var) prism::get_prism_dailys(
-  type = var,
-  minDate = "2020-01-01",
-  maxDate = "2023-12-31",
-  keepZip = FALSE)
-)
+# load census tract shapefile
+# ca_census <- sf::st_read(
+#   "Data/ca_tract_2010.gpkg"
+# )
+ca_census <- readRDS("Data/ca_tract_2010.rds")
 
-prism::get_prism_dailys(
-  type = "tmax",
-  minDate = "2000-01-01",
-  maxDate = "2019-12-31",
-  keepZip = FALSE
-)
-
-# Load shapefile of the city
-city_shapefile <- sf::st_read("Data/tl_2024_us_county/tl_2024_us_county.shp")
 
 #### Load functions ####
-source("Code/Functions.R")
+source("R/Functions.R")
 
 #### Outcome Variables ####
 mental_health_issues <- c(
@@ -117,12 +110,7 @@ suicide_vars   <- c("EVER THOUGHT TO COMMIT SUICIDE" = "tk1",
 
 #### Clean data ####
 # Get the temperature data for the years of interest
-
-# Filter by California
-ca_counties <- city_shapefile %>% 
-  filter(STATEFP == "06") %>%
-  rename(county = NAME)
-
+# debugonce(data_var_from_prism)
 chis_geo <- pooling(my_chis_list) %>%
   mutate(across(where(is.factor), fct_drop)) %>% 
   mutate(racecn_p = forcats::fct_recode(racecn_p,
@@ -134,12 +122,12 @@ chis_geo <- pooling(my_chis_list) %>%
                                      "200-299% FPL" = "200-299% Fpl",
                                      "300% FPL And Above" = "300% Fpl And Above")
   ) %>% 
-  mutate(K6 = create_K6_score(across(all_of(K6_vars))),
-         worst_K6 = create_K6_score(across(all_of(worst_K6_vars))),
-         K6_ge_13 = as.integer(K6 >= 13),
-         worst_K6_ge_13 = as.integer(worst_K6 >= 13),
-         max_K6 = pmax(K6,worst_K6)
-  ) %>% 
+  # mutate(K6 = create_K6_score(across(all_of(K6_vars))),
+  #        worst_K6 = create_K6_score(across(all_of(worst_K6_vars))),
+  #        K6_ge_13 = as.integer(K6 >= 13),
+  #        worst_K6_ge_13 = as.integer(worst_K6 >= 13),
+  #        max_K6 = pmax(K6,worst_K6)
+  # ) %>% 
   mutate(alcohol = factor(ifelse(as.character(te24a) =="Inapplicable", 
                                  as.character(te24),
                                  as.character(te24a)),
@@ -149,30 +137,16 @@ chis_geo <- pooling(my_chis_list) %>%
          survey_years  = lubridate::year(survey_dates),
          survey_months = lubridate::month(survey_dates)) %>% 
   mutate(county = fips_cnt) %>% 
-  left_join(ca_counties %>% dplyr::select(county, geometry), by = "county") %>%
-  st_as_sf() %>% 
-  data_var_from_prism("tmax") %>% 
-  data_var_from_prism("tmean") %>%
-  data_var_from_prism("ppt") %>%
-  data_var_from_prism("vpdmax") %>% 
-  as.data.frame() %>% 
-  dplyr::select(-geometry)
+  data_var_from_prism("tmax", ca_census, admin.level = "census", cutoff = 32) %>% 
+  # data_var_from_prism("tmean", ca_census, admin.level = "census", cutoff = 32) %>%
+  data_var_from_prism("ppt", ca_census, admin.level = "census") %>%
+  data_var_from_prism("vpdmax", ca_census, admin.level = "census") %>% 
+  as.data.frame()# %>% 
+  # dplyr::select(-geometry)
 
 for(j in colnames(d_chis_2023)) {
   attr(chis_geo[[j]], "label") <- attr(d_chis_2023[[j]], "label")
 }
-
-#### Setup PCA Vars ####
-PCAs <- FactoMineR::FAMD(base = chis_geo[,c("dstrs30",  # Likely has psychological distress in the past month
-                                            "dstrsyr",  # Serious psychological distress for worst month in the past year (K6 score)
-                                            "dstrs12",  # Likely has had psychological distress in the last year
-                                            "distress",
-                                            "tf30",
-                                            K6_vars,worst_K6_vars,
-                                            suicide_vars)], ncp = 5, graph = TRUE, row.w = chis_geo$fnwgt0)
-PCAs$eig %>% print()
-
-chis_geo <- chis_geo %>% mutate(depPCA = PCAs$ind$coord[,1])
 
 #### Save Data ####
 saveRDS(chis_geo, file = "Data/chis_combined.Rds")
