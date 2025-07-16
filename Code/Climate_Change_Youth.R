@@ -8,39 +8,42 @@ library(survey)      # Survey data analysis
 library(ggplot2)     # Data visualization
 library(table1)      # Demographic tables
 library(sf)          # Spatial data handling and mapping
-
+library(purrr)
+library(gtsummary)
+library(broom.helpers)
+library(here)
 
 # Step 1: 
 # Set Wd
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))  # Sets to script location
-setwd("..")  # Moves up to the project root
-getwd()
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))  # Sets to script location
+# setwd("..")  # Moves up to the project root
+# getwd()
 
 # Import confidential dummy datasets
-d_chis_2023 <- haven::read_dta('Data/dummyfile_2023_teen_stata/TEEN.dta') %>% ## ED: had question about whether the other datasets on google drive are same?
+d_chis_2023 <- haven::read_dta(here::here('Data','dummyfile_2023_teen_stata/TEEN.dta')) %>% ## ED: had question about whether the other datasets on google drive are same?
     rename_all(tolower) %>%
     mutate(year = 2023)
 
-d_chis_2022 <- haven::read_dta('Data/teen 2022 dummy STATA/TEEN.dta') %>%
+d_chis_2022 <- haven::read_dta(here::here('Data','teen 2022 dummy STATA/TEEN.dta')) %>%
     rename_all(tolower) %>%
     mutate(year = 2022)
 
-d_chis_2021 <- haven::read_dta('Data/dummyfile_2021_teen_stata/TEEN.dta') %>%
+d_chis_2021 <- haven::read_dta(here::here('Data','dummyfile_2021_teen_stata/TEEN.dta')) %>%
     rename_all(tolower) %>%
     mutate(year = 2021)
 
 # Import public use variable datasets
-'/Users/danielzhao/Desktop/CHIS_Youth/Data/teen_2023_stata'
-chis_2023 <- haven::read_dta('Data/teen_2023_stata/TEEN.dta') %>%
+# '/Users/danielzhao/Desktop/CHIS_Youth/Data/teen_2023_stata'
+chis_2023 <- haven::read_dta(here::here('Data','teen_2023_stata/TEEN.dta')) %>%
     rename_all(tolower) %>%
     mutate(year = 2023)
 
-chis_2022 <- haven::read_dta('Data/teen_stata_2022/TEEN.dta') %>%
+chis_2022 <- haven::read_dta(here::here('Data','teen_stata_2022/TEEN.dta')) %>%
     rename_all(tolower) %>%
     mutate(year = 2022)
 
-chis_2021 <- haven::read_dta('Data/teen_stata_2021/TEEN.dta') %>%
+chis_2021 <- haven::read_dta(here::here('Data','teen_stata_2021/TEEN.dta')) %>%
     rename_all(tolower) %>%
     mutate(year = 2021)
 
@@ -163,7 +166,7 @@ print(demo_table)
 # # Filter by California
 # california_shapefile <- city_shapefile[city_shapefile$STATEFP %in% '06',]
 
-california_shapefile <- readRDS("Data/ca_county.rds")
+california_shapefile <- readRDS(here::here('Data','ca_county.rds'))
 # Generate city data
 # Average the anxiety scores by county
 chis_data_filtered$fips_cnt
@@ -175,7 +178,7 @@ result <- summarize(result, ClimateAnxiety = mean(tf45)) ## ED: this doesn't use
 
 # COUNTYFP and fips_cnt need to be standardized - both three digit ints
 
-california_shapefile$COUNTYFP_int <- as.integer(sprintf(fmt = california_shapefile$COUNTYFP, "%03d"))
+california_shapefile$COUNTYFP_int <- as.integer(sprintf(fmt = california_shapefile$COUNTYFP))
 
 # Left join 
 california_heatmap <- left_join(california_shapefile, result, by = c("COUNTYFP_int" = "fips_cnt"))
@@ -223,13 +226,6 @@ la_shapefile$COUNTYFP_int <- as.integer(sprintf("%03d", as.integer(la_shapefile$
 # Join the Los Angeles shapefile with the aggregated anxiety data by the sublevel data structure in LA***
 la_heatmap <- left_join(la_shapefile, chis_data_la, by = c("COUNTYFP_int" = "fips_cnt"))
 
-# Plot heatmap for Los Angeles County
-ggplot(la_heatmap) +
-    geom_sf(aes(fill = AverageAnxiety)) +
-    geom_sf_text(aes(label = NAME), size = 5) +  # Adjust label size if necessary
-    scale_fill_gradientn(colors = c("green", "yellow", "orange", "red")) +
-    theme_minimal() +
-    labs(title = "Average Anxiety Scores in Los Angeles County", fill = "Avg Anxiety")
 
 #### ANALYSIS #2- CLIMATE CHANGE/MENTAL HEALTH #####################################################################################
 # Goal: To assess if climate anxiety is associated with worsened mental health symptoms (eg, nervousness, distress, depressed)
@@ -868,11 +864,6 @@ multivariate_model <- glm(
 ); ## ED: doesn't account for weights
 
  summary(multivariate_model)
-tbl_multi <- tbl_regression(
-    multivariate_model,
-    exponentiate = TRUE,
-    label = list(ethnicity ~ "Race/Ethnicity", sex ~ "Sex", age ~ "Age", eng_prof ~ "English Proficiency", educ ~ "Education", poverty_level ~ "Poverty Level", social_impairment ~ "Impairment of Social Life", urbanicity = "Urbanicity", martial_status = "Marital Status", trust_neighborhood = "Trust Neighborhood", property_damage = "Property Damage")
-)
 
 summary <- summary(multivariate_model, ci_method="wald") # make sure estimate is OR? make sure i'm interpreting correctly
 x <- as.data.frame(exp(cbind("Odds_ratio" = coef(multivariate_model), confint.default(multivariate_model, level = 0.95))))
@@ -889,43 +880,33 @@ View(x)
 # x <- x[x$p.values <= 0.05,]
 View(x)
 
-interaction_model <- glm(
-    climate_changeYES ~ (age + ethnicity + sex + martial_status)^2,
-    data = data,
-    family = "binomial",
-    weights = data$RAKEDW0
-);
+# interaction_model <- glm(
+#   tf45 ~ (age + ethnicity + sex + martial_status)^2,
+#     data = data,
+#     family = "binomial",
+#     weights = data$RAKEDW0
+# );
+# 
+# summary <- summary(interaction_model, ci_method="wald") # make sure estimate is OR? make sure i'm interpreting correctly
+# x <- as.data.frame(exp(cbind("Odds_ratio" = coef(interaction_model), confint.default(interaction_model, level = 0.95))))
+# x <- round(x, 3)
+# x <- na.omit(x)
+# p.values <- round(summary(interaction_model)$coefficients[,4], 3)
+# x$p.values <- p.values
+# # x <- x[x$p.values <= 0.05,]
+# # View(x)
+# 
+# library(jtools) # Load jtools
+# library(huxtable)
+# export_summs(interaction_model, scale = TRUE)
+# 
+# # load package
+# library(sjPlot)
+# library(sjmisc)
+# library(sjlabelled)
 
-summary <- summary(interaction_model, ci_method="wald") # make sure estimate is OR? make sure i'm interpreting correctly
-x <- as.data.frame(exp(cbind("Odds_ratio" = coef(interaction_model), confint.default(interaction_model, level = 0.95))))
-x <- round(x, 3)
-x <- na.omit(x)
-p.values <- round(summary(interaction_model)$coefficients[,4], 3)
-x$p.values <- p.values
-# x <- x[x$p.values <= 0.05,]
-View(x)
-
-install.packages('jtools')
-install.packages('huxtable')
-library(jtools) # Load jtools
-library(huxtable)
-export_summs(interaction_model, scale = TRUE)
-
-# load package
-library(sjPlot)
-library(sjmisc)
-library(sjlabelled)
-
-tab_model(m1)
-
-tbl_int <- tbl_regression(
-    interaction_model,
-    exponentiate = TRUE,
-    label = list(ethnicity ~ "Race/Ethnicity", sex ~ "Sex", age ~ "Age", eng_prof ~ "English Proficiency", educ ~ "Education", poverty_level ~ "Poverty Level", social_impairment ~ "Impairment of Social Life", urbanicity = "Urbanicity", martial_status = "Marital Status", property_damage = "Property Damage")
-)
-
-tbl_int
-
+# tab_model(m1)
+# 
 # tab_model(multivariate_model)
 
 # model_unadj <- glm(
@@ -1057,10 +1038,10 @@ chi_sq_results
 # Get proportions within each variable level
 # Get proportions within each variable level, preserving names
 # Load data.table
-library(data.table)
-
-for (var in categorical_vars) {
-    tbl <- table(tf45 = chis_design$variables$tf45, !!sym(var) := chis_design$variables[[var]])
-    prop_tbl <- prop.table(tbl, 2)  # Column-wise proportions to show directionality
-    print(as.data.frame(prop_tbl))
-}
+# library(data.table)
+# 
+# for (var in categorical_vars) {
+#     tbl <- table(tf45 = chis_design$variables$tf45, !!sym(var) := chis_design$variables[[var]])
+#     prop_tbl <- prop.table(tbl, 2)  # Column-wise proportions to show directionality
+#     print(as.data.frame(prop_tbl))
+# }
