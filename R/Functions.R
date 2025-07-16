@@ -350,44 +350,6 @@ count_hot_days <- function(start_date, end_date, lon, lat, threshold = 32) {
   sum(vals >= threshold, na.rm = TRUE)
 }
 
-create_var_from_prism <- function(sf, var, years, minDate = NULL, maxDate = NULL,
-                                  time = "annual") {
-  stopifnot("'var' must be a single character" = (length(var) == 1))
-  stopifnot("'var' must be in  “ppt”, “tmean”, “tmin”, “tmax”, “vpdmin”, “vpdmax”, “tdmean”." = var %in%  c("tmean","tmax","tmin","ppt","vpdmin","vpdmax","tdmean"))
-  stopifnot("'time' must be in 'annual' or 'daily'" = (time %in% c("annual", "daily")))
-  
-  ny <- length(years)
-  stopifnot("'years' must be an integer greater than 1980 and less than 2025" = ny >=1)
-  
-  past_20 <- lapply(years, function(y) (y - 20L):(y-1L))
-  
-  var_list <- vector("list", ny)
-  
-  for(i in 1:ny) {
-    var_list[[i]] <- prism::prism_archive_subset(var, time, years = past_20[[i]]) %>% 
-      pd_stack() %>% 
-      raster::calc(mean, na.rm = TRUE)
-  }
-  
-  files <- prism::prism_archive_subset(type = var, 
-                                       time, 
-                                       years = years)
-  stack <- prism::pd_stack(files)
-  var_vals <- exactextractr::exact_extract(stack, sf, "mean")
-  
-  for (i in 1:ny){
-    temp_name <- paste0(var, "_", years[[i]])
-    delta_name<- paste0("delta_",var,"_",years[[i]])
-    sf <- sf %>% 
-      mutate(!!temp_name  := var_vals[[i]]) %>% 
-      mutate(!!delta_name := .data[[temp_name]] -
-               exactextractr::exact_extract(var_list[[i]], sf, "mean"))
-  }
-  
-  return(sf)
-  
-}
-
 shift_legend <- function(p){
   
   # check if p is a valid object
