@@ -217,8 +217,8 @@ la_shapefile <- california_shapefile[california_shapefile$COUNTYFP == '037',]
 
 # Filter the dataset for Los Angeles County (fips_cnt should match COUNTYFP)
 chis_data_la <- chis_data_filtered[chis_data_filtered$fips_cnt == 37,]
-View(chis_data_la)
-View(la_shapefile)
+# View(chis_data_la)
+# View(la_shapefile)
 
 # Standardize COUNTYFP in the shapefile to match fips_cnt
 la_shapefile$COUNTYFP_int <- as.integer(sprintf("%03d", as.integer(la_shapefile$COUNTYFP)))
@@ -317,7 +317,7 @@ model.results <- data.frame(
     significances
     );
 
-View(model.results)
+# View(model.results)
 
 #### MULTIVARIATE ANALYSES
 
@@ -527,7 +527,7 @@ model.results <- data.frame(
     significances
     );
 
-View(model.results)
+# View(model.results)
 
 #### MULTIVARIATE
 
@@ -589,7 +589,7 @@ model.results <- data.frame(
     multi.significances
     );
 
-View(model.results)
+# View(model.results)
 
 
 ##### ANALYSIS #4 - TEMPORAL ANALYSIS ##########################################################
@@ -702,7 +702,7 @@ for (var in subgroups) {
     
 }
 
-View(all_results)
+# View(all_results)
 
 # Filter the significant results for Race (ombsrtn_p1) and Poverty Level (povll)
 significant_results <- all_results[
@@ -876,9 +876,9 @@ p.values <- ifelse(p.values < 0.001, "***",
                    ifelse(p.values < 0.01, "**", 
                           ifelse(p.values < 0.05, "*", "-")))
 x$p.values <- p.values
-View(x)
+# View(x)
 # x <- x[x$p.values <= 0.05,]
-View(x)
+# View(x)
 
 # interaction_model <- glm(
 #   tf45 ~ (age + ethnicity + sex + martial_status)^2,
