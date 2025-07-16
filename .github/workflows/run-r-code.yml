@@ -10,10 +10,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-22.04, macos-latest, windows-latest]
         
     env:
       RENV_CONFIG_REPOS_OVERRIDE: https://cloud.r-project.org
+      RENV_CONFIG_INSTALL_STAGED: false
+      RENV_CONFIG_CACHE_SYMLINKS: FALSE
+      RENV_ROBOCOPY_SAFETY: false
+      RENV_CONFIG_VERBOSE: TRUE
+      RENV_CONFIG_PACKAGE_TYPE: binary
 
     steps:
     - name: Checkout code
@@ -39,9 +44,8 @@ jobs:
     - name: Install renv and restore environment
       shell: Rscript {0}
       run: |
-        install.packages("renv", repos = "https://cloud.r-project.org")
-        Sys.setenv(RENV_ROBOCOPY_SAFETY = "false")
-        options(pkgType = "binary")
+        options(pkgType = "binary", repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
+        install.packages("renv")
         tryCatch({
           renv::restore(prompt = FALSE)
         }, error = function(e) {
