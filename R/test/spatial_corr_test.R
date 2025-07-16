@@ -53,6 +53,9 @@ moran.test(test$tmax_prior_month_mean_delta, lw, zero.policy = TRUE)
 moran.test(test$tmax_prior_month_count35, lw, zero.policy = TRUE)
 moran.test(test$tmax_prior_month_count35_delta, lw, zero.policy = TRUE)
 
+
+moran.test(as.numeric(test$tf45), lw, zero.policy = TRUE)
+
 moran.test(test$K6, lw, zero.policy = TRUE)
 moran.test(test$max_K6, lw, zero.policy = TRUE)
 moran.test(test$s_depPCA, lw, zero.policy = TRUE)
@@ -61,6 +64,7 @@ moran.test(test$s_depPCA, lw, zero.policy = TRUE)
 test2 <- chis %>%
   group_by(county, year) %>%
   summarize(K6_mean = mean(K6),
+            climate = mean(tf45 == "Yes"),
             temp = mean(tmax_prior_yr_mean),
             precip = mean(ppt_prior_yr_mean), .groups = "drop") %>% 
   arrange(county) %>% 
@@ -70,3 +74,9 @@ lagsarlm(K6_mean ~ temp + precip , data = test2, listw = lw, zero.policy = TRUE)
 
 lm_resid <- lm(K6_mean ~ temp + precip , data = test2) %>% residuals
 moran.test(lm_resid, listw = lw)
+
+
+lagsarlm(climate ~ temp + precip , data = test2, listw = lw, zero.policy = TRUE) %>% summary()
+
+glm_resid <- glm(climate ~ temp + precip , data = test2) %>% residuals
+moran.test(glm_resid, listw = lw)
