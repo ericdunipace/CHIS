@@ -39,7 +39,8 @@ jobs:
           libcurl4-openssl-dev libssl-dev libxml2-dev \
           libharfbuzz-dev libfribidi-dev libfreetype6-dev \
           libpng-dev libtiff5-dev libjpeg-dev \
-          libudunits2-dev libgdal-dev gdal-bin
+          libudunits2-dev libgdal-dev gdal-bin \
+          libgeos-dev libproj-dev
     
     - name: Install renv and restore environment
       shell: Rscript {0}
