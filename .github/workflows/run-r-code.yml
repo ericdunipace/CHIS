@@ -35,11 +35,14 @@ jobs:
           libharfbuzz-dev libfribidi-dev libfreetype6-dev \
           libpng-dev libtiff5-dev libjpeg-dev \
           libudunits2-dev
-
+    
     - name: Install renv and restore environment
       run: |
         Rscript -e 'install.packages("renv", repos = "https://cloud.r-project.org")'
-        Rscript -e 'options(pkgType = "binary"); renv::restore(prompt = FALSE)'
+        Rscript -e '
+          Sys.setenv(RENV_ROBOCOPY_SAFETY = "false");
+          options(pkgType = "binary");
+          renv::restore(prompt = FALSE)'
 
     - name: Run testthat tests
       run: |
