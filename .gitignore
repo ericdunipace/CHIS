@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-Data
 .DS_Store
+Data/prism
+Data/tl2024_us_county
 *.tif
