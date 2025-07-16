@@ -37,12 +37,17 @@ jobs:
           libudunits2-dev
     
     - name: Install renv and restore environment
+      shell: Rscript {0}
       run: |
-        Rscript -e 'install.packages("renv", repos = "https://cloud.r-project.org")'
-        Rscript -e '
-          Sys.setenv(RENV_ROBOCOPY_SAFETY = "false");
-          options(pkgType = "binary");
-          renv::restore(prompt = FALSE)'
+        install.packages("renv", repos = "https://cloud.r-project.org")
+        Sys.setenv(RENV_ROBOCOPY_SAFETY = "false")
+        options(pkgType = "binary")
+        tryCatch({
+          renv::restore(prompt = FALSE)
+        }, error = function(e) {
+          message("RENV RESTORE ERROR: ", conditionMessage(e))
+          quit(status = 1)
+        })
 
     - name: Run testthat tests
       run: |
