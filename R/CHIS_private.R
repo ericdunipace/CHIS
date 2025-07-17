@@ -6,19 +6,12 @@ library(haven)       # Reading .dta files
 library(survey)      # Survey data analysis
 library(ggplot2)     # Data visualization
 library(sf)          # Spatial data handling and mapping
-library(prism)       # Prism data visualization, for temperatures
 library(purrr)       # Functional programming
 library(gtsummary)   # for summary tables
 library(RColorBrewer)# map colors
 library(lme4)        # Linear mixed-effects models
 library(forcats)     # Factor manipulation
-library(rstudioapi)  # For setting working directory to script location
 library(glue)
-library(exactextractr)
-library(raster)
-library(lubridate)
-library(stringr)
-library(terra)
 library(here)
 library(lemon)
 library(dplyr)       # Data manipulation
@@ -256,7 +249,7 @@ attr(table_demographics,"type") <-list(
 climateanx_tot <- svytotal(~tf45, design = chis_design, na.rm = TRUE)
 
 
-demo_table <- tbl_custom_summary(
+demo_table <- gtsummary::tbl_custom_summary(
   data = chis_design$variables %>% 
     mutate(cont_age = as.numeric(as.character(srage_p))),
   by = "tf45",
