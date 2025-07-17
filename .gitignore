@@ -4,5 +4,7 @@
 .Ruserdata
 .DS_Store
 Data/prism
-Data/tl2024_us_county
+Data/tl_2024_us_county
+Data/california_census_2010
+Outputs
 *.tif
