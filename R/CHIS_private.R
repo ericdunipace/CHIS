@@ -16,6 +16,8 @@ library(here)
 library(lemon)
 library(dplyr)       # Data manipulation
 
+here::i_am("R/CHIS_private.R")  # adjust this to your actual file location
+
 #### Setup output directory ####
 if (!dir.exists(output_dir <- here::here("Outputs"))) {
   dir.create(output_dir)
@@ -373,7 +375,7 @@ final_heatwave_plot <- lemon::reposition_legend(
   panel = "panel-2-2",
   plot = FALSE)
 
-
+final_heatwave_plot 
 pdf(here::here("Outputs","heatwave_map.pdf"), width = 6, height = 6)
 grid.draw(final_heatwave_plot)
 dev.off()
@@ -385,6 +387,71 @@ dev.off()
 write.csv(county_result_year, file = here::here("Outputs","climiate_anxiety_map_data.csv"),
           row.names = FALSE)
 
+colnames(census_temp)
+colnames(california_heatmap_year)
+colnames(census_heatwave)
+
+census_temp <- census_temp %>%
+    mutate(county_fips = substr(tract10, 1, 5))
+
+census_heatwave <- census_heatwave %>%
+    mutate(county_fips = substr(tract10, 1, 5))
+
+
+temp_by_county <- census_temp %>%
+    group_by(year, county_fips) %>%
+    summarize(
+        `Avg Tmax` = weighted.mean(tmax, POP10, na.rm = TRUE)
+    )
+
+heatwave_by_county <- census_heatwave %>%
+    group_by(year, county_fips) %>%
+    summarize(
+        `Heatwave Days` = weighted.mean(days_above32, POP10, na.rm = TRUE)
+    )
+
+climate_panel <- california_heatmap_year %>%
+    mutate(year = as.integer(year),
+           county_fips = GEOID) %>%
+    left_join(
+        temp_by_county %>%
+            mutate(year = as.integer(year)) %>%
+            st_drop_geometry(),
+        by = c("county_fips", "year")
+    ) %>%
+    left_join(
+        heatwave_by_county %>%
+            mutate(year = as.integer(year)) %>%
+            st_drop_geometry(),
+        by = c("county_fips", "year")
+    )
+
+
+model_full <- lm(ClimateAnxiety ~ `Avg Tmax` + `Heatwave Days` + factor(year), data = climate_panel)
+summary(model_full)
+model_summary <- summary(model_full)
+
+coefs_df <- as.data.frame(model_summary$coefficients)
+
+# Optionally clean column names
+colnames(coefs_df) <- c("Estimate", "Std_Error", "t_value", "p_value")
+
+# Add rownames as a new column for variable names
+coefs_df <- tibble::rownames_to_column(coefs_df, var = "Variable")
+
+write.csv(coefs_df, file = here::here("Outputs", "climate_anxiety_regression_results.csv"), row.names = FALSE)
+
+
+library(ggplot2)
+
+ggplot(climate_panel, aes(x = `Avg Tmax`, y = ClimateAnxiety)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE, color = "blue") +
+    facet_wrap(~year) +
+    theme_minimal() +
+    labs(title = "Climate Anxiety vs Avg Tmax", x = "Average Tmax", y = "% Climate Anxiety")
+
+
 #### ANALYSIS #2- CLIMATE CHANGE/MENTAL HEALTH #####################################################################################
 
 glm.model <- svyglm(as.formula(formula)
@@ -393,7 +460,7 @@ glm.model <- svyglm(as.formula(formula)
 )
 
 mixef.model <- glmer.svyrep.design(glmer.formula,
-                            , family = "binomial",
+                            family = "binomial",
                             design = chis_design,
                             control=glmerControl(optimizer="bobyqa",
                                                  optCtrl=list(maxfun=100000)),
