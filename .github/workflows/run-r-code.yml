@@ -13,6 +13,7 @@ jobs:
         os: [ubuntu-22.04, macos-latest, windows-latest]
         
     env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RENV_CONFIG_REPOS_OVERRIDE: https://packagemanager.posit.co/cran/latest
       RENV_CONFIG_INSTALL_STAGED: false
       RENV_CONFIG_CACHE_SYMLINKS: FALSE
