@@ -6,5 +6,5 @@
 Data/prism
 Data/tl_2024_us_county
 Data/california_census_2010
-Outputs
+Outputs/*.*
 *.tif
