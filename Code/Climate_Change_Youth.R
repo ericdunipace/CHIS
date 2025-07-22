@@ -45,7 +45,7 @@ chis_2022 <- haven::read_dta(here::here('Data','teen_stata_2022/TEEN.dta')) %>%
 
 chis_2021 <- haven::read_dta(here::here('Data','teen_stata_2021/TEEN.dta')) %>%
     rename_all(tolower) %>%
-    mutate(year = 2021)
+    mutate(year = 2021) 
 
 # Add dummy data to list
 my_chis_list <- list(d_chis_2021, d_chis_2022, d_chis_2023) # work with confidential data
