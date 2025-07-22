@@ -215,7 +215,7 @@ lmer.svyrep.design <- function(formula, design = NULL, data = NULL,
 }
 
 glmer.svyrep.design <- function(formula, design = NULL, data = NULL,
-                                get.coef = FALSE,
+                                get.coef = FALSE, verbose = FALSE,
                                 ...) {
   
   data <- design$variables
@@ -227,15 +227,20 @@ glmer.svyrep.design <- function(formula, design = NULL, data = NULL,
   scale  <- design$scale
   
   data$.weights <- w0/sum(w0) * n
-  fit <- glmer(formula = formula, data = data, weights = .weights,
+  
+  if (isTRUE(verbose)) message("Running model")
+  fit <- lme4::glmer(formula = formula, data = data, weights = .weights,
                ...)
   fit@call$data <- substitute(design$variables)
   fit@call$weights <- substitute(design$pweights/sum(design$pweights) * nrow(design$variables))
   
+  if (isTRUE(verbose)) message("Running replicate weights. Please be patient.")
   rep_fit <- lapply(weights, function(w) {
     new_args <- list(object = fit, weights = w/sum(w) * n )
     do.call(update, new_args)
   })
+  
+  if (isTRUE(verbose)) message("Calculating variance-covariance matrices.")
   
   # Extract the coefficients and standard errors
   fe     <- fixef(fit)
@@ -284,7 +289,7 @@ glmer.svyrep.design <- function(formula, design = NULL, data = NULL,
       rp
     })
     param_list <- list(param = param,
-         rep_param= rep_param)
+                       rep_param= rep_param)
   }
   
   out <- list(fit = fit, fe = fe, re = re,
@@ -292,7 +297,7 @@ glmer.svyrep.design <- function(formula, design = NULL, data = NULL,
                           re = vcov_re,
                           combined = combined_vcov),
               param = param_list
-              )
+  )
   
   class(out) <- "svyrep_merMod"
   return(out)
@@ -338,7 +343,7 @@ vcov.svyrep_merMod <- function(object, full = FALSE, ...) {
 }
 
 extractAIC.svyrep_merMod <- function(object, k = 2, ...) {
- 
+  
   fit <- object$fit
   ll <- logLik(refitML(fit))
   y  <- object$fit@resp$y
@@ -352,7 +357,7 @@ extractAIC.svyrep_merMod <- function(object, k = 2, ...) {
   
   sigma2hat <- sum((y - muhat)^2 * w)/Nhat
   minus2ellhat  <- -2 * logLik(refitML(object$fit)) # This is the log-likelihood of the model
-    # Nhat * log(sigma2hat) + Nhat + Nhat * log(2 * pi)
+  # Nhat * log(sigma2hat) + Nhat + Nhat * log(2 * pi)
   
   Delta_mu <- solve(V0 * sigma2hat, V)
   Isigma2 <- Nhat/(2 * sigma2hat^2)
@@ -370,73 +375,6 @@ extractAIC.svyrep_merMod <- function(object, k = 2, ...) {
 AIC.svyrep_merMod <- function(object, k = 2, ...) {
   aic <- extractAIC(object, k = k, ...)
   aic["AIC"]
-}
-
-count_hot_days <- function(start_date, end_date, lon, lat, threshold = 32) {
-  date_range <- as.character(seq(start_date, end_date, by = "day"))
-  valid_dates <- date_range[date_range %in% names(tmax_map)]
-  if (length(valid_dates) == 0) return(NA)
-  
-  rasters <- stack(tmax_map[valid_dates])
-  vals <- extract(rasters, matrix(c(lon, lat), ncol = 2))
-  sum(vals >= threshold, na.rm = TRUE)
-}
-
-shift_legend <- function(p){
-  
-  # check if p is a valid object
-  if(!"gtable" %in% class(p)){
-    if("ggplot" %in% class(p)){
-      gp <- ggplotGrob(p) # convert to grob
-    } else {
-      message("This is neither a ggplot object nor a grob generated from ggplotGrob. Returning original plot.")
-      return(p)
-    }
-  } else {
-    gp <- p
-  }
-  
-  # check for unfilled facet panels
-  facet.panels <- grep("^panel", gp[["layout"]][["name"]])
-  empty.facet.panels <- sapply(facet.panels, function(i) "zeroGrob" %in% class(gp[["grobs"]][[i]]))
-  empty.facet.panels <- facet.panels[empty.facet.panels]
-  if(length(empty.facet.panels) == 0){
-    message("There are no unfilled facet panels to shift legend into. Returning original plot.")
-    return(p)
-  }
-  
-  # establish extent of unfilled facet panels (including any axis cells in between)
-  empty.facet.panels <- gp[["layout"]][empty.facet.panels, ]
-  empty.facet.panels <- list(min(empty.facet.panels[["t"]]), min(empty.facet.panels[["l"]]),
-                             max(empty.facet.panels[["b"]]), max(empty.facet.panels[["r"]]))
-  names(empty.facet.panels) <- c("t", "l", "b", "r")
-  
-  # extract legend & copy over to location of unfilled facet panels
-  guide.grob <- which(gp[["layout"]][["name"]] == "guide-box")
-  if(length(guide.grob) == 0){
-    message("There is no legend present. Returning original plot.")
-    return(p)
-  }
-  gp <- gtable_add_grob(x = gp,
-                        grobs = gp[["grobs"]][[guide.grob]],
-                        t = empty.facet.panels[["t"]],
-                        l = empty.facet.panels[["l"]],
-                        b = empty.facet.panels[["b"]],
-                        r = empty.facet.panels[["r"]],
-                        name = "new-guide-box")
-  
-  # squash the original guide box's row / column (whichever applicable)
-  # & empty its cell
-  guide.grob <- gp[["layout"]][guide.grob, ]
-  if(guide.grob[["l"]] == guide.grob[["r"]]){
-    gp <- gtable_squash_cols(gp, cols = guide.grob[["l"]])
-  }
-  if(guide.grob[["t"]] == guide.grob[["b"]]){
-    gp <- gtable_squash_rows(gp, rows = guide.grob[["t"]])
-  }
-  gp <- gtable_remove_grobs(gp, "guide-box")
-  
-  return(gp)
 }
 
 prism_to_map <- function(var, sf, years, admin.level, heatwave = FALSE, cutoff = 32) {
@@ -493,7 +431,7 @@ prism_to_map <- function(var, sf, years, admin.level, heatwave = FALSE, cutoff =
       if (!file.exists(outfile)) {
         idxs       <- which(as.character(year_factors) == yr)
         year_bil   <- bil_paths[idxs]
-        year_stack <- terra::rast(year_bil)
+        year_stack <- terra::rast(year_bil) %>% terra::project(cal_admin)
         year_crop  <- terra::mask(terra::crop(year_stack, cal_admin), cal_admin)
         year_count <- terra::app(year_crop, 
                                  fun = function(v) sum(v > cutoff, na.rm = TRUE))
@@ -509,11 +447,8 @@ prism_to_map <- function(var, sf, years, admin.level, heatwave = FALSE, cutoff =
     annual_counts        <- terra::rast(unlist(annual_files))
     names(annual_counts) <- unique_years
     
-    # project cal_admin vector to annual_counts raster
-    cal_proj <- terra::project(cal_admin, annual_counts[[1]])
-    
     # Zonal sum for each annual layer
-    zonal_df <- terra::zonal(annual_counts, cal_proj,
+    zonal_df <- terra::zonal(annual_counts, cal_admin,
                              fun = "mean", na.rm = TRUE)
     
     zonal_df[[admin.level]] <- rownames(zonal_df) <- sf[[admin.level]]
@@ -538,7 +473,7 @@ prism_to_map <- function(var, sf, years, admin.level, heatwave = FALSE, cutoff =
     y <- unique_years[i]
     # Download (or locate) annual files for those years
     ann_stack_r <- prism::pd_stack(prism::prism_archive_subset(var, "annual", years = y))
-    ann_stack_t <- terra::rast(ann_stack_r)
+    ann_stack_t <- terra::rast(ann_stack_r) %>% terra::project(cal_admin)
     ann_mask_ca <- terra::mask(terra::crop(ann_stack_t, cal_admin), cal_admin)
     clim_rasters[[i]] <- terra::app(ann_mask_ca, mean, na.rm = TRUE)
   }
@@ -559,11 +494,11 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
   stopifnot("'var' must be in  \"ppt\", \"tmean\", \"tmin\", \"tmax\", \"vpdmin\", \"vpdmax\", \"tdmean\"." =
               var %in%  c("tmean","tmax","tmin","ppt","vpdmin","vpdmax","tdmean"))
   admin.level <- match.arg(admin.level, c("county","census")) %>% 
-  switch(
-         "county" = "county",
-         "zip" = "bestzip",
-         "census" = "tract10"
-         )
+    switch(
+      "county" = "county",
+      "zip" = "bestzip",
+      "census" = "tract10"
+    )
   
   # Get all daily file paths and their dates for 'var'
   files_daily <- prism::prism_archive_subset(var, "daily")
@@ -571,7 +506,7 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
   bil_paths <- unlist(lapply(file.path(prism::prism_get_dl_dir(), files_daily), function(f) {
     list.files(f, pattern = "\\.bil$", full.names = TRUE)
   }))
-  dates_daily <- prism::pd_get_date(files_daily)
+  dates_daily <- prism::pd_get_date(files_daily) %>% lubridate::date()
   # Named vector: names are "YYYY-MM-DD"
   var_daily <- setNames(files_daily, as.character(dates_daily))
   
@@ -590,7 +525,7 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
     years_vec <- (y - 16L):(y - 2L)
     # Download (or locate) annual files for those years
     ann_stack_r <- prism::pd_stack(prism::prism_archive_subset(var, "annual", years = years_vec))
-    ann_stack_t <- terra::rast(ann_stack_r)
+    ann_stack_t <- terra::rast(ann_stack_r) %>% terra::project(cal_admin)
     ann_stack_ca<- terra::mask(terra::crop(ann_stack_t, cal_admin), cal_admin)
     # Compute mean raster over 20-year period
     clim_rasters[[i]] <- terra::app(ann_stack_ca, mean, na.rm = TRUE)
@@ -623,19 +558,19 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
     names(annual_files) <- years_all
     
     for (yr in years_all) {
-      outfile    <- paste0(glue("{admin.level}_above{cutoff}_{yr}.tiff"))
+      outfile    <- paste0(glue("{var}_{admin.level}_above{cutoff}_{yr}.tiff"))
       annual_files[[as.character(yr)]] <- outfile
       
       if (!file.exists(outfile)) {
         idxs       <- which(year_factors == yr)
         year_bil   <- bil_paths[idxs]
-        year_stack <- terra::rast(year_bil)
+        year_stack <- terra::rast(year_bil) %>% terra::project(cal_admin)
         year_ca    <- terra::mask(terra::crop(year_stack, cal_admin), cal_admin)
         year_count <- terra::app(year_ca, 
                                  fun = function(v) sum(v > cutoff, na.rm = TRUE))
         
         terra::writeRaster(year_count, filename = outfile, overwrite = TRUE,
-                           wopt = list(datatype = "INT1U", gdal = c("COMPRESS=LZW")))
+                           wopt = list(datatype = "INT2U", gdal = c("COMPRESS=LZW")))
         rm(year_stack, year_count); gc()
       }
       
@@ -646,10 +581,10 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
     names(annual_counts) <- years_all
     
     # project cal_admin vector to annual_counts raster
-    cal_proj <- terra::project(cal_admin, annual_counts[[1]])
+    # cal_proj <- terra::project(cal_admin, annual_counts[[1]])
     
     # Zonal sum for each annual layer
-    zonal_df <- terra::zonal(annual_counts, cal_proj,
+    zonal_df <- terra::zonal(annual_counts, cal_admin,
                              fun = "mean", na.rm = TRUE)
     
     zonal_df[[admin.level]] <- rownames(zonal_df) <- sf[[admin.level]]
@@ -669,11 +604,6 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
       tidyr::pivot_longer(cols = -all_of(admin.level),
                           names_to = "year",
                           values_to = paste0(glue("mean_days_above{cutoff}") ))
-    # sf <- sf %>%
-    #   left_join(admin_avg, by = c(admin.level,"year"))
-    
-    file.remove(unlist(annual_files))
-    
   }
   
   # get unique month year combos
@@ -689,9 +619,9 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
     sm <- lubridate::month(sd)
     
     # Prior month window
-    pm_date <- sd - lubridate::days(90)
-    pm_start <- lubridate::floor_date(pm_date, "month")
-    pm_end   <- lubridate::ceiling_date(pm_date, "month") - days(1)
+    pm_date  <- sd 
+    pm_start <- pm_date %m-% lubridate::days(90)
+    pm_end   <- pm_date %m-% lubridate::days(1)
     
     # 1-year prior window
     prior_start <- sd %m-% lubridate::years(1)
@@ -703,37 +633,78 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
     
     # 3-month prior daily subset
     date_names <- as.Date(names(var_daily))
-    sel_pm <- var_daily[which(date_names >= pm_start & date_names <= pm_end)]
+    sel_pm <- bil_paths[which(date_names >= pm_start & date_names <= pm_end)]
     if(length(sel_pm) > 0) {
-      stack_pm <- prism::prism_archive_subset(var, "daily", minDate = pm_start, maxDate = pm_end) %>%
-        pd_stack() %>%
-        terra::rast() %>% 
+      stack_pm <- terra::rast(sel_pm) %>% 
+        terra::project(cal_admin) %>% 
         terra::crop(cal_admin) %>% 
         terra::mask(cal_admin)
+      # stack_pm <- prism::prism_archive_subset(var, "daily", minDate = pm_start, maxDate = pm_end) %>%
+      #   prism::pd_stack() %>%
+      #   terra::rast() %>% terra::project(cal_admin) %>%
+      #   terra::crop(cal_admin) %>% 
+      #   terra::mask(cal_admin)
       
       pm_means  <- terra::app(stack_pm, mean, na.rm = TRUE)
       pm_mean  <- terra::extract(pm_means, cal_admin, 
                                  fun = mean, na.rm = TRUE) %>% 
         .[,2]
-      if(var == "tmax") {
-        pm_count <- terra::app(stack_pm, function(x, ...) sum(x > cutoff,...), 
-                                 na.rm = TRUE) %>% 
+      
+      stack_pm_normal_list <- lapply(2:16, function(yy) {
+        pmn_idx     <- which(dates_daily >= (pm_start %m-% lubridate::years(yy)) & dates_daily <= (pm_end %m-% lubridate::years(yy)))
+        pmn_bil     <- bil_paths[pmn_idx]
+        stack_pm <- terra::rast(pmn_bil) %>% 
+          terra::project(cal_admin) %>% 
+          terra::crop(cal_admin) %>% 
+          terra::mask(cal_admin)
+        # prism::prism_archive_subset(var, "daily", minDate = pm_start %m-% lubridate::years(yy), maxDate = pm_end %m-% lubridate::years(yy)) %>%
+        #   # unlist()
+        #   pd_stack() %>%
+        #   terra::rast() %>% terra::project(cal_admin) %>%
+        #   terra::crop(cal_admin) %>% 
+        #   terra::mask(cal_admin)
+      })
+      names(stack_pm_normal_list) <- as.character(2:16)
+      
+      pm_mean_normal <- lapply(stack_pm_normal_list, function(d) {
+        terra::app(d, mean, na.rm = TRUE) %>% 
           terra::extract(cal_admin, fun = mean, na.rm = TRUE) %>% 
           .[,2]
+      }) %>% 
+        bind_cols() %>% 
+        rowMeans(na.rm = TRUE)
+      
+      if(var == "tmax") {
+        # Count days above cutoff
+        pm_count <- terra::app(stack_pm, function(x, ...) sum(x > cutoff,...), 
+                               na.rm = TRUE) %>% 
+          terra::extract(cal_admin, fun = mean, na.rm = TRUE) %>% 
+          .[,2]
+        
+        pm_count_normal <- lapply(stack_pm_normal_list, function(d) {
+          terra::app(d, function(x, ...) sum(x > cutoff,...), 
+                     na.rm = TRUE) %>% 
+            terra::extract(cal_admin, fun = mean, na.rm = TRUE) %>% 
+            .[,2]
+        }) %>% 
+          bind_cols() %>% 
+          rowMeans(na.rm = TRUE)
+        
       } else {
-        pm_count <- NA_integer_
+        pm_count <- pm_count_normal <- NA_integer_
       }
     } else {
-      pm_mean <- NA_real_
-      pm_count <- NA_integer_
+      pm_mean <- pm_mean_normal <- NA_real_
+      pm_count <-  pm_count_normal <- NA_integer_
+      
     }
     
     # 1-year prior daily subset
-    sel_prior <- var_daily[which(date_names >= prior_start & date_names <= prior_end)]
+    sel_prior <- bil_paths[which(date_names >= prior_start & date_names <= prior_end)]
     if(length(sel_prior) > 0) {
-      stack_prior <- prism::prism_archive_subset(var, "daily", minDate = prior_start, maxDate = prior_end) %>%
-        pd_stack() %>%
-        terra::rast() %>% 
+      # Get the bil files for the prior year
+      stack_prior <- terra::rast(sel_prior) %>%
+         terra::project(cal_admin) %>%
         terra::crop(cal_admin) %>%
         terra::mask(cal_admin)
       
@@ -744,8 +715,8 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
         .[,2]
       if(var == "tmax") {
         yr_prior_count <-  terra::app(stack_prior, 
-                                        function(x, ...) sum(x > cutoff,...), 
-                                        na.rm = TRUE) %>% 
+                                      function(x, ...) sum(x > cutoff,...), 
+                                      na.rm = TRUE) %>% 
           terra::extract(cal_admin, fun = mean, na.rm = TRUE) %>% 
           .[,2]
       } else {
@@ -757,11 +728,10 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
     }
     
     # Lagged 1-year daily subset
-    sel_lag <- var_daily[which(date_names >= lag_start & date_names <= lag_end)]
+    sel_lag <- bil_paths[which(date_names >= lag_start & date_names <= lag_end)]
     if(length(sel_lag) > 0) {
-      stack_lag <- prism::prism_archive_subset(var, "daily", minDate = lag_start, maxDate = lag_end) %>%
-        pd_stack() %>%
-        terra::rast() %>% 
+      stack_lag <- terra::rast(sel_lag) %>% 
+        terra::project(cal_admin) %>% 
         terra::crop(cal_admin) %>%
         terra::mask(cal_admin)
       
@@ -771,8 +741,8 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
         .[,2]
       if(var == "tmax") {
         yr_lag_count <- terra::app(stack_lag, 
-                                     function(x, ...) sum(x > cutoff,...), 
-                                     na.rm = TRUE) %>% 
+                                   function(x, ...) sum(x > cutoff,...), 
+                                   na.rm = TRUE) %>% 
           terra::extract(cal_admin, fun = mean, na.rm = TRUE) %>% 
           .[,2]
       } else {
@@ -796,14 +766,15 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
       survey_months = sm,
       survey_years = sy,
       !!glue({admin.level}) := sf[[admin.level]],
-      !!paste0(var, "_prior_90_days_mean")    := pm_mean,
-      !!paste0(var, glue("_prior_90_days_count{cutoff}")) := pm_count,
-      !!paste0(var, "_prior_yr_mean")             := yr_prior_mean,
-      !!paste0(var, glue("_prior_yr_count{cutoff}"))          := yr_prior_count,
-      !!paste0(var, "_prior_yr_lag_mean")         := lag_mean,
-      !!paste0(var, glue("_prior_yr_lag_count{cutoff}"))      := yr_lag_count,
-      !!paste0(var, "_20yr_normal")         := clim_val
-      
+      !!paste0(var, "_" , admin.level, "_prior_90_days_mean") := pm_mean,
+      !!paste0(var, "_" , admin.level, "_prior_90_days_mean_normal") := pm_mean_normal, 
+      !!paste0(var, "_" , admin.level, glue("_prior_90_days_count{cutoff}")) := pm_count,
+      !!paste0(var, "_" , admin.level, glue("_prior_90_days_count{cutoff}_normal")) := pm_count_normal,
+      !!paste0(var, "_" , admin.level, "_prior_yr_mean")  := yr_prior_mean,
+      !!paste0(var, "_" , admin.level, glue("_prior_yr_count{cutoff}"))          := yr_prior_count,
+      !!paste0(var, "_" , admin.level, "_lag_yr_mean") := lag_mean,
+      !!paste0(var, "_" , admin.level, glue("_lag_yr_count{cutoff}"))      := yr_lag_count,
+      !!paste0(var, "_" , admin.level, "_15yr_normal")  := clim_val
     )
     
   })
@@ -812,9 +783,13 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
   data_out <- data %>%
     left_join(results, by = c("survey_dates", "survey_months", "survey_years", admin.level)) %>%
     mutate(
-      across(starts_with(var) & ends_with("_mean"), 
-             ~ . - !!sym(paste0(var, "_20yr_normal")),
-             .names = "{.col}_delta")
+      across(starts_with(var) & ends_with("yr_mean"), 
+             ~ . - !!sym(paste0(var, "_", admin.level, "_15yr_normal")),
+             .names = "{.col}_delta"),
+      across(starts_with(var) & ends_with("_90_days_mean"),
+             ~ . - !!sym(paste0(var, "_", admin.level, "_prior_90_days_mean_normal")),
+             .names = "{.col}_delta"
+      )
     )
   
   if (var == "tmax")  {
@@ -822,10 +797,11 @@ data_var_from_prism <- function(data, var, sf, admin.level = "county",
       left_join(admin_avg_days_cutoff %>% mutate(year = as.numeric(year)),
                 by = c(admin.level, "year")) %>%
       mutate(
-        !!glue("tmax_prior_90_days_count{cutoff}_delta") := .data[[glue("tmax_prior_90_days_count{cutoff}")]] - .data[[glue("mean_days_above{cutoff}")]] * 90 / 365.25,
-        !!glue("tmax_prior_yr_count{cutoff}_delta") := .data[[glue("tmax_prior_yr_count{cutoff}")]]  - .data[[glue("mean_days_above{cutoff}")]],
-        !!glue("tmax_lag_yr_count{cutoff}_delta") := .data[[glue("tmax_prior_yr_lag_count{cutoff}")]] - .data[[glue("mean_days_above{cutoff}")]]
+        !!glue("tmax_{admin.level}_prior_90_days_count{cutoff}_delta") := .data[[glue("tmax_{admin.level}_prior_90_days_count{cutoff}")]] - .data[[glue("tmax_{admin.level}_prior_90_days_count{cutoff}_normal")]],
+        !!glue("tmax_{admin.level}_prior_yr_count{cutoff}_delta") := .data[[glue("tmax_{admin.level}_prior_yr_count{cutoff}")]]  - .data[[glue("mean_days_above{cutoff}")]],
+        !!glue("tmax_{admin.level}_lag_yr_count{cutoff}_delta") := .data[[glue("tmax_{admin.level}_lag_yr_count{cutoff}")]] - .data[[glue("mean_days_above{cutoff}")]]
       )
+    file.remove(unlist(annual_files))
   }
   
   return(data_out)

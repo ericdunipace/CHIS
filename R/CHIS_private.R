@@ -13,7 +13,9 @@ library(lme4)        # Linear mixed-effects models
 library(forcats)     # Factor manipulation
 library(glue)
 library(here)
+library(terra)
 library(lemon)
+library(forcats)     # Factor manipulation
 library(dplyr)       # Data manipulation
 
 #### Setup output directory ####
@@ -114,14 +116,17 @@ chis <- pooling(chis_list) %>%
                                 "No" = "On Vacation",
                                 "Yes" = "Home Schooled"
     ),
+    tl53 = forcats::fct_rev(tl53),
+    
   ) %>% 
   mutate(survey_dates = parse_my_to_date(tadate_mm),
          survey_years  = lubridate::year(survey_dates),
          survey_months = lubridate::month(survey_dates)) %>% 
   mutate(county = fips_cnt) %>% 
-  left_join(y = aux_data$prism %>% select(-year),
-            by = c("tract10", "survey_years","survey_months"))
-
+  left_join(y = aux_data$prism$census %>% select(-year),
+            by = c("tract10", "survey_years","survey_months")) %>% 
+  left_join(y = aux_data$prism$county %>% select(-year),
+            by = c("county", "survey_years","survey_months"))
 
 
 for(j in colnames(d_chis_2023)) {
@@ -141,6 +146,18 @@ census_heatwave <- aux_data$map_census_heat %>%
   left_join(y = census_shapefile, by = "tract10") %>% 
   sf::st_as_sf()
 
+# check for missing values in climate vars
+missing_obs <- which(is.na(chis$tmax_tract10_prior_yr_mean))
+
+if ( length(missing_obs) > 0 ) {
+  cn <- colnames(aux_data$prism$census %>% select(-starts_with("survey"),-tract10,-year))
+  cn_c <- gsub("tract10_", "county_", cn)
+  
+  for(j in seq_along(cn)) {
+    if (is.null(chis[missing_obs, cn[j]])) next
+    chis[missing_obs, cn[j]] <- chis[missing_obs, cn_c[j]]
+  }
+}
 
 #### Set up survey design object to account for weights ####
 # Set up survey design for analysis
@@ -169,36 +186,48 @@ baseline_demographics <- c(
 
 
 modifiable_protective <- c(
-  "as.numeric(tl25)",         # CARES DEEPLY ABOUT ISSUES IN COMMUNITY
-  "as.numeric(tl27)",         # BELIEVES CAN MAKE A DIFFERENCE IN THE COMMUNITY
-  "tl50",         # EVER VOLUNTEERED TO SOLVE PROBLEM IN THE COMMUNITY
-  "as.numeric(tl53)",         # CONFIDENCE TO CONTACT SOMEONE IN THE GOVT WHO REPRESENTS COMMUNITY
-  "as.numeric(tq10)",         # HOW OFTEN FELT ABLE TO TALK TO FAMILY ABOUT FEELINGS
-  "as.numeric(tq11)",         # HOW OFTEN FELT FAMILY STOOD BY YOU DURING DIFFICULT TIMES
-  "as.numeric(tq14)",         # HOW OFTEN FELT SUPPORTED BY FRIENDS
-  "as.numeric(tq16)"          # HOW OFTEN ENJOYED PARTICIPATING IN COMMUNITY TRADITIONS
+  "scale(as.numeric(tl25))",         # CARES DEEPLY ABOUT ISSUES IN COMMUNITY strong agree -> strong dis
+  "scale(as.numeric(tl27))",         # BELIEVES CAN MAKE A DIFFERENCE IN THE COMMUNITY strong agree -> strong dis
+  "tl50",         # EVER VOLUNTEERED TO SOLVE PROBLEM IN THE COMMUNITY Yes, No
+  "scale(as.numeric(tl53))",         # CONFIDENCE TO CONTACT SOMEONE IN THE GOVT WHO REPRESENTS COMMUNITY Definitely Could -> Definitely Could Not
+  "scale(as.numeric(tq10))",         # HOW OFTEN FELT ABLE TO TALK TO FAMILY ABOUT FEELINGS All Of The Time -> Never
+  "scale(as.numeric(tq11))",         # HOW OFTEN FELT FAMILY STOOD BY YOU DURING DIFFICULT TIMES All Of The Time -> Never
+  "scale(as.numeric(tq14))",         # HOW OFTEN FELT SUPPORTED BY FRIENDS  All Of The Time -> Never
+  "scale(as.numeric(tq16))"          # HOW OFTEN ENJOYED PARTICIPATING IN COMMUNITY TRADITIONS  All Of The Time -> Never
 );
 
 access_to_care <- c(
-  "uninsured",      # INSURANCE TYPE
+  "uninsured",      # INSURANCE TYPE, Yes, No
   "health_office",      # KIND OF PLACE MOST OFTEN GO FOR HEALTH CARE
-  "tf9"          # DELAYED/DID NOT GET MEDICAL CARE FELT NEEDED IN PAST 12 MOS
+  "tf9"          # DELAYED/DID NOT GET MEDICAL CARE FELT NEEDED IN PAST 12 MOS, Yes, No
 );
 
 civic_engagement <- c(
-  "school_last_week",          # ATTENDED SCHOOL LAST WEEK
+  "school_last_week",          # ATTENDED SCHOOL LAST WEEK Yes, No
   # "ta4c_p1",         # ATTENDED SCHOOL DURING LAST SCHOOL YR, only in 2023 data
-  "tb4",          # # OF DAYS OF SCHOOL MISSED FOR HEALTH PROBLEM PAST MO
-  "tl10",         # PARTICIPATE IN CLUBS/ORGS OUTSIDE SCHOOL PAST YR
-  "as.numeric(tq15)"          # HOW OFTEN FELT SENSE OF BELONGING AT SCHOOL
+  "scale(I(as.numeric(school_last_week ==  'Yes')) * tb4)",          # Number OF DAYS OF SCHOOL MISSED FOR HEALTH PROBLEM PAST MO -1 -> 15 in raw data, -1 is 
+  "tl10",         # PARTICIPATE IN CLUBS/ORGS OUTSIDE SCHOOL PAST YR, Yes, No
+  "scale(as.numeric(tq15))"   # HOW OFTEN FELT SENSE OF BELONGING AT SCHOOL All Of The Time -> Never
 );
+
+climate_variables <- c(
+  "scale(tmax_tract10_prior_90_days_count32_delta)", # Tmax above 32 for the 90 days prior to survey date
+  "scale(tmax_tract10_prior_90_days_mean_delta)", # Mean Tmaxfor the 90 days prior to survey date
+  "scale(tmax_tract10_prior_yr_mean_delta)",          # Mean Tmax for the year prior to survey date
+  "scale(tmax_tract10_prior_yr_count32_delta)",  # Count of Tmax above 32 for the year prior to survey date
+  "scale(tmax_county_prior_90_days_count32_delta)", # Tmax above 32 for the 90 days prior to survey date
+  "scale(tmax_county_prior_90_days_mean_delta)", # Mean Tmaxfor the 90 days prior to survey date
+  "scale(tmax_county_prior_yr_mean_delta)",          # Mean Tmax for the year prior to survey date
+  "scale(tmax_county_prior_yr_count32_delta)"  # Count of Tmax above 32 for the year prior to survey date
+)
 
 # Aggregate all the variables
 characteristics <- c(
   baseline_demographics, 
   modifiable_protective, 
   access_to_care, 
-  civic_engagement
+  civic_engagement,
+  climate_variables
 )
 
 # formula
@@ -387,42 +416,46 @@ write.csv(county_result_year, file = here::here("Outputs","climiate_anxiety_map_
 
 #### ANALYSIS #2- CLIMATE CHANGE/MENTAL HEALTH #####################################################################################
 
+#glm model
 glm.model <- svyglm(as.formula(formula)
                     , family = "binomial",
                     design = chis_design
 )
 
-mixef.model <- glmer.svyrep.design(glmer.formula,
-                            , family = "binomial",
-                            design = chis_design,
-                            control=glmerControl(optimizer="bobyqa",
-                                                 optCtrl=list(maxfun=100000)),
-                            get.coef = TRUE
-)
-
-
 # get summary tables
 glm.summ <- glm.model %>% summary() 
-mixef.summ <- mixef.model %>% summary()
-
 print(glm.summ)
-print(mixef.summ)
+glm.vcov <- vcov(glm.model)
 
 # save basic summary outputs
 write.csv(glm.summ$coefficients,
           file = here::here("Outputs","glm_model_summary.csv"))
+write.csv(glm.vcov,
+          file = here::here("Outputs","glm_vcov.csv"))
+
+# mixed effects model
+mixef.model <- glmer.svyrep.design(glmer.formula,
+                            , family = "binomial",
+                            design = chis_design,
+                            control=lme4::glmerControl(optimizer="bobyqa",
+                                                 optCtrl=list(maxfun=100000)),
+                            get.coef = TRUE,
+                            verbose = TRUE
+)
+
+# get summary of mixef
+mixef.summ <- mixef.model %>% summary()
+print(mixef.summ)
+
+# save summaries
 write.csv(mixef.summ$coefficients,
           file = here::here("Outputs","fixef_coef.csv"))
 
-# save coef and standard errors of glm model
+# save standard errors of model
 mixef.vcov <- mixef.model$vcov$combined
-glm.vcov <- vcov(glm.model)
-
 write.csv(mixef.vcov,
           file = here::here("Outputs","mixef_vcov.csv"))
 
-write.csv(glm.vcov,
-          file = here::here("Outputs","glm_vcov.csv"))
 
 # save replicate coefficients for later calculations
 beta_me <- as.data.frame(mixef.model$param$param)
