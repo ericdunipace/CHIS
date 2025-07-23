@@ -331,7 +331,7 @@ library(sf)
 library(stringr)
 
 # Load shapefile and filter for California
-city_shapefile <- st_read(here::here("Data","tl_2024_us_county","tl_2024_us_county.shp"))
+city_shapefile <- st_read(here::here("data-raw","tl_2024_us_county","tl_2024_us_county.shp"))
 california_shapefile <- city_shapefile %>% 
   filter(STATEFP == "06") %>%
   mutate(COUNTYFP_int = as.integer(COUNTYFP))
