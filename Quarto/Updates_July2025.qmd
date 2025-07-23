@@ -1,0 +1,53 @@
+---
+title: "CHIS Adolescents Analysis"
+subtitle: "Updates July 2025"
+format: revealjs
+author: "Eric Dunipace"
+execute:
+  echo: true
+  warning: true
+  error: true
+  message: true
+  include: true
+  results: 'markup'
+---
+
+## Introduction
+
+## Changes to code
+
+Minor - Used `svyglm` when survey adjusted standard errors needed
+
+Larger - Changing how tables are created - Creating combined outcome variable based on K6 survey -
+
+## Outcome
+There are several potential outcomes
+
+## K6
+
+In the data, the survey questions `tg11`--`tg16` are from the [K6 survey instrument](https://www.hcp.med.harvard.edu/ncs/k6_scales.php): 
+<blockquote>
+The K6 is best to use when you want to look at serious mental illness (about 5-8% of the population). The K6 was not designed to distinguish the top 1-2% from the rest of the population.
+</blockquote>
+
+## Principal components decomposition
+
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished presentation. To learn more about Quarto presentations see <https://quarto.org/docs/presentations/>.
+
+## Bullets
+
+When you click the **Render** button a document will be generated that includes:
+
+-   Content authored with markdown
+-   Output from executable code
+
+## Code
+
+When you click the **Render** button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
