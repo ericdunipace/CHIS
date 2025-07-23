@@ -57,7 +57,6 @@ jobs:
     - name: Install renv and restore environment
       shell: Rscript {0}
       run: |
-        options(repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
         install.packages("renv")
         tryCatch({
           renv::restore(prompt = FALSE)
