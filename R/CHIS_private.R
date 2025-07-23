@@ -35,17 +35,17 @@ source(here::here("R","Functions.R"))
 
 #### load data ####
 # load chis data 2021-2023
-d_chis_2023 <- haven::read_dta(here::here('data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')) %>%
+d_chis_2023 <- haven::read_dta(here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2023) %>% 
   haven::as_factor()
 
-d_chis_2022 <- haven::read_dta(here::here('data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')) %>%
+d_chis_2022 <- haven::read_dta(here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2022) %>% 
   haven::as_factor()
 
-d_chis_2021 <- haven::read_dta(here::here('data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')) %>%
+d_chis_2021 <- haven::read_dta(here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2021) %>% 
   haven::as_factor()

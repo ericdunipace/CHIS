@@ -13,13 +13,7 @@ library(sf)          # Spatial data handling and mapping
 library(purrr)
 library(here)
 
-
-# Step 1: 
-# Set Wd
-
-# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))  # Sets to script location
-# setwd("..")  # Moves up to the project root
-# getwd()
+here::i_am("R/Climate_Change_Youth_PUF.R")  
 
 # Import confidential dummy datasets
 d_chis_2023 <- haven::read_dta(here::here('Data', 'dummyfile_2023_teen_stata/TEEN.dta') ) %>%
