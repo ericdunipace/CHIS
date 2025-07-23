@@ -138,7 +138,7 @@ hist(chis_design$variables$climate_distress_bin)
 data <- chis_design$variables
 dummy_data <- d_chis_design$variables
 
-data$ta4c_p1
+# data$ta4c_p1
 ### REFACTOR CHIS_DESIGN
 
 # Goal: to identify certain subgroups most vulnerable to climate change anxiety
@@ -163,7 +163,7 @@ data$srage_p <- factor(data$srage_p, levels = c("12", "13", "14", "15", "16", "1
 #     )
 
 label(data$srage_p) <- "Age"
-data$srage_p
+# data$srage_p
 
 # Sex
 data$srsex <- factor(data$srsex, levels = c("1", "2"), labels = c("Male", "Female"))
@@ -208,7 +208,7 @@ data$ahedtc_p1 <- factor(
 
 label(data$ahedtc_p1) <- "Parents' Educational Attainment"
 
-data$ta4c_p1
+# data$ta4c_p1
 
 # Poverty Level
 data$povll <- factor(
@@ -251,7 +251,7 @@ label(data$ur_clrt2) <- "Rural/Urban (Claritas ZIP, 2-level)"
 data$year <- factor(data$year)
 label(data$year) <- "Year"
 
-data$climate_distress_bin
+# data$climate_distress_bin
 
 # Outcome variable
 label(data$climate_distress_bin) <- "Total"
@@ -325,7 +325,7 @@ library(sf)
 library(stringr)
 
 # Load shapefile and filter for California
-california_shapefile <- readRDS(here::here("data","auxiliary_data.rds")) %>% .$county_ca %>% 
+california_shapefile <- readRDS(here::here("Data","auxiliary_data.rds")) %>% .$county_ca %>% 
   filter(STATEFP == "06") %>%
   mutate(COUNTYFP_int = as.integer(COUNTYFP)) %>% 
   mutate(NAME = county)
