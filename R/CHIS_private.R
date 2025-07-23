@@ -18,6 +18,10 @@ library(lemon)
 library(forcats)     # Factor manipulation
 library(dplyr)       # Data manipulation
 
+
+here::i_am("R/CHIS_private.R")  # adjust this to your actual file location
+
+
 #### Setup output directory ####
 if (!dir.exists(output_dir <- here::here("Outputs"))) {
   dir.create(output_dir)
@@ -58,70 +62,7 @@ aux_data <- readRDS(here::here("Data","auxillary_data.rds"))
 #### Clean and combine CHIS data ####
 # chis <- readRDS(here::here("Data', 'chis_combined.Rds") )
 
-chis <- pooling(chis_list) %>%
-  mutate(across(where(is.factor), fct_drop)) %>% 
-  mutate(
-    age_group = factor(ifelse(srage_p %in% c("12","13","14"),
-                       "12-14", "15-17")),
-    ombsrtn_p1 = forcats::fct_recode(ombsrtn_p1,
-                                     "Hispanic" = "Hispanic",
-                                     "White, Non-Hispanic" = "White, Non-hispanic (nh)",
-                                     "Asian, Non-Hispanic" = "Asian Only, Nh",
-                                     "Two Or More Races, Non-Hispanic" = "Two Or More Races, Nh"),
-    povll_binary = forcats::fct_recode(povll,
-                                "Less than 300% FPL" = "0-99% Fpl",
-                                "Less than 300% FPL" = "100-199% Fpl",
-                                "Less than 300% FPL" = "200-299% Fpl",
-                                "300% FPL And Above" = "300% Fpl And Above"),
-    povll = forcats::fct_recode(povll,
-                                "0-99% FPL" = "0-99% Fpl",
-                                "100-199% FPL" = "100-199% Fpl",
-                                "200-299% FPL" = "200-299% Fpl",
-                                "300% FPL And Above" = "300% Fpl And Above"),
-    ahedtc_binary = forcats::fct_recode(ahedtc_p1,
-                                        "No college" = "No Formal Education Or Grade 1-8",
-                                        "No college" = "Grade 9-11",
-                                        "No college" = "Grade 12/h.s. Diploma",
-                                        "College or more" = "Some College",
-                                        "College or more" = "Aa/as Degree Or Vocational School",
-                                        "College or more" = "Ba Or Bs Degree/some Grad School",
-                                        "College or more" = "Ma Or Ms Degree",
-                                        "College or more" = "Ph.d. Or Equivalent"
-    ),
-    ahedtc_p1 = forcats::fct_recode(ahedtc_p1,
-                                    "Grade 12/H.S. Diploma" = "Grade 12/h.s. Diploma",
-                                    "AA/AS Degree Or Vocational School" = "Aa/as Degree Or Vocational School",
-                                    "BA Or BS Degree/Some Grad School" = "Ba Or Bs Degree/some Grad School",
-                                    "MA Or MS Degree" = "Ma Or Ms Degree",
-                                    "Ph.D. Or Equivalent" = "Ph.d. Or Equivalent"
-    ),
-    lnghmt_binary = forcats::fct_recode(lnghmt_p1,
-                                       "English" = "English & Spanish",
-                                       "English" = "English And One Other Language",
-                                "Non-English" = "Spanish Or Other One Language Only",
-                                "Non-English" = "Other Languages (2+)"
-    ),
-    uninsured = factor(ifelse(as.character(instype) == "Uninsured",
-                                    "Yes", "No")),
-    health_office = forcats::fct_recode(tf2,
-                                "Primary care office" = "Doctor's Office/kaiser/hmo",
-                                "Primary care office" = "Clinic/health Center/hospital Clinic",
-                                "Primary care office" = "Other Health Professional (not Md)/alternative Medicine", 
-                                "Not primary care office" = "Inapplicable"   ,
-                                "Not primary care office" = "Emergency Room" ,
-                                "Not primary care office" = "Family Members/friends Residence/who Are Health Professionals",
-                                "Not primary care office" = "Some Other Place",
-                                "Not primary care office" = "No One Place"),
-    school_last_week = forcats::fct_recode(ta4,
-                                "No" = "On Vacation",
-                                "Yes" = "Home Schooled"
-    ),
-    tl53 = forcats::fct_rev(tl53),
-    
-  ) %>% 
-  mutate(survey_dates = parse_my_to_date(tadate_mm),
-         survey_years  = lubridate::year(survey_dates),
-         survey_months = lubridate::month(survey_dates)) %>% 
+chis <- chis_clean(chis_list) %>% 
   mutate(county = fips_cnt) %>% 
   left_join(y = aux_data$prism$census %>% select(-year),
             by = c("tract10", "survey_years","survey_months")) %>% 

@@ -4,40 +4,25 @@
 # Load required libraries (ensure they are installed)
 library(dplyr)       # Data manipulation
 library(haven)       # Reading .dta files
-library(survey)      # Survey data analysis
-library(ggplot2)     # Data visualization
-library(sf)          # Spatial data handling and mapping
-library(prism)       # Prism data visualization, for temperatures
 library(purrr)       # Functional programming
-library(gtsummary)   # for summary tables
-library(RColorBrewer)# map colors
-library(lme4)        # Linear mixed-effects models
 library(forcats)     # Factor manipulation
-library(rstudioapi)  # For setting working directory to script location
-library(glue)
-library(exactextractr)
-library(raster)
 library(lubridate)
-library(stringr)
-library(terra)
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))  # Sets to script location
-setwd("..")  # Moves up to the project root
-getwd()
+here::i_am("R/Cleaning/CHIS_PUF_clean.R")  # adjust this to your actual file location
 
 
 # Import PUF datasets
-chis_2023 <- haven::read_dta('Data/teen_2023_stata/TEEN.dta') %>%
+chis_2023 <- haven::read_dta(here::here('Data','teen_2023_stata/TEEN.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2023) %>% 
   haven::as_factor()
 
-chis_2022 <- haven::read_dta('Data/teen_stata_2022/TEEN.dta') %>%
+chis_2022 <- haven::read_dta(here::here('Data','teen_stata_2022/TEEN.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2022) %>% 
   haven::as_factor()
 
-chis_2021 <- haven::read_dta('Data/teen_stata_2021/TEEN.dta') %>%
+chis_2021 <- haven::read_dta(here::here('Data','teen_stata_2021/TEEN.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2021) %>% 
   haven::as_factor()
@@ -46,37 +31,11 @@ chis_2021 <- haven::read_dta('Data/teen_stata_2021/TEEN.dta') %>%
 my_chis_list <- list(chis_2021, chis_2022, chis_2023) # work with PUF data
 
 #### Load functions ####
-source("R/Functions.R")
+source(here::here("R","Functions.R"))
 
 #### Clean data ####
 
-chis <- pooling(my_chis_list) %>%
-  mutate(across(where(is.factor), fct_drop))   %>% 
-  mutate(
-    ombsrtn_p1 = forcats::fct_recode(ombsrtn_p1,
-                                     "Hispanic" = "Hispanic",
-                                     "White, Non-Hispanic" = "White, Non-hispanic (nh)",
-                                     "Asian, Non-Hispanic" = "Asian Only, Nh",
-                                     "Two Or More Races, Non-Hispanic" = "Two Or More Races, Nh"),
-    povll = forcats::fct_recode(povll,
-                                "0-99% FPL" = "0-99% Fpl",
-                                "100-199% FPL" = "100-199% Fpl",
-                                "200-299% FPL" = "200-299% Fpl",
-                                "300% FPL And Above" = "300% Fpl And Above"),
-    ahedtc_p1 = forcats::fct_recode(ahedtc_p1,
-                                    "Grade 12/H.S. Diploma" = "Grade 12/h.s. Diploma",
-                                    "AA/AS Degree Or Vocational School" = "Aa/as Degree Or Vocational School",
-                                    "BA Or BS Degree/Some Grad School" = "Ba Or Bs Degree/some Grad School",
-                                    "MA Or MS Degree" = "Ma Or Ms Degree",
-                                    "Ph.D. Or Equivalent" = "Ph.d. Or Equivalent"
-    )
-  ) %>% 
-  mutate(tf29v2 = ifelse(tf29v2 == 997, 0.5, tf29v2)) %>% 
-  mutate(age_group = factor(ifelse(srage_p %in% c("12","13","14"),
-                                   "12-14","15-17"))) %>% 
-  mutate(survey_dates = parse_my_to_date(tadate_mm),
-         survey_years  = lubridate::year(survey_dates),
-         survey_months = lubridate::month(survey_dates)) %>% 
+chis <- chis_clean(my_chis_list) %>% 
   mutate(
     across(
       everything(),
