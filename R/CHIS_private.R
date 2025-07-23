@@ -359,7 +359,7 @@ write.csv(county_result_year, file = here::here("Outputs","climiate_anxiety_map_
 
 #glm model
 glm.model <- svyglm(as.formula(formula)
-                    , family = "binomial",
+                    , family = quasibinomial(),
                     design = chis_design
 )
 

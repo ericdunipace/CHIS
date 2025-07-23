@@ -1,5 +1,7 @@
 ### Disparities research in barriers to mental health #############################################
 
+# commenting out portions that throw errors when source file
+
 # Import and read stuff in 
 # Load required libraries (ensure they are installed)
 library(dplyr)       # Data manipulation
@@ -49,8 +51,8 @@ chis_2021 <- haven::read_dta(here::here('Data', 'teen_stata_2021/TEEN.dta') ) %>
   mutate(year = 2021)
 
 # Compare variable labels
-str(d_chis_2023)  # confidential
-str(chis_2023)    # PUF
+# str(d_chis_2023)  # confidential
+# str(chis_2023)    # PUF
 
 # Add dummy data to list
 my_d_chis_list <- list(d_chis_2021, d_chis_2022, d_chis_2023) # work with confidential data
@@ -329,7 +331,7 @@ library(sf)
 library(stringr)
 
 # Load shapefile and filter for California
-city_shapefile <- st_read("Data/tl_2024_us_county/tl_2024_us_county.shp")
+city_shapefile <- st_read(here::here("Data","tl_2024_us_county","tl_2024_us_county.shp"))
 california_shapefile <- city_shapefile %>% 
   filter(STATEFP == "06") %>%
   mutate(COUNTYFP_int = as.integer(COUNTYFP))
@@ -350,21 +352,21 @@ anxiety_by_county_year <- dummy_data_named %>%
   group_by(fips_cnt, county_name, year) %>%
   summarize(ClimateAnxiety = mean(tf45, na.rm = TRUE), .groups = "drop")
 
-View(anxiety_by_county_year)
-
-
-# What other geographic units could we have merged by? (we could've also
-# considered zipcode, but unclear if there is enough sample size per zipcode)
-# We could also do county with respect to California but zipcode with respect to LA
-names(chis_data_filtered)
-names(california_shapefile)
-
-# Compute average climate anxiety by county and year
+# View(anxiety_by_county_year)
+# 
+# 
+# # What other geographic units could we have merged by? (we could've also
+# # considered zipcode, but unclear if there is enough sample size per zipcode)
+# # We could also do county with respect to California but zipcode with respect to LA
+# names(chis_data_filtered)
+# names(california_shapefile)
+# 
+# # Compute average climate anxiety by county and year
 anxiety_by_county_year <- dummy_data %>%
   group_by(fips_cnt, year) %>%
   summarize(ClimateAnxiety = mean(tf45, na.rm = TRUE), .groups = "drop")
-
-View(anxiety_by_county_year)
+# 
+# View(anxiety_by_county_year)
 yr <- 2021
 
 # Join shapefile with anxiety data for each year and plot
@@ -373,7 +375,7 @@ merged_data <- anxiety_by_county_year %>%
   left_join(california_shapefile, ., by = c("COUNTYFP_int" = "fips_cnt")) %>%
   st_as_sf()
 
-View(merged_data)
+# View(merged_data)
 
 p <- ggplot(merged_data) +
   geom_sf(aes(fill = ClimateAnxiety)) +
@@ -389,8 +391,8 @@ p <- ggplot(merged_data) +
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-print(p)
-ggsave("Climate_Heatmap_2021.pdf", plot = p, width = 11, height = 8.5)
+# print(p)
+ggsave(here::here("Outputs", "Climate_Heatmap_2021.pdf"), plot = p, width = 11, height = 8.5)
 
 yr <- 2022
 
@@ -415,7 +417,7 @@ p <- ggplot(merged_data) +
   )
 
 print(p)
-ggsave("Climate_Heatmap_2022.pdf", plot = p, width = 11, height = 8.5)
+ggsave(here::here("Climate_Heatmap_2022.pdf"), plot = p, width = 11, height = 8.5)
 
 yr <- 2023
 
@@ -441,7 +443,7 @@ p <- ggplot(merged_data) +
   )
 
 print(p)
-ggsave("Climate_Heatmap_2023.pdf", plot = p, width = 11, height = 8.5)
+ggsave(here::here("Climate_Heatmap_2023.pdf"), plot = p, width = 11, height = 8.5)
 
 #### ANALYSIS #2- CLIMATE CHANGE/MENTAL HEALTH (DAC) (DISCARDED) #####################################################################################
 # Goal: To assess if climate anxiety is associated with worsened mental health symptoms (eg, nervousness, distress, depressed)
@@ -479,20 +481,20 @@ characteristics <- mental_health_issues
 # Factor all characteristics except continuous variables like distress and dstrsyr
 for (i in 1:length(characteristics)) {
   characteristic <- characteristics[i]
-  
+  if(is.null(data[[characteristic]])) next
   data[[characteristic]] <- factor(data[[characteristic]])
 }
 
-data$dstrsyr <- as.numeric(data$dstrsyr)
-data$distress <- as.numeric(data$distress)
+if(!is.null(data$dstrsyr)) data$dstrsyr <- as.numeric(data$dstrsyr)
+if(!is.null(data$distress)) data$distress <- as.numeric(data$distress)
 
 # Loop over each variable
 for (i in 1:length(characteristics)) {
   
   characteristic <- characteristics[i]
-  
+  if(is.null(data[[characteristic]])) next
   # Create formula for the logistic regression
-  fmla <- as.formula(paste("tf45 ~ ", characteristic))
+  fmla <- as.formula(paste("I(tf45==2) ~ ", characteristic))
   
   # Fit the logistic regression model
   univariate_model <- glm(
@@ -535,158 +537,18 @@ model.results <- data.frame(
 
 # View(model.results)
 
-#### MULTIVARIATE ANALYSES
-
-# Define the covariates to be used in the multivariate analyses
-covariates <- c(
-  "srage",       # Age
-  "srsex",       # Gender
-  "ombsrreo",    # Race/Ethnicity
-  "tq9",         # Family financial stress
-  "instype"      # Insurance type
-);
-
-characteristics <- mental_health_issues
-
-# Initialize vectors to store results for all levels of all variables
-characteristic_names <- c()  # To store the variable name for each level
-level_names <- c()           # To store the level name for each coefficient
-p.values <- c()              # To store p-values for all levels
-odds.ratios <- c()           # To store odds ratios for all levels
-ci.lower <- c()              # To store lower bounds of confidence intervals
-ci.upper <- c()              # To store upper bounds of confidence intervals
-significances <- c()         # To store significance stars for all levels
-
-# Initialize vectors
-multi.p.values <- rep(NA, length(characteristics));
-multi.odds.ratios <- rep(NA, length(characteristics));
-multi.confidence.intervals <- rep(NA, length(characteristics));
-multi.significances <- rep(NA, length(characteristic));
-
-# as.formula(paste("tf45 ~ ", paste(xnam, collapse="+")))
-
-# Loop over each variable while adjusting for covariates
-for (i in 1:length(characteristics)) {
-  
-  ## Univariable: create a formula for a model with a large number of variables
-  characteristic <- characteristics[i] # so this is mental health characteristic
-  xnam <- c(characteristic, covariates)
-  fmla <- as.formula(paste("tf45 ~ ", paste(xnam, collapse= "+")))
-  
-  # for each univariate model, save the unadjusted OR and p value
-  univariate_model <- glm(
-    fmla,
-    data = data,
-    family = "binomial",
-    weights = data$RAKEDW0
-  );
-  
-  # Extract odds ratio, confidence intervals, and p-value
-  OR <- exp(coef(univariate_model)[2])  # Odds ratio for the variable
-  CI <- exp(confint.default(univariate_model, level = 0.95)[2, ])  # 95% CI for the variable
-  p_value <- summary(univariate_model)$coefficients[2, 4]  # p-value for the variable
-  # Convert p-values to factors
-  sig <- ifelse(p_value < 0.001, "***", 
-                ifelse(p_value < 0.01, "**", 
-                       ifelse(p_value < 0.05, "*", "-")))
-  
-  multi.p.values[i] <- p_value
-  multi.confidence.intervals[i] <- CI
-  multi.odds.ratios[i] <- OR
-  multi.significances[i] <- sig
-}
-
-# Create dataframe with bootstrap results
-model.results <- data.frame(
-  characteristics,
-  multi.p.values,
-  multi.confidence.intervals,
-  multi.odds.ratios,
-  multi.significances
-);
-
-labels <- labelled::var_label(chis_2023)  # This gives variable labels
-labels
-# Create a named character vector
-class(labels)
-label_dict <- unlist(labels)
-class(label_dict)
-label_dict
-
-# Lookup the labels for the variable names
-friendly_names <- label_dict[characteristics]
-friendly_names
-
-##### ANALYSIS #3 - VULNERABLE SUBGROUPS (PUF) ##########################################################
-
-# Goal: to identify certain subgroups most vulnerable to climate change anxiety
-
-baseline_demographics <- c(
-  "srage_p",      # SELF-REPORTED AGE
-  "srsex",        # SELF-REPORTED GENDER
-  "ombsrtn_p1",   # OMB/CURRENT DOF RACE - ETHNICITY
-  "schtyp_p1",    # TYPE OF SCHOOL ATTENDED
-  "ahedtc_p1",    # ADULT EDUCATIONAL ATTAINMENT
-  "povgwd_p1",    # FAMILY POVERTY THRESHOLD LEVEL
-  "lnghmt_p1",    # LANGUAGE SPOKEN AT HOME
-  "ur_clrt2"      # URBANICITY
-);
-
-
-modifiable_protective <- c(
-  "tq10",         # HOW OFTEN FELT ABLE TO TALK TO FAMILY ABOUT FEELINGS
-  "tq11",         # HOW OFTEN FELT FAMILY STOOD BY YOU DURING DIFFICULT TIMES
-  "tq14"          # HOW OFTEN FELT SUPPORTED BY FRIENDS
-);
-
-access_to_care <- c(
-  "tb19",         # ER/URGENT CARE VISIT FOR ASTHMA IN PAST YEAR
-  "forgo",        # HAD TO FORGO NECESSARY CARE
-  "tb24",         # OF SCHOOL DAYS MISSED DUE TO ASTHMA IN PAST 12 MOS
-  "instype",      # INSURANCE TYPE
-  "tf2",          # KIND OF PLACE MOST OFTEN GO FOR HEALTH CARE
-  "tf9",          # DELAYED/DID NOT GET MEDICAL CARE FELT NEEDED IN PAST 12 MOS
-  "th57"          # EVENTUALLY RECEIVED MED CARE THAT WAS DELAYED
-);
-
-civic_engagement <- c(
-  "ta4c_p1",         # ATTENDED SCHOOL DURING LAST SCHOOL YR
-  "tl53",         # CONFIDENCE TO CONTACT SOMEONE IN THE GOVT WHO REPRESENTS COMMUNITY
-  "tl10",         # PARTICIPATE IN CLUBS/ORGS OUTSIDE SCHOOL PAST YR
-  "tq15",         # HOW OFTEN FELT SENSE OF BELONGING AT SCHOOL
-  "tl25",         # CARES DEEPLY ABOUT ISSUES IN COMMUNITY
-  "tl27",         # BELIEVES CAN MAKE A DIFFERENCE IN THE COMMUNITY
-  "tl50",         # EVER VOLUNTEERED TO SOLVE PROBLEM IN THE COMMUNITY
-  "tq16"          # HOW OFTEN ENJOYED PARTICIPATING IN COMMUNITY TRADITIONS
-);
-
-table(chis_design$variables$ta4c_p1, chis_design$variables$year)
-
-# Define the covariates to be used in the multivariate analyses
-covariates <- c(
-  "srage_p",     # Age
-  "srsex",       # Gender
-  "ombsrtn_p1",  # Race/Ethnicity
-  "povll"        # Poverty
-);
-
-
-# data <- chis_data_filtered
+# #### MULTIVARIATE ANALYSES
 # 
-# # Aggregate all the variables
-# characteristics <- c(
-#     baseline_demographics, 
-#     modifiable_protective, 
-#     access_to_care, 
-#     receiving_mental_healthcare, 
-#     civic_engagement
-#     )
+# # Define the covariates to be used in the multivariate analyses
+# covariates <- c(
+#   "srage",       # Age
+#   "srsex",       # Gender
+#   "ombsrreo",    # Race/Ethnicity
+#   "tq9",         # Family financial stress
+#   "instype"      # Insurance type
+# );
 # 
-# # Check to see if all the predictor variables are in dataset
-# characteristics %in% colnames(data)
-# 
-# # If using PUF data, just subset to the variables that are avaiable 
-# characteristics <- characteristics[characteristics %in% colnames(data)]
+# characteristics <- mental_health_issues
 # 
 # # Initialize vectors to store results for all levels of all variables
 # characteristic_names <- c()  # To store the variable name for each level
@@ -697,98 +559,239 @@ covariates <- c(
 # ci.upper <- c()              # To store upper bounds of confidence intervals
 # significances <- c()         # To store significance stars for all levels
 # 
+# # Initialize vectors
+# multi.p.values <- rep(NA, length(characteristics));
+# multi.odds.ratios <- rep(NA, length(characteristics));
+# multi.confidence.intervals <- rep(NA, length(characteristics));
+# multi.significances <- rep(NA, length(characteristic));
 # 
-# # Loop over each variable
+# # as.formula(paste("tf45 ~ ", paste(xnam, collapse="+")))
+# 
+# # Loop over each variable while adjusting for covariates
 # for (i in 1:length(characteristics)) {
-#     
-#     characteristic <- characteristics[i]
-#     
-#     # Create formula for the logistic regression
-#     fmla <- as.formula(paste("climate_distress_bin ~ year +", paste(xnam, collapse = "+")))
-#     
-#     # Fit the logistic regression model
-#     univariate_model <- glm(
-#         fmla,
-#         data = data,
-#         family = "binomial",
-#         weights = data$RAKEDW0
-#         );
-#     
-#     # Extract coefficients, confidence intervals, and p-values for all levels
-#     ORs <- exp(coef(univariate_model))  # Odds ratios
-#     CIs <- exp(confint.default(univariate_model, level = 0.95))  # Confidence intervals
-#     p_values <- summary(univariate_model)$coefficients[, 4]  # p-values
-#     
-#     # Convert p-values to significance stars
-#     sig <- ifelse(p_values < 0.001, "***",
-#                   ifelse(p_values < 0.01, "**",
-#                          ifelse(p_values < 0.05, "*", "-")))
-#     
-#     # Append results for each level of this variable
-#     characteristic_names <- c(characteristic_names, rep(characteristic, length(ORs)))
-#     level_names <- c(level_names, names(ORs))
-#     odds.ratios <- c(odds.ratios, ORs)
-#     ci.lower <- c(ci.lower, CIs[, 1])
-#     ci.upper <- c(ci.upper, CIs[, 2])
-#     p.values <- c(p.values, p_values)
-#     significances <- c(significances, sig)
-#     }
-# 
+#   
+#   ## Univariable: create a formula for a model with a large number of variables
+#   characteristic <- characteristics[i] # so this is mental health characteristic
+#   if(is.null(data[[characteristic]])) next
+#   xnam <- c(characteristic, covariates)
+#   fmla <- as.formula(paste("tf45 ~ ", paste(xnam, collapse= "+")))
+#   
+#   # for each univariate model, save the unadjusted OR and p value
+#   univariate_model <- glm(
+#     fmla,
+#     data = data,
+#     family = "binomial",
+#     weights = data$RAKEDW0
+#   );
+#   
+#   # Extract odds ratio, confidence intervals, and p-value
+#   OR <- exp(coef(univariate_model)[2])  # Odds ratio for the variable
+#   CI <- exp(confint.default(univariate_model, level = 0.95)[2, ])  # 95% CI for the variable
+#   p_value <- summary(univariate_model)$coefficients[2, 4]  # p-value for the variable
+#   # Convert p-values to factors
+#   sig <- ifelse(p_value < 0.001, "***", 
+#                 ifelse(p_value < 0.01, "**", 
+#                        ifelse(p_value < 0.05, "*", "-")))
+#   
+#   multi.p.values[i] <- p_value
+#   multi.confidence.intervals[i] <- CI
+#   multi.odds.ratios[i] <- OR
+#   multi.significances[i] <- sig
+# }
 # 
 # # Create dataframe with bootstrap results
 # model.results <- data.frame(
-#     characteristic_names,
-#     level_names,
-#     odds.ratios,
-#     ci.lower,
-#     ci.upper,
-#     odds.ratios,
-#     significances
-#     );
+#   characteristics,
+#   multi.p.values,
+#   multi.confidence.intervals,
+#   multi.odds.ratios,
+#   multi.significances
+# );
 # 
-# View(model.results)
+# labels <- labelled::var_label(chis_2023)  # This gives variable labels
+# labels
+# # Create a named character vector
+# class(labels)
+# label_dict <- unlist(labels)
+# class(label_dict)
+# label_dict
+# 
+# # Lookup the labels for the variable names
+# friendly_names <- label_dict[characteristics]
+# friendly_names
+# 
+# ##### ANALYSIS #3 - VULNERABLE SUBGROUPS (PUF) ##########################################################
+# 
+# # Goal: to identify certain subgroups most vulnerable to climate change anxiety
+# 
+# baseline_demographics <- c(
+#   "srage_p",      # SELF-REPORTED AGE
+#   "srsex",        # SELF-REPORTED GENDER
+#   "ombsrtn_p1",   # OMB/CURRENT DOF RACE - ETHNICITY
+#   "schtyp_p1",    # TYPE OF SCHOOL ATTENDED
+#   "ahedtc_p1",    # ADULT EDUCATIONAL ATTAINMENT
+#   "povgwd_p1",    # FAMILY POVERTY THRESHOLD LEVEL
+#   "lnghmt_p1",    # LANGUAGE SPOKEN AT HOME
+#   "ur_clrt2"      # URBANICITY
+# );
+# 
+# 
+# modifiable_protective <- c(
+#   "tq10",         # HOW OFTEN FELT ABLE TO TALK TO FAMILY ABOUT FEELINGS
+#   "tq11",         # HOW OFTEN FELT FAMILY STOOD BY YOU DURING DIFFICULT TIMES
+#   "tq14"          # HOW OFTEN FELT SUPPORTED BY FRIENDS
+# );
+# 
+# access_to_care <- c(
+#   "tb19",         # ER/URGENT CARE VISIT FOR ASTHMA IN PAST YEAR
+#   "forgo",        # HAD TO FORGO NECESSARY CARE
+#   "tb24",         # OF SCHOOL DAYS MISSED DUE TO ASTHMA IN PAST 12 MOS
+#   "instype",      # INSURANCE TYPE
+#   "tf2",          # KIND OF PLACE MOST OFTEN GO FOR HEALTH CARE
+#   "tf9",          # DELAYED/DID NOT GET MEDICAL CARE FELT NEEDED IN PAST 12 MOS
+#   "th57"          # EVENTUALLY RECEIVED MED CARE THAT WAS DELAYED
+# );
+# 
+# civic_engagement <- c(
+#   "ta4c_p1",         # ATTENDED SCHOOL DURING LAST SCHOOL YR
+#   "tl53",         # CONFIDENCE TO CONTACT SOMEONE IN THE GOVT WHO REPRESENTS COMMUNITY
+#   "tl10",         # PARTICIPATE IN CLUBS/ORGS OUTSIDE SCHOOL PAST YR
+#   "tq15",         # HOW OFTEN FELT SENSE OF BELONGING AT SCHOOL
+#   "tl25",         # CARES DEEPLY ABOUT ISSUES IN COMMUNITY
+#   "tl27",         # BELIEVES CAN MAKE A DIFFERENCE IN THE COMMUNITY
+#   "tl50",         # EVER VOLUNTEERED TO SOLVE PROBLEM IN THE COMMUNITY
+#   "tq16"          # HOW OFTEN ENJOYED PARTICIPATING IN COMMUNITY TRADITIONS
+# );
+# 
+# table(chis_design$variables$ta4c_p1, chis_design$variables$year)
+# 
+# # Define the covariates to be used in the multivariate analyses
+# covariates <- c(
+#   "srage_p",     # Age
+#   "srsex",       # Gender
+#   "ombsrtn_p1",  # Race/Ethnicity
+#   "povll"        # Poverty
+# );
+# 
+# 
+# # data <- chis_data_filtered
+# # 
+# # # Aggregate all the variables
+# # characteristics <- c(
+# #     baseline_demographics, 
+# #     modifiable_protective, 
+# #     access_to_care, 
+# #     receiving_mental_healthcare, 
+# #     civic_engagement
+# #     )
+# # 
+# # # Check to see if all the predictor variables are in dataset
+# # characteristics %in% colnames(data)
+# # 
+# # # If using PUF data, just subset to the variables that are avaiable 
+# # characteristics <- characteristics[characteristics %in% colnames(data)]
+# # 
+# # # Initialize vectors to store results for all levels of all variables
+# # characteristic_names <- c()  # To store the variable name for each level
+# # level_names <- c()           # To store the level name for each coefficient
+# # p.values <- c()              # To store p-values for all levels
+# # odds.ratios <- c()           # To store odds ratios for all levels
+# # ci.lower <- c()              # To store lower bounds of confidence intervals
+# # ci.upper <- c()              # To store upper bounds of confidence intervals
+# # significances <- c()         # To store significance stars for all levels
+# # 
+# # 
+# # # Loop over each variable
+# # for (i in 1:length(characteristics)) {
+# #     
+# #     characteristic <- characteristics[i]
+# #     
+# #     # Create formula for the logistic regression
+# #     fmla <- as.formula(paste("climate_distress_bin ~ year +", paste(xnam, collapse = "+")))
+# #     
+# #     # Fit the logistic regression model
+# #     univariate_model <- glm(
+# #         fmla,
+# #         data = data,
+# #         family = "binomial",
+# #         weights = data$RAKEDW0
+# #         );
+# #     
+# #     # Extract coefficients, confidence intervals, and p-values for all levels
+# #     ORs <- exp(coef(univariate_model))  # Odds ratios
+# #     CIs <- exp(confint.default(univariate_model, level = 0.95))  # Confidence intervals
+# #     p_values <- summary(univariate_model)$coefficients[, 4]  # p-values
+# #     
+# #     # Convert p-values to significance stars
+# #     sig <- ifelse(p_values < 0.001, "***",
+# #                   ifelse(p_values < 0.01, "**",
+# #                          ifelse(p_values < 0.05, "*", "-")))
+# #     
+# #     # Append results for each level of this variable
+# #     characteristic_names <- c(characteristic_names, rep(characteristic, length(ORs)))
+# #     level_names <- c(level_names, names(ORs))
+# #     odds.ratios <- c(odds.ratios, ORs)
+# #     ci.lower <- c(ci.lower, CIs[, 1])
+# #     ci.upper <- c(ci.upper, CIs[, 2])
+# #     p.values <- c(p.values, p_values)
+# #     significances <- c(significances, sig)
+# #     }
+# # 
+# # 
+# # # Create dataframe with bootstrap results
+# # model.results <- data.frame(
+# #     characteristic_names,
+# #     level_names,
+# #     odds.ratios,
+# #     ci.lower,
+# #     ci.upper,
+# #     odds.ratios,
+# #     significances
+# #     );
+# # 
+# # View(model.results)
 
 #### MULTIVARIATE
 
-library(survey)
-
-# Create the formula
-all_predictors <- c(baseline_demographics, modifiable_protective, access_to_care, civic_engagement)
-all_puf_predictors <- c(baseline_demographics, modifiable_protective, civic_engagement) # access_to_care vars are missing from PUF
-base_formula <- as.formula(paste("climate_distress_bin ~", paste(all_puf_predictors, collapse = " + ")))
-
-all_puf_predictors[!all_puf_predictors %in% colnames(chis_design$variables)]
-
-
-table(chis_design$variables$ta4c_p1, chis_design$variables$year)
-
-# Multivariate logistic model
-multi_logistic_model <- svyglm(base_formula, 
-                               design = chis_design,
-                               family = quasibinomial())
-
-
-
-tidy_model <- broom::tidy(multi_logistic_model, conf.int = TRUE, exponentiate = TRUE)
-
-tidy_model$adj.p.value <- p.adjust(tidy_model$p.value, method = "fdr")
-
-results_table <- tidy_model %>%
-  select(term, estimate, conf.low, conf.high, p.value, adj.p.value) %>%
-  mutate(across(where(is.numeric), ~ round(., 6))) %>%
-  rename(
-    Characteristic = term,
-    `Odds Ratio` = estimate,
-    `95% CI Lower` = conf.low,
-    `95% CI Upper` = conf.high,
-    `P-value` = p.value
-  )
-
-print(results_table)
-# View(results_table)
-write.csv(results_table, "vulnerable_subgroups_model_table.csv", row.names = FALSE)
-
-# # Step 2: Initialize vectors
+# library(survey)
+# 
+# # Create the formula
+# all_predictors <- c(baseline_demographics, modifiable_protective, access_to_care, civic_engagement)
+# all_puf_predictors <- c(baseline_demographics, modifiable_protective, civic_engagement) # access_to_care vars are missing from PUF
+# base_formula <- as.formula(paste("climate_distress_bin ~", paste(all_puf_predictors, collapse = " + ")))
+# 
+# all_puf_predictors[!all_puf_predictors %in% colnames(chis_design$variables)]
+# 
+# 
+# table(chis_design$variables$ta4c_p1, chis_design$variables$year)
+# 
+# # Multivariate logistic model
+# multi_logistic_model <- svyglm(base_formula, 
+#                                design = chis_design,
+#                                family = quasibinomial())
+# 
+# 
+# 
+# tidy_model <- broom::tidy(multi_logistic_model, conf.int = TRUE, exponentiate = TRUE)
+# 
+# tidy_model$adj.p.value <- p.adjust(tidy_model$p.value, method = "fdr")
+# 
+# results_table <- tidy_model %>%
+#   select(term, estimate, conf.low, conf.high, p.value, adj.p.value) %>%
+#   mutate(across(where(is.numeric), ~ round(., 6))) %>%
+#   rename(
+#     Characteristic = term,
+#     `Odds Ratio` = estimate,
+#     `95% CI Lower` = conf.low,
+#     `95% CI Upper` = conf.high,
+#     `P-value` = p.value
+#   )
+# 
+# print(results_table)
+# # View(results_table)
+# write.csv(results_table, "vulnerable_subgroups_model_table.csv", row.names = FALSE)
+# 
+# # # Step 2: Initialize vectors
 # characteristic_names <- c()
 # level_names <- c()
 # p.values <- c()
