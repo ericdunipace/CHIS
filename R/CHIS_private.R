@@ -58,9 +58,9 @@ chis_list <- list(
 
 # supporting data files
 # can uncomment on personal machine
-# county_shapefile <- readRDS(here::here("data","ca_county.rds"))
-# census_shapefile <- readRDS(here::here("data","ca_tract_2010.rds"))
-aux_data <- readRDS(here::here("data","auxiliary_data.rds"))
+# county_shapefile <- readRDS(here::here("Data","ca_county.rds"))
+# census_shapefile <- readRDS(here::here("Data","ca_tract_2010.rds"))
+aux_data <- readRDS(here::here("Data","auxiliary_data.rds"))
 
 #### Clean and combine CHIS data ####
 # chis <- readRDS(here::here("data', 'chis_combined.Rds") )
