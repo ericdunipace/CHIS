@@ -13,8 +13,8 @@ package_names <- names(lockfile$Packages)
 final_names <- names[names %in% package_names]
 final_ver   <- ver[names %in% package_names]
 
-final_ver[2] <- "1.1"
-final_ver[38] <- "2.3"
+final_ver[final_names == "askpass"]   <- "1.1"
+final_ver[final_names == "gridExtra"] <- "2.3"
 
 #### Set package versions ####
 for( i in seq_along(final_names)) {
@@ -23,10 +23,18 @@ for( i in seq_along(final_names)) {
   tryCatch(renv::install(glue("{n}@{v}"),
                 lock = TRUE, prompt = FALSE,
                 dependencies = "strong", type = "binary"),
-           error = function(e) {renv::install(glue("{n}"),
-                                              dependencies = "strong", prompt = FALSE,
-                                              lock = TRUE,
-                                              type = "binary")})
+           error = function(e) {
+             tryCatch(renv::install(glue("{n}@{v}"),
+              dependencies = "strong", prompt = FALSE,
+              lock = TRUE,
+              type = "binary",
+              repos = "https://cloud.r-project.org/"),
+              error = function(e) {
+                renv::install(glue("{n}"),
+                              dependencies = "strong", prompt = FALSE,
+                              lock = TRUE)
+              })
+    })
 }
 
 renv::snapshot()
