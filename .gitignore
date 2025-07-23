@@ -7,3 +7,7 @@ Data/prism
 Data/california_census_2010
 Data/tl_2024_us_county
 Quarto
+Data/tl_2024_us_county
+Data/california_census_2010
+Outputs/*.*
+*.tif
