@@ -231,7 +231,7 @@ demo_table <- gtsummary::tbl_custom_summary(
   type = attr(table_demographics,"type"),
   missing = c("ifany"),
   missing_text = "Unknown",
-  missing_stat = "{N_miss}",
+  # missing_stat = "{N_miss}",
   include = table_demographics
 ) %>% 
   bold_labels() %>% 
