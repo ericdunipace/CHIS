@@ -3952,31 +3952,6 @@
       "Maintainer": "Kirill Müller <kirill@cynkra.com>",
       "Repository": "CRAN"
     },
-    "rstudioapi": {
-      "Package": "rstudioapi",
-      "Version": "0.17.1",
-      "Source": "Repository",
-      "Title": "Safely Access the RStudio API",
-      "Description": "Access the RStudio API (if available) and provide informative error messages when it's not.",
-      "Authors@R": "c( person(\"Kevin\", \"Ushey\", role = c(\"aut\", \"cre\"), email = \"kevin@rstudio.com\"), person(\"JJ\", \"Allaire\", role = c(\"aut\"), email = \"jj@posit.co\"), person(\"Hadley\", \"Wickham\", role = c(\"aut\"), email = \"hadley@posit.co\"), person(\"Gary\", \"Ritchie\", role = c(\"aut\"), email = \"gary@posit.co\"), person(family = \"RStudio\", role = \"cph\") )",
-      "Maintainer": "Kevin Ushey <kevin@rstudio.com>",
-      "License": "MIT + file LICENSE",
-      "URL": "https://rstudio.github.io/rstudioapi/, https://github.com/rstudio/rstudioapi",
-      "BugReports": "https://github.com/rstudio/rstudioapi/issues",
-      "RoxygenNote": "7.3.2",
-      "Suggests": [
-        "testthat",
-        "knitr",
-        "rmarkdown",
-        "clipr",
-        "covr"
-      ],
-      "VignetteBuilder": "knitr",
-      "Encoding": "UTF-8",
-      "NeedsCompilation": "no",
-      "Author": "Kevin Ushey [aut, cre], JJ Allaire [aut], Hadley Wickham [aut], Gary Ritchie [aut], RStudio [cph]",
-      "Repository": "CRAN"
-    },
     "s2": {
       "Package": "s2",
       "Version": "1.1.9",
