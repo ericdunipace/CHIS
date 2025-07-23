@@ -31,7 +31,11 @@ jobs:
 
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
-      run: brew install --cask xquartz
+      run: |
+        brew install --cask xquartz
+        brew install gettext
+        echo "CPPFLAGS=-I$(brew --prefix gettext)/include" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix gettext)/lib" >> $GITHUB_ENV
       
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
@@ -42,12 +46,13 @@ jobs:
           libharfbuzz-dev libfribidi-dev libfreetype6-dev \
           libpng-dev libtiff5-dev libjpeg-dev \
           libudunits2-dev libgdal-dev gdal-bin \
-          libgeos-dev libproj-dev
+          libgeos-dev libproj-dev libgettextpo-dev gettext
 
     - name: Install renv and restore environment
       shell: Rscript {0}
       run: |
-        install.packages("renv")
+        install.packages("renv", repos = "https://packagemanager.posit.co/cran/latest")
+        options(repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
         tryCatch({
           renv::restore(prompt = FALSE)
         }, error = function(e) {
