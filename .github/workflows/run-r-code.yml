@@ -43,14 +43,6 @@ jobs:
           libpng-dev libtiff5-dev libjpeg-dev \
           libudunits2-dev libgdal-dev gdal-bin \
           libgeos-dev libproj-dev
-    
-    - name: Cache R packages
-      uses: actions/cache@v4
-      with:
-        path: renv/library
-        key: ${{ runner.os }}-renv-${{ hashFiles('renv.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-renv-
 
     - name: Install renv and restore environment
       shell: Rscript {0}
