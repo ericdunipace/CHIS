@@ -66,5 +66,5 @@ chis <- chis_clean(my_chis_list) %>%
 # labelled::var_label(chis) <- labelled::var_label(chis_2023)
 
 #### Save as RDS ####
-saveRDS(chis, file = "Data/chis_puf_combined.Rds")
+saveRDS(chis, file = here::here("data","chis_puf_combined.Rds"))
 

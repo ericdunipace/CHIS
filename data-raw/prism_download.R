@@ -9,7 +9,7 @@ library(dplyr)
 
 source(here::here("R","Functions.R"))
 
-prism::prism_set_dl_dir(path = here::here("Data","prism"), create = TRUE)
+prism::prism_set_dl_dir(path = here::here("data-raw","prism"), create = TRUE)
 
 
 sapply(c("tmean","tmax","ppt","vpdmax"), function(x) prism::get_prism_annual(type = x, years = 2000:2023,keepZip = FALSE))
@@ -43,15 +43,15 @@ sapply(c("tmax","ppt","vpdmax"), function(var) prism::get_prism_dailys(
 #### Prism data for census ####
 # note must have already downloaded the census shapefile and cleaned
 # source(here::here("R","Census_2010_clean.R"))
-stopifnot("census file does not exist" = file.exists(here::here("Data","ca_tract_2010.rds")))
+stopifnot("census file does not exist" = file.exists(here::here("data-raw","ca_tract_2010.rds")))
 
-prism_vars.fn <- here::here("Data","prism_vars_census.rds")
+prism_vars.fn <- here::here("data-raw","prism_vars_census.rds")
 
 if(!file.exists(prism_vars.fn)) {
   message("prism_vars being created...")
   
   # read in census shapefile
-  census_shapefile <- readRDS(here::here("Data","ca_tract_2010.rds"))
+  census_shapefile <- readRDS(here::here("data-raw","ca_tract_2010.rds"))
   
   tracts <- census_shapefile$tract10
   ntracts<- length(census_shapefile$tract10)
@@ -86,7 +86,7 @@ if(!file.exists(prism_vars.fn)) {
 # source(here::here("R","Census_2010_clean.R"))
 stopifnot("county file does not exist" = file.exists(here::here("Data","ca_county.rds")))
 
-prism_vars_county.fn <- here::here("Data","prism_vars_county.rds")
+prism_vars_county.fn <- here::here("data-raw","prism_vars_county.rds")
 
 if(!file.exists(prism_vars_county.fn)) {
   message("prism_vars being created...")
@@ -125,8 +125,8 @@ if(!file.exists(prism_vars_county.fn)) {
 
 
 ##### create 2023,2022,2021 tmax avg and heatwave avg for maps ####
-census_temp.fn <- here::here("Data","map_census_temp.rds")
-census_heat.fn <- here::here("Data","map_census_heat.rds")
+census_temp.fn <- here::here("data-raw","map_census_temp.rds")
+census_heat.fn <- here::here("data-raw","map_census_heat.rds")
 
 if ( !file.exists(census_temp.fn) || !file.exists(census_heat.fn) ) {
   # read in census shapefile

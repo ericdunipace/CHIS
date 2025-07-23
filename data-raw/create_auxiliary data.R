@@ -5,17 +5,17 @@
 
 library(here)
 
-here::i_am("R/Cleaning/create_auxiliary data.R")  # adjust this to your actual file location
+here::i_am("data-raw/create_auxiliary data.R")  # adjust this to your actual file location
 
 # load data
-prism_census   <- readRDS(here::here("Data",
+prism_census   <- readRDS(here::here("data-raw",
                                 "prism_vars_census.rds"))
-prism_county   <- readRDS(here::here("Data",
+prism_county   <- readRDS(here::here("data-raw",
                                      "prism_vars_county.rds"))
-census_ca      <- readRDS(here::here("Data", "ca_tract_2010.rds")) 
-county_ca      <- readRDS(here::here("Data", "ca_county.rds"))
-cens_temp_save <- readRDS(here::here("Data","map_census_temp.rds"))
-cens_heat_save <- readRDS(here::here("Data","map_census_heat.rds"))
+census_ca      <- readRDS(here::here("data-raw", "ca_tract_2010.rds")) 
+county_ca      <- readRDS(here::here("data-raw", "ca_county.rds"))
+cens_temp_save <- readRDS(here::here("data-raw","map_census_temp.rds"))
+cens_heat_save <- readRDS(here::here("data-raw","map_census_heat.rds"))
 
 # make list
 aux_data <- list(
@@ -28,4 +28,4 @@ aux_data <- list(
 )
 
 # save auxiliary data
-saveRDS(aux_data, file = here::here("Data","auxillary_data.rds"))
+saveRDS(aux_data, file = here::here("data","auxillary_data.rds"))
