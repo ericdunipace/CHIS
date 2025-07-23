@@ -3,8 +3,9 @@
 # source(here::here("R", "Census_2010_clean.R"))
 # source(here::here("R", "prism_download.R"))
 
-library(sf)
 library(here)
+
+here::i_am("R/Cleaning/create_auxiliary data.R")  # adjust this to your actual file location
 
 # load data
 prism_census   <- readRDS(here::here("Data",
