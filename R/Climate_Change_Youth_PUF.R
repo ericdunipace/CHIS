@@ -9,25 +9,26 @@ library(ggplot2)     # Data visualization
 library(table1)      # Demographic tables
 library(sf)          # Spatial data handling and mapping
 library(purrr)
+library(here)
 
 
 # Step 1: 
 # Set Wd
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))  # Sets to script location
-setwd("..")  # Moves up to the project root
-getwd()
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))  # Sets to script location
+# setwd("..")  # Moves up to the project root
+# getwd()
 
 # Import confidential dummy datasets
-d_chis_2023 <- haven::read_dta('Data/dummyfile_2023_teen_stata/TEEN.dta') %>%
+d_chis_2023 <- haven::read_dta(here::here('Data', 'dummyfile_2023_teen_stata/TEEN.dta') ) %>%
   rename_all(tolower) %>%
   mutate(year = 2023)
 
-d_chis_2022 <- haven::read_dta('Data/teen 2022 dummy STATA/TEEN.dta') %>%
+d_chis_2022 <- haven::read_dta(here::here('Data', 'teen 2022 dummy STATA/TEEN.dta') ) %>%
   rename_all(tolower) %>%
   mutate(year = 2022)
 
-d_chis_2021 <- haven::read_dta('Data/dummyfile_2021_teen_stata/TEEN.dta') %>%
+d_chis_2021 <- haven::read_dta(here::here('Data', 'dummyfile_2021_teen_stata/TEEN.dta') ) %>%
   rename_all(tolower) %>%
   mutate(year = 2021)
 
@@ -35,16 +36,15 @@ d_chis_2021 <- haven::read_dta('Data/dummyfile_2021_teen_stata/TEEN.dta') %>%
 labels <- sapply(d_chis_2023, function(x) attr(x, "label"))
 
 # Import public use variable datasets
-'/Users/danielzhao/Desktop/CHIS_Youth/Data/teen_2023_stata'
-chis_2023 <- haven::read_dta('Data/teen_2023_stata/TEEN.dta') %>%
+chis_2023 <- haven::read_dta(here::here('Data', 'teen_2023_stata/TEEN.dta') ) %>%
   rename_all(tolower) %>%
   mutate(year = 2023)
 
-chis_2022 <- haven::read_dta('Data/teen_stata_2022/TEEN.dta') %>%
+chis_2022 <- haven::read_dta(here::here('Data', 'teen_stata_2022/TEEN.dta') ) %>%
   rename_all(tolower) %>%
   mutate(year = 2022)
 
-chis_2021 <- haven::read_dta('Data/teen_stata_2021/TEEN.dta') %>%
+chis_2021 <- haven::read_dta(here::here('Data', 'teen_stata_2021/TEEN.dta') ) %>%
   rename_all(tolower) %>%
   mutate(year = 2021)
 
