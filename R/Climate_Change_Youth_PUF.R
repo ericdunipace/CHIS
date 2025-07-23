@@ -302,8 +302,8 @@ demo_table <- table1(
 
 
 # Check if data exists and has observations
-dim(data)
-str(data)
+# dim(data)
+# str(data)
 
 # Check if the grouping variables exist and have valid values
 table(data$year, useNA = "always")
@@ -315,11 +315,11 @@ library(table1)
 library(htmltools)
 
 # Save nicely formatted HTML file
-warning(" this table  doesn't account for weights")
-save_html(print(demo_table), file = "demo_table.html")
+# 
+# warning(" this table  doesn't account for weights"); save_html(print(demo_table), file = here::here("Outputs", "demo_table.html"))
 
 # Check for hidden factor levels
-str(data$srage_p)
+# str(data$srage_p)
 levels(data$srage_p)  # if it's a factor
 
 
@@ -417,7 +417,7 @@ p <- ggplot(merged_data) +
   )
 
 print(p)
-ggsave(here::here("Climate_Heatmap_2022.pdf"), plot = p, width = 11, height = 8.5)
+# ggsave(here::here("Climate_Heatmap_2022.pdf"), plot = p, width = 11, height = 8.5)
 
 yr <- 2023
 
@@ -443,7 +443,7 @@ p <- ggplot(merged_data) +
   )
 
 print(p)
-ggsave(here::here("Climate_Heatmap_2023.pdf"), plot = p, width = 11, height = 8.5)
+# ggsave(here::here("Climate_Heatmap_2023.pdf"), plot = p, width = 11, height = 8.5)
 
 #### ANALYSIS #2- CLIMATE CHANGE/MENTAL HEALTH (DAC) (DISCARDED) #####################################################################################
 # Goal: To assess if climate anxiety is associated with worsened mental health symptoms (eg, nervousness, distress, depressed)
