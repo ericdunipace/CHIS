@@ -2,6 +2,8 @@
 
 ### Import and read stuff in ######################################################################
 # Load required libraries (ensure they are installed)
+library(stats)
+library(utils)
 library(haven)       # Reading .dta files
 library(survey)      # Survey data analysis
 library(ggplot2)     # Data visualization
@@ -13,14 +15,18 @@ library(lme4)        # Linear mixed-effects models
 library(forcats)     # Factor manipulation
 library(glue)
 library(here)
-library(terra)
 library(lemon)
 library(forcats)     # Factor manipulation
 library(dplyr)       # Data manipulation
 
-
+# confirm file location
 here::i_am("R/CHIS_private.R")  # adjust this to your actual file location
 
+# check for github action to skip expensive runs
+is_github_actions <- Sys.getenv("GITHUB_ACTIONS") == "true"
+
+# skip expensive calls on testthat
+is_testthat <- Sys.getenv("TESTTHAT") == "true"
 
 #### Setup output directory ####
 if (!dir.exists(output_dir <- here::here("Outputs"))) {
@@ -102,7 +108,7 @@ if ( length(missing_obs) > 0 ) {
 
 #### Set up survey design object to account for weights ####
 # Set up survey design for analysis
-chis_design <- svrepdesign(
+chis_design <- survey::svrepdesign(
   data = chis,
   weights = ~ fnwgt0,
   repweights = "fnwgt[1-9]",
@@ -345,20 +351,20 @@ final_heatwave_plot <- lemon::reposition_legend(
 
 
 pdf(here::here("Outputs","heatwave_map.pdf"), width = 6, height = 6)
-grid.draw(final_heatwave_plot)
+grid::grid.draw(final_heatwave_plot)
 dev.off()
 
 pdf(here::here("Outputs","tmax_map.pdf"), width = 6, height = 6)
-grid.draw(final_tmax_plot)
+grid::grid.draw(final_tmax_plot)
 dev.off()
 
-write.csv(county_result_year, file = here::here("Outputs","climiate_anxiety_map_data.csv"),
+utils::write.csv(county_result_year, file = here::here("Outputs","climiate_anxiety_map_data.csv"),
           row.names = FALSE)
 
 #### ANALYSIS #2- CLIMATE CHANGE/MENTAL HEALTH #####################################################################################
 
 #glm model
-glm.model <- svyglm(as.formula(formula)
+glm.model <- survey::svyglm(as.formula(formula)
                     , family = quasibinomial(),
                     design = chis_design
 )
@@ -369,19 +375,28 @@ print(glm.summ)
 glm.vcov <- vcov(glm.model)
 
 # save basic summary outputs
-write.csv(glm.summ$coefficients,
+utils::write.csv(glm.summ$coefficients,
           file = here::here("Outputs","glm_model_summary.csv"))
-write.csv(glm.vcov,
+utils::write.csv(glm.vcov,
           file = here::here("Outputs","glm_vcov.csv"))
 
 # mixed effects model
+ctrl <- lme4::glmerControl(
+  optimizer = "bobyqa",
+  optCtrl   = list( maxfun=1E5L ) 
+  )
+
+if ( isTRUE(is_github_actions) || isTRUE(is_testthat) ) {
+  message("Running on GitHub Actions. Limiting max function evaluations for glmer")
+  ctrl$optCtrl$maxfun <- 0L     # limit total function evaluations
+  glmer.formula <- "I(tf45 == 'Yes') ~ 1 + (1 | county)"
+}
 mixef.model <- glmer.svyrep.design(glmer.formula,
-                            , family = "binomial",
-                            design = chis_design,
-                            control=lme4::glmerControl(optimizer="bobyqa",
-                                                 optCtrl=list(maxfun=100000)),
-                            get.coef = TRUE,
-                            verbose = TRUE
+                            , family   = "binomial"
+                            , design   = chis_design
+                            , control  = ctrl
+                            , get.coef = TRUE
+                            , verbose  = TRUE
 )
 
 # get summary of mixef
@@ -389,12 +404,12 @@ mixef.summ <- mixef.model %>% summary()
 print(mixef.summ)
 
 # save summaries
-write.csv(mixef.summ$coefficients,
+utils::write.csv(mixef.summ$coefficients,
           file = here::here("Outputs","fixef_coef.csv"))
 
 # save standard errors of model
 mixef.vcov <- mixef.model$vcov$combined
-write.csv(mixef.vcov,
+utils::write.csv(mixef.vcov,
           file = here::here("Outputs","mixef_vcov.csv"))
 
 
@@ -405,9 +420,9 @@ rep_beta_me <- mixef.model$param$rep_param %>%
   as.data.frame()
 rownames(rep_beta_me) <- rownames(beta_me)
 
-write.csv(beta_me,
+utils::write.csv(beta_me,
           file = here::here("Outputs","mixef_coef.csv"))
-write.csv(rep_beta_me,
+utils::write.csv(rep_beta_me,
           file = here::here("Outputs","mixef_replicate_coef.csv"))
 
 

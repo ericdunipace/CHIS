@@ -243,10 +243,10 @@ glmer.svyrep.design <- function(formula, design = NULL, data = NULL,
   if (isTRUE(verbose)) message("Calculating variance-covariance matrices.")
   
   # Extract the coefficients and standard errors
-  fe     <- fixef(fit)
-  rep_fe <- sapply(rep_fit, fixef)
+  fe     <- fixef(fit) 
+  rep_fe <- sapply(rep_fit, fixef)  %>% matrix(ncol = length(rep_fit))
   
-  re     <- ranef(fit)
+  re     <- ranef(fit) 
   rep_re <- lapply(rep_fit, ranef)
   
   # Calculate the variance-covariance matrix
