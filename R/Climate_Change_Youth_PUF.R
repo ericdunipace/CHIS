@@ -331,10 +331,10 @@ library(sf)
 library(stringr)
 
 # Load shapefile and filter for California
-city_shapefile <- st_read(here::here("data-raw","tl_2024_us_county","tl_2024_us_county.shp"))
-california_shapefile <- city_shapefile %>% 
+california_shapefile <- readRDS(here::here("data","auxiliary_data.rds")) %>% .$county_ca %>% 
   filter(STATEFP == "06") %>%
-  mutate(COUNTYFP_int = as.integer(COUNTYFP))
+  mutate(COUNTYFP_int = as.integer(COUNTYFP)) %>% 
+  mutate(NAME = county)
 
 # Ensure fips_cnt is numeric and 3-digit
 dummy_data$fips_cnt <- as.integer(dummy_data$fips_cnt)

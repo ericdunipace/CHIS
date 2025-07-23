@@ -6,7 +6,7 @@ library(stats)
 library(utils)
 library(haven)       # Reading .dta files
 library(survey)      # Survey data analysis
-library(ggplot2)     # Data visualization
+library(ggplot2)     # data visualization
 library(sf)          # Spatial data handling and mapping
 library(purrr)       # Functional programming
 library(gtsummary)   # for summary tables
@@ -17,13 +17,10 @@ library(glue)
 library(here)
 library(lemon)
 library(forcats)     # Factor manipulation
-library(dplyr)       # Data manipulation
+library(dplyr)       # data manipulation
 
 # confirm file location
 here::i_am("R/CHIS_private.R")  # adjust this to your actual file location
-
-# check for github action to skip expensive runs
-is_github_actions <- Sys.getenv("GITHUB_ACTIONS") == "true"
 
 # skip expensive calls on testthat
 is_testthat <- Sys.getenv("TESTTHAT") == "true"
@@ -38,17 +35,17 @@ source(here::here("R","Functions.R"))
 
 #### load data ####
 # load chis data 2021-2023
-d_chis_2023 <- haven::read_dta(here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')) %>%
+d_chis_2023 <- haven::read_dta(here::here('data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2023) %>% 
   haven::as_factor()
 
-d_chis_2022 <- haven::read_dta(here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')) %>%
+d_chis_2022 <- haven::read_dta(here::here('data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2022) %>% 
   haven::as_factor()
 
-d_chis_2021 <- haven::read_dta(here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')) %>%
+d_chis_2021 <- haven::read_dta(here::here('data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2021) %>% 
   haven::as_factor()
@@ -61,12 +58,12 @@ chis_list <- list(
 
 # supporting data files
 # can uncomment on personal machine
-# county_shapefile <- readRDS(here::here("Data","ca_county.rds"))
-# census_shapefile <- readRDS(here::here("Data","ca_tract_2010.rds"))
-aux_data <- readRDS(here::here("Data","auxillary_data.rds"))
+# county_shapefile <- readRDS(here::here("data","ca_county.rds"))
+# census_shapefile <- readRDS(here::here("data","ca_tract_2010.rds"))
+aux_data <- readRDS(here::here("data","auxiliary_data.rds"))
 
 #### Clean and combine CHIS data ####
-# chis <- readRDS(here::here("Data', 'chis_combined.Rds") )
+# chis <- readRDS(here::here("data', 'chis_combined.Rds") )
 
 chis <- chis_clean(chis_list) %>% 
   mutate(county = fips_cnt) %>% 
@@ -386,7 +383,7 @@ ctrl <- lme4::glmerControl(
   optCtrl   = list( maxfun=1E5L ) 
   )
 
-if ( isTRUE(is_github_actions) || isTRUE(is_testthat) ) {
+if ( isTRUE(is_testthat) ) {
   message("Running on GitHub Actions. Limiting max function evaluations for glmer")
   ctrl$optCtrl$maxfun <- 0L     # limit total function evaluations
   glmer.formula <- "I(tf45 == 'Yes') ~ 1 + (1 | county)"
