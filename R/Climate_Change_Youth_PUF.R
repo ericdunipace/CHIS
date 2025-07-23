@@ -9,7 +9,6 @@ library(ggplot2)     # Data visualization
 library(table1)      # Demographic tables
 library(sf)          # Spatial data handling and mapping
 library(purrr)
-library(openxlsx)
 
 
 # Step 1: 
