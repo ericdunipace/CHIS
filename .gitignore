@@ -3,9 +3,10 @@
 .RData
 .Ruserdata
 .DS_Store
-Data/prism
-Data/tl_2024_us_county
-Data/california_census_2010
+data-raw/prism
+data-raw/tl_2024_us_county
+data-raw/california_census_2010
+data-raw/*.rds
 Outputs/*.*
 *.tif
 Quarto
