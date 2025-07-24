@@ -71,7 +71,8 @@ jobs:
         gfortran --version
       shell: bash
       
-    - name: Workaround R macro length bug
+    - name: Workaround R macro length bug (macOS only)
+      if: runner.os == 'macOS'
       run: echo 'PKG_CPPFLAGS=-DR_NO_REMAP' >> $GITHUB_ENV
     
     - name: Install renv and restore environment
