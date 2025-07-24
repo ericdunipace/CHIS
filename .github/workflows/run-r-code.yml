@@ -37,13 +37,14 @@ jobs:
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
       run: |
-        brew install gcc udunits gettext xquartz
-        # grab the major version (e.g. "15")
+        brew install gcc udunits gettext jq
+        if [ -d /opt/homebrew ]; then BREW_PREFIX=/opt/homebrew; else BREW_PREFIX=/usr/local; fi
         GCCVER=$(brew info gcc --json | jq -r '.[0].installed[0].version | split(".")[0]')
-        sudo tee -a /Library/Frameworks/R.framework/Resources/etc/Makeconf <<EOF
-        FC=/opt/homebrew/bin/gfortran
-        F77=/opt/homebrew/bin/gfortran
-        FLIBS=-L/opt/homebrew/lib/gcc/${GCCVER} -lgfortran
+        sudo ln -sf $BREW_PREFIX/bin/gfortran /usr/local/bin/gfortran
+        sudo tee -a $(R RHOME)/etc/Makeconf <<EOF
+        FC=$BREW_PREFIX/bin/gfortran
+        F77=$BREW_PREFIX/bin/gfortran
+        FLIBS=-L$BREW_PREFIX/lib/gcc/$GCCVER -lgfortran
         EOF
       
     - name: Install system dependencies (Linux)
@@ -69,11 +70,6 @@ jobs:
       run: |
         gfortran --version
       shell: bash
-      
-    - name: Check R Makeconf
-      run: |
-        grep -E '^(FC|F77|FLIBS)' /Library/Frameworks/R.framework/Resources/etc/Makeconf
-        ls /opt/homebrew/lib/gcc
     
     - name: Install renv and restore environment
       shell: Rscript {0}
