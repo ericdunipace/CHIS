@@ -408,7 +408,7 @@ ctrl <- lme4::glmerControl(
 
 if ( isTRUE(is_testthat) ) {
   message("Running on GitHub Actions. Limiting max function evaluations for glmer")
-  ctrl$optCtrl$maxfun <- 1L     # limit total function evaluations
+  ctrl$optCtrl$maxfun <- 5L     # limit total function evaluations
   glmer.formula <- "I(tf45 == 'Yes') ~ 1 + (1 | county)" # simplify formulae for speed
 }
 mixef.model <- glmer.svyrep.design(glmer.formula,
