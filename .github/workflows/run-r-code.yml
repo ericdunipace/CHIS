@@ -34,36 +34,12 @@ jobs:
       with:
         r-version: '4.2.3'  # version on DAC website
         
-    - name: Install CRAN gfortran runtime (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        mac_ver=$(sw_vers -productVersion | awk -F '.' '{print $1}')
-        if [[ "$mac_ver" == "14" ]]; then
-          curl -LO https://mac.r-project.org/tools/gfortran-12.3-sonoma-arm64.tar.xz
-          sudo tar -xJf gfortran-12.3-sonoma-arm64.tar.xz -C /
-        elif [[ "$mac_ver" == "13" ]]; then
-          curl -LO https://mac.r-project.org/tools/gfortran-12.2-ventura-arm64.tar.xz
-          sudo tar -xJf gfortran-12.2-ventura-arm64.tar.xz -C /
-        else
-          echo "Unknown macOS version, gfortran runtime not installed."
-          exit 1
-        fi
-
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
       run: |
         brew install --cask xquartz
         brew install gettext
         brew install udunits
-        echo "CPPFLAGS=-I$(brew --prefix gettext)/include" >> $GITHUB_ENV
-        echo "LDFLAGS=-L$(brew --prefix gettext)/lib" >> $GITHUB_ENV
-        echo "FC=$(brew --prefix gcc)/bin/gfortran" >> $GITHUB_ENV
-        echo "CC=$(brew --prefix gcc)/bin/gcc" >> $GITHUB_ENV
-        echo "CXX=$(brew --prefix gcc)/bin/g++" >> $GITHUB_ENV
-        echo "FC=/opt/R/arm64/gfortran/bin/gfortran" >> $GITHUB_ENV
-        echo "F77=/opt/R/arm64/gfortran/bin/gfortran" >> $GITHUB_ENV
-        echo "LDFLAGS=-L/opt/R/arm64/gfortran/lib" >> $GITHUB_ENV
-        echo "DYLD_FALLBACK_LIBRARY_PATH=/opt/R/arm64/gfortran/lib" >> $GITHUB_ENV
       
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
