@@ -9,13 +9,11 @@ library(survey)      # Survey data analysis
 library(ggplot2)     # data visualization
 library(sf)          # Spatial data handling and mapping
 library(purrr)       # Functional programming
-library(gtsummary)   # for summary tables
 library(RColorBrewer)# map colors
 library(lme4)        # Linear mixed-effects models
 library(forcats)     # Factor manipulation
 library(glue)
 library(here)
-library(lemon)
 library(forcats)     # Factor manipulation
 library(dplyr)       # data manipulation
 
@@ -70,7 +68,7 @@ chis <- chis_clean(chis_list) %>%
   left_join(y = aux_data$prism$census %>% select(-year),
             by = c("tract10", "survey_years","survey_months")) %>% 
   left_join(y = aux_data$prism$county %>% select(-year),
-            by = c("county", "survey_years","survey_months"))
+            by = c("county", "survey_years","survey_months")) 
 
 
 for(j in colnames(d_chis_2023)) {
@@ -184,24 +182,33 @@ glmer.formula <- paste0(formula, "+ (1 | county)")
 
 
 # variables for table 1
-table_demographics <- baseline_demographics
-table_demographics[grep("age_group",baseline_demographics)] <- "cont_age"
+table_demographics <- c(
+  "srage_p" , 
+  "srsex",
+  "ombsrtn_p1",
+  "schtyp_p1",
+  "ahedtc_p1",
+  "povll",
+  "lnghmt_p1",
+  "ur_clrt2")
 
 attr(table_demographics,"label") <-list(
   "tf45"          = "Climate Anxiety", #CLIMATE CHANGE MAKES YOU NERVOUS/DEPRESSED/STRESSED
-  "cont_age"     = "Age",     # SELF-REPORTED AGE
-  "srsex"       = "Sex",        # SELF-REPORTED GENDER
-  "ombsrtn_p1"  = "Ethnicity",   # OMB/CURRENT DOF RACE - ETHNICITY
-  "schtyp_p1"   = "Type of School Attended",    # TYPE OF SCHOOL ATTENDED
-  "ahedtc_p1"   = "Parents' Educational Attainment",    # ADULT EDUCATIONAL ATTAINMENT
-  "povll"       = "Poverty Level",        # POVERTY LEVEL
-  "lnghmt_p1"   = "Language Spoken at Home",     # LANGUAGE SPOKEN AT HOME
-  "ur_clrt2"    = "Rural/Urban (Claritas ZIP, 2-level)"   # URBAN/RURAL CLASSIFICATION
+  "cont_age"     = "Age", 
+  "srage_p"        = "Age",     # SELF-REPORTED AGE
+  "srsex"        = "Sex",        # SELF-REPORTED GENDER
+  "ombsrtn_p1"   = "Ethnicity",   # OMB/CURRENT DOF RACE - ETHNICITY
+  "schtyp_p1"    = "Type of School Attended",    # TYPE OF SCHOOL ATTENDED
+  "ahedtc_p1"    = "Parents' Educational Attainment",    # ADULT EDUCATIONAL ATTAINMENT
+  "povll"        = "Poverty Level",        # POVERTY LEVEL
+  "lnghmt_p1"    = "Language Spoken at Home",     # LANGUAGE SPOKEN AT HOME
+  "ur_clrt2"     = "Rural/Urban (Claritas ZIP, 2-level)"   # URBAN/RURAL CLASSIFICATION
 )
 
 attr(table_demographics,"type") <-list(
   "tf45"          = "categorical", #CLIMATE CHANGE MAKES YOU NERVOUS/DEPRESSED/STRESSED
   "cont_age"     = "continuous",     # SELF-REPORTED AGE
+  "srage_p"       = "categorical",
   "srsex"       = "categorical",        # SELF-REPORTED GENDER
   "ombsrtn_p1"  = "categorical",   # OMB/CURRENT DOF RACE - ETHNICITY
   "schtyp_p1"   = "categorical",    # TYPE OF SCHOOL ATTENDED
@@ -219,41 +226,57 @@ attr(table_demographics,"type") <-list(
 # Define baseline demographic variables to be included in the table
 
 
-climateanx_tot <- svytotal(~tf45, design = chis_design, na.rm = TRUE)
+table1_output <- list()
+
+for(nn in table_demographics) {
+  vartype <- attr(table_demographics, "type")[[nn]]
+  svy_summ <- switch(vartype,
+         "continuous" = survey::svymean,
+         "categorical" = survey::svytotal)
+  
+  temp_stat <- survey::svyby(
+    formula = as.formula(paste0("~", nn)),
+    by = ~year+tf45,
+    design = chis_design,
+    FUN = svy_summ,
+    na.rm = TRUE
+  )
+  
+  if(vartype == "continuous") {
+    temp_stat$se <- survey::svyby(
+      formula = as.formula(paste0("~", nn)),
+      by = ~year+tf45,
+      design = chis_design,
+      FUN = svyvar,
+      na.rm = TRUE
+    )$V1
+    temp_stat <- temp_stat %>% 
+      rename(sd = se) %>% 
+      rename(mean := !!sym(nn)) %>% 
+      mutate(label = NA_character_)
+  } else if (vartype == "categorical") {
+    temp_stat <- temp_stat %>% 
+      select(- starts_with("se")) %>% 
+      tidyr::pivot_longer(cols = starts_with(nn), 
+                         names_to = "label", 
+                         values_to = "N") %>%
+      mutate(perc = N / sum(N, na.rm = TRUE) * 100) %>% 
+      mutate(label = gsub(nn, "", label))
+      
+    
+  }
+  
+  temp_stat$variable <- attr(table_demographics, "label")[[nn]]
+  
+  table1_output[[nn]] <- temp_stat
+}
 
 
-demo_table <- gtsummary::tbl_custom_summary(
-  data = chis_design$variables %>% 
-    mutate(cont_age = as.numeric(as.character(srage_p))),
-  by = "tf45",
-  stat_fns = everything() ~ mean_svy_rep,
-  label = attr(table_demographics, "label"),
-  statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~
-                     "{N} ({p}%) "),
-  digits = NULL,
-  type = attr(table_demographics,"type"),
-  missing = c("ifany"),
-  missing_text = "Unknown",
-  # missing_stat = "{N_miss}",
-  include = table_demographics
-) %>% 
-  bold_labels() %>% 
-  modify_header(
-    stat_1 ~ "**Yes**, <br>N = {format(round(climateanx_tot[1], 0),big.mark = ',')}",
-    stat_2 ~ "**No**, <br>N = {format(round(climateanx_tot[2], 0),big.mark = ',')}"
-  ) %>% 
-  modify_spanning_header(all_stat_cols() ~ "**Climate Anxiety**") %>% 
-  modify_footnote_header(
-    footnote = "All totals and percentages are based on values from sample weights. There are a total of {format(nrow(chis),big.mark = ',')} observations in the unweighted data. Percentages across all values of one variable sum to approximately 100% due to rounding",
-    columns = all_stat_cols(),
-    replace = FALSE
-  ) 
+table1_output %>% 
+  bind_rows() %>% 
+  utils::write.csv(file = here::here("Outputs", "table1.csv"), 
+                   row.names = FALSE)
 
-# Display the table
-# print(demo_table)
-demo_table %>% 
-  as_gt() %>% 
-  gt::gtsave(filename = here::here("Outputs","demographics.tex"))
 
 #### ANALYSIS #1- SPATIAL HEATMAP #####################################################################################
 # Goal: To create a spatial heatmap of climate anxiety across California counties
@@ -334,13 +357,13 @@ county_plot_year_tmax <-
   facet_wrap(~year, ncol = 2) +
   theme(legend.box = "horizontal")
 
-final_tmax_plot <- lemon::reposition_legend(
+final_tmax_plot <- fix_reposition_legend(
   county_plot_year_tmax,
   position = "center",
   panel = "panel-2-2",
   plot = FALSE)
 
-final_heatwave_plot <- lemon::reposition_legend(
+final_heatwave_plot <- fix_reposition_legend(
   county_plot_year_heatwave,
   position = "center",
   panel = "panel-2-2",
@@ -362,7 +385,7 @@ utils::write.csv(county_result_year, file = here::here("Outputs","climiate_anxie
 
 #glm model
 glm.model <- survey::svyglm(as.formula(formula)
-                    , family = quasibinomial(),
+                    , family = stats::quasibinomial(),
                     design = chis_design
 )
 
@@ -386,7 +409,7 @@ ctrl <- lme4::glmerControl(
 if ( isTRUE(is_testthat) ) {
   message("Running on GitHub Actions. Limiting max function evaluations for glmer")
   ctrl$optCtrl$maxfun <- 1L     # limit total function evaluations
-  glmer.formula <- "I(tf45 == 'Yes') ~ 1 + (1 | county)"
+  glmer.formula <- "I(tf45 == 'Yes') ~ 1 + (1 | county)" # simplify formulae for speed
 }
 mixef.model <- glmer.svyrep.design(glmer.formula,
                             , family   = "binomial"
