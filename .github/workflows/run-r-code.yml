@@ -24,8 +24,6 @@ jobs:
       RENV_ROBOCOPY_SAFETY: false
       RENV_CONFIG_VERBOSE: TRUE
       RENV_CONFIG_PACKAGE_TYPE: binary
-      FC: gfortran
-      GCC_V: 12
 
     steps:
     - name: Checkout code
@@ -35,17 +33,6 @@ jobs:
       uses: r-lib/actions/setup-r@v2
       with:
         r-version: '4.2.3'  # version on DAC website
-        
-    - name: Checkout fortran
-      uses: fortran-lang/setup-fortran@v1
-      id: setup-fortran
-      with:
-        compiler: ${{ matrix.toolchain.compiler }}
-        version: ${{ matrix.toolchain.version }}
-
-    - run: |
-        ${{ env.FC }} ... # environment vars FC, CC, and CXX are set
-        ${{ steps.setup-fortran.outputs.fc }} ... # outputs work too
 
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
@@ -53,11 +40,9 @@ jobs:
         brew install --cask xquartz
         brew install gettext
         brew install udunits
+        brew install gcc
         echo "CPPFLAGS=-I$(brew --prefix gettext)/include" >> $GITHUB_ENV
         echo "LDFLAGS=-L$(brew --prefix gettext)/lib" >> $GITHUB_ENV
-        sudo ln -fs /opt/homebrew/bin/gfortran-${GCC_V} /usr/local/bin/gfortran
-        sudo mkdir -p /usr/local/gfortran
-        sudo ln -sf /opt/homebrew/Cellar/gcc@${GCC_V}/*/lib/gcc/${GCC_V} /usr/local/gfortran/lib
       
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
@@ -68,7 +53,20 @@ jobs:
           libharfbuzz-dev libfribidi-dev libfreetype6-dev \
           libpng-dev libtiff5-dev libjpeg-dev \
           libudunits2-dev libgdal-dev gdal-bin \
-          libgeos-dev libproj-dev libgettextpo-dev gettext
+          libgeos-dev libproj-dev libgettextpo-dev gettext \
+          gfortran
+          
+    - name: Install gfortran (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install -y mingw
+        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          
+    # Verify installation
+    - name: Show gfortran version
+      run: |
+        gfortran --version
+      shell: bash
 
     - name: Install renv and restore environment
       shell: Rscript {0}
