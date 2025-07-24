@@ -47,11 +47,19 @@ jobs:
         FLIBS=-L$BREW_PREFIX/lib/gcc/$GCCVER -lgfortran
         EOF
     
-    - name: Set UDUNITS2 paths (macOS only)
+    - name: Symlink libudunits2.dylib to .so (macOS only)
+      if: runner.os == 'macOS'
+      run: |
+        if [ -f /opt/homebrew/lib/libudunits2.dylib ]; then
+          ln -sf /opt/homebrew/lib/libudunits2.dylib /opt/homebrew/lib/libudunits2.so
+        fi
+
+    - name: Set UDUNITS2 env vars (macOS only)
       if: runner.os == 'macOS'
       run: |
         echo "UDUNITS2_INCLUDE=/opt/homebrew/include" >> $GITHUB_ENV
-        echo "UDUNITS2_LIBS='-L/opt/homebrew/lib -ludunits2'" >> $GITHUB_ENV
+        echo "UDUNITS2_LIBS=-L/opt/homebrew/lib -ludunits2" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
       
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
