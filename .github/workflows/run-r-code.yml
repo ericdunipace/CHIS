@@ -8,11 +8,27 @@ on:
 jobs:
   test:
     name: Test on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-latest, windows-latest]
-        
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain:
+          - {compiler: gcc, version: 13}
+          - {compiler: intel, version: '2025.0'}
+          - {compiler: intel-classic, version: '2021.10'}
+          - {compiler: nvidia-hpc, version: '25.1'}
+          - {compiler: lfortran, version: '0.45.0'}
+        include:
+          - os: ubuntu-latest
+            toolchain: {compiler: gcc, version: 12}
+        exclude:
+          - os: macos-latest
+            toolchain: {compiler: intel, version: '2023.2'}
+          - os: macos-latest
+            toolchain: {compiler: nvidia-hpc, version: '23.11'}
+          - os: windows-latest
+            toolchain: {compiler: nvidia-hpc, version: '23.11'}
+
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RENV_CONFIG_REPOS_OVERRIDE: https://packagemanager.posit.co/cran/latest
@@ -32,6 +48,17 @@ jobs:
       uses: r-lib/actions/setup-r@v2
       with:
         r-version: '4.2.3'  # version on DAC website
+        
+    - name: Checkout fortran
+      uses: fortran-lang/setup-fortran@v1
+      id: setup-fortran
+      with:
+        compiler: ${{ matrix.toolchain.compiler }}
+        version: ${{ matrix.toolchain.version }}
+
+    - run: |
+        ${{ env.FC }} ... # environment vars FC, CC, and CXX are set
+        ${{ steps.setup-fortran.outputs.fc }} ... # outputs work too
 
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
