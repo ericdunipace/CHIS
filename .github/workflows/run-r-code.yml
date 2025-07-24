@@ -46,6 +46,12 @@ jobs:
         F77=$BREW_PREFIX/bin/gfortran
         FLIBS=-L$BREW_PREFIX/lib/gcc/$GCCVER -lgfortran
         EOF
+    
+    - name: Set UDUNITS2 paths (macOS only)
+      if: runner.os == 'macOS'
+      run: |
+        echo "UDUNITS2_INCLUDE=/opt/homebrew/include" >> $GITHUB_ENV
+        echo "UDUNITS2_LIBS='-L/opt/homebrew/lib -ludunits2'" >> $GITHUB_ENV
       
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
