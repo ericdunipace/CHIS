@@ -43,6 +43,11 @@ jobs:
         brew install gcc
         echo "CPPFLAGS=-I$(brew --prefix gettext)/include" >> $GITHUB_ENV
         echo "LDFLAGS=-L$(brew --prefix gettext)/lib" >> $GITHUB_ENV
+        echo "FC=$(brew --prefix gcc)/bin/gfortran" >> $GITHUB_ENV
+        echo "CC=$(brew --prefix gcc)/bin/gcc" >> $GITHUB_ENV
+        echo "CXX=$(brew --prefix gcc)/bin/g++" >> $GITHUB_ENV
+        echo "F77=$(brew --prefix gcc)/bin/gfortran" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix gcc)/lib/gcc/current" >> $GITHUB_ENV
       
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
