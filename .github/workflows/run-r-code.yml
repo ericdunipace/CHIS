@@ -33,6 +33,21 @@ jobs:
       uses: r-lib/actions/setup-r@v2
       with:
         r-version: '4.2.3'  # version on DAC website
+        
+    - name: Install CRAN gfortran runtime (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        mac_ver=$(sw_vers -productVersion | awk -F '.' '{print $1}')
+        if [[ "$mac_ver" == "14" ]]; then
+          curl -LO https://mac.r-project.org/tools/gfortran-12.3-sonoma-arm64.tar.xz
+          sudo tar -xJf gfortran-12.3-sonoma-arm64.tar.xz -C /
+        elif [[ "$mac_ver" == "13" ]]; then
+          curl -LO https://mac.r-project.org/tools/gfortran-12.2-ventura-arm64.tar.xz
+          sudo tar -xJf gfortran-12.2-ventura-arm64.tar.xz -C /
+        else
+          echo "Unknown macOS version, gfortran runtime not installed."
+          exit 1
+        fi
 
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
@@ -40,7 +55,6 @@ jobs:
         brew install --cask xquartz
         brew install gettext
         brew install udunits
-        brew install gcc
         echo "CPPFLAGS=-I$(brew --prefix gettext)/include" >> $GITHUB_ENV
         echo "LDFLAGS=-L$(brew --prefix gettext)/lib" >> $GITHUB_ENV
         echo "FC=$(brew --prefix gcc)/bin/gfortran" >> $GITHUB_ENV
