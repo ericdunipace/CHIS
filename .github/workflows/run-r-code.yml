@@ -40,6 +40,10 @@ jobs:
         brew install --cask xquartz
         brew install gettext
         brew install udunits
+        brew install gcc
+        echo 'FC=/opt/homebrew/bin/gfortran' | sudo tee -a /Library/Frameworks/R.framework/Resources/etc/Makeconf
+        echo 'F77=/opt/homebrew/bin/gfortran' | sudo tee -a /Library/Frameworks/R.framework/Resources/etc/Makeconf
+        echo 'FLIBS=-L/opt/homebrew/lib/gcc/$(brew info gcc --json | jq -r ".[0].installed[0].version | split(\".\")[0]") -lgfortran' | sudo tee -a /Library/Frameworks/R.framework/Resources/etc/Makeconf
       
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
