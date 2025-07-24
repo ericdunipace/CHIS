@@ -37,7 +37,7 @@ jobs:
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
       run: |
-        brew install gcc udunits gettext jq
+        brew install gcc udunits gettext jq gdal
         if [ -d /opt/homebrew ]; then BREW_PREFIX=/opt/homebrew; else BREW_PREFIX=/usr/local; fi
         GCCVER=$(brew info gcc --json | jq -r '.[0].installed[0].version | split(".")[0]')
         sudo ln -sf $BREW_PREFIX/bin/gfortran /usr/local/bin/gfortran
