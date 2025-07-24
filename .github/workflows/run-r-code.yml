@@ -47,19 +47,37 @@ jobs:
         FLIBS=-L$BREW_PREFIX/lib/gcc/$GCCVER -lgfortran
         EOF
     
-    - name: Symlink libudunits2.dylib to .so (macOS only)
-      if: runner.os == 'macOS'
-      run: |
-        if [ -f /opt/homebrew/lib/libudunits2.dylib ]; then
-          ln -sf /opt/homebrew/lib/libudunits2.dylib /opt/homebrew/lib/libudunits2.so
-        fi
-
     - name: Set UDUNITS2 env vars (macOS only)
       if: runner.os == 'macOS'
       run: |
+        # Symlink .dylib as .so if not already present
+        if [ -f /opt/homebrew/lib/libudunits2.dylib ]; then
+          ln -sf /opt/homebrew/lib/libudunits2.dylib /opt/homebrew/lib/libudunits2.so
+        fi
+        if [ -f /usr/local/lib/libudunits2.dylib ]; then
+          ln -sf /usr/local/lib/libudunits2.dylib /usr/local/lib/libudunits2.so
+        fi
         echo "UDUNITS2_INCLUDE=/opt/homebrew/include" >> $GITHUB_ENV
-        echo "UDUNITS2_LIBS=-L/opt/homebrew/lib -ludunits2" >> $GITHUB_ENV
+        echo "UDUNITS2_LIBS='-L/opt/homebrew/lib -ludunits2'" >> $GITHUB_ENV
         echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
+        echo "UDUNITS2_XML_PATH=/opt/homebrew/share/udunits/udunits2.xml" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=/opt/homebrew/lib" >> $GITHUB_ENV
+        # Repeat for Intel prefix (for universal workflows)
+        echo "UDUNITS2_INCLUDE=/usr/local/include" >> $GITHUB_ENV
+        echo "UDUNITS2_LIBS='-L/usr/local/lib -ludunits2'" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> $GITHUB_ENV
+        echo "UDUNITS2_XML_PATH=/usr/local/share/udunits/udunits2.xml" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=/usr/local/lib" >> $GITHUB_ENV
+        
+    - name: Debug udunits presence
+      if: runner.os == 'macOS'
+      run: |
+        ls -lh /opt/homebrew/lib/libudunits2*
+        ls -lh /opt/homebrew/include/udunits2.h || true
+        ls -lh /opt/homebrew/lib/pkgconfig/udunits2.pc || true
+        ls -lh /usr/local/lib/libudunits2* || true
+        ls -lh /usr/local/include/udunits2.h || true
+        ls -lh /usr/local/lib/pkgconfig/udunits2.pc || true
       
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
