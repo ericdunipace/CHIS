@@ -46,9 +46,10 @@ jobs:
         echo "FC=$(brew --prefix gcc)/bin/gfortran" >> $GITHUB_ENV
         echo "CC=$(brew --prefix gcc)/bin/gcc" >> $GITHUB_ENV
         echo "CXX=$(brew --prefix gcc)/bin/g++" >> $GITHUB_ENV
-        echo "F77=$(brew --prefix gcc)/bin/gfortran" >> $GITHUB_ENV
-        echo "LDFLAGS=-L/opt/homebrew/opt/gcc/lib/gcc/current" >> $GITHUB_ENV
-        echo "DYLD_LIBRARY_PATH=/opt/homebrew/opt/gcc/lib/gcc/current" >> $GITHUB_ENV
+        echo "FC=/opt/R/arm64/gfortran/bin/gfortran" >> $GITHUB_ENV
+        echo "F77=/opt/R/arm64/gfortran/bin/gfortran" >> $GITHUB_ENV
+        echo "LDFLAGS=-L/opt/R/arm64/gfortran/lib" >> $GITHUB_ENV
+        echo "DYLD_FALLBACK_LIBRARY_PATH=/opt/R/arm64/gfortran/lib" >> $GITHUB_ENV
       
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
