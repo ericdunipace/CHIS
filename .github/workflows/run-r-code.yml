@@ -70,6 +70,9 @@ jobs:
       run: |
         gfortran --version
       shell: bash
+      
+    - name: Workaround R macro length bug
+      run: echo 'PKG_CPPFLAGS=-DR_NO_REMAP' >> $GITHUB_ENV
     
     - name: Install renv and restore environment
       shell: Rscript {0}
