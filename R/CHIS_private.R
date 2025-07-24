@@ -21,7 +21,7 @@ library(dplyr)       # data manipulation
 here::i_am("R/CHIS_private.R")  # adjust this to your actual file location
 
 # skip expensive calls on testthat
-is_testthat <- Sys.getenv("TESTTHAT") == "true"
+is_testthat <- isTRUE(Sys.getenv("TESTTHAT") == "true")
 
 #### Setup output directory ####
 if (!dir.exists(output_dir <- here::here("Outputs"))) {
@@ -409,7 +409,7 @@ ctrl <- lme4::glmerControl(
 if ( isTRUE(is_testthat) ) {
   message("Running on GitHub Actions. Limiting max function evaluations for glmer")
   ctrl$optCtrl$maxfun <- 5L     # limit total function evaluations
-  glmer.formula <- "I(tf45 == 'Yes') ~ 1 + (1 | county)" # simplify formulae for speed
+  glmer.formula <- "I(tf45 == 'Yes') ~ 1 + (1 | county)" # simplify formula for speed
 }
 mixef.model <- glmer.svyrep.design(glmer.formula,
                             , family   = "binomial"
