@@ -102,6 +102,13 @@ jobs:
       run: |
         gfortran --version
       shell: bash
+      
+    - name: Install renv and restore environment
+      if: runner.os == 'macOS'
+      shell: Rscript {0}
+      run: |
+        install.packages("remotes")
+        remotes::install_version("units", version = "0.8-1", type = 'source', configure.args = c(units = '--with-udunits2-lib=/opt/homebrew/lib --with-udunits2-include=/opt/homebrew/include'))
     
     - name: Install renv and restore environment
       shell: Rscript {0}
