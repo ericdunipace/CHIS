@@ -27,19 +27,18 @@ jobs:
   
       - name: Set up pandoc (if needed for reports)
         uses: r-lib/actions/setup-pandoc@v2
-        
       
       - name: Install system dependencies (Linux)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          libcurl4-openssl-dev libssl-dev libxml2-dev \
-          libharfbuzz-dev libfribidi-dev libfreetype6-dev \
-          libpng-dev libtiff5-dev libjpeg-dev \
-          libudunits2-dev libgdal-dev gdal-bin \
-          libgeos-dev libproj-dev libgettextpo-dev gettext \
-          gfortran
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libcurl4-openssl-dev libssl-dev libxml2-dev \
+            libharfbuzz-dev libfribidi-dev libfreetype6-dev \
+            libpng-dev libtiff5-dev libjpeg-dev \
+            libudunits2-dev libgdal-dev gdal-bin \
+            libgeos-dev libproj-dev libgettextpo-dev gettext \
+            gfortran
   
       - name: Set up R dependencies with renv
         run: |
