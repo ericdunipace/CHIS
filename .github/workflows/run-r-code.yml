@@ -103,7 +103,7 @@ jobs:
         gfortran --version
       shell: bash
       
-    - name: Install renv and restore environment
+    - name: Install units of macOS
       if: runner.os == 'macOS'
       shell: Rscript {0}
       run: |
