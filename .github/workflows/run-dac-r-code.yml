@@ -1,4 +1,4 @@
-name: Run R Code with renv and testthat
+name: Run DAC R Code with renv and testthat
 
 on:
   push:
