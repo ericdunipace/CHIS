@@ -1,0 +1,56 @@
+name: Run local R Code and Save Artifacts
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [macos-latest]
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RENV_CONFIG_REPOS_OVERRIDE: https://packagemanager.posit.co/cran/latest
+      RENV_CONFIG_INSTALL_STAGED: false
+      RENV_CONFIG_CACHE_SYMLINKS: FALSE
+      RENV_ROBOCOPY_SAFETY: false
+      RENV_CONFIG_VERBOSE: TRUE
+      RENV_CONFIG_PACKAGE_TYPE: binary
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
+        
+    - name: Install system dependencies (mac)
+      if: runner.os == 'macOS'
+      run: |
+        brew install gcc udunits gettext jq gdal
+    
+    - name: Extract package names from renv.lock and install
+      shell: Rscript {0}
+      run: |
+        options(repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
+        install.packages("jsonlite")
+        pkgs <- names(jsonlite::fromJSON("renv.lock")$Packages)
+        install.packages(pkgs)
+  
+    - name: Run local R code
+      run: |
+        r_folder <- here::here("R","localCode")
+        script_files <- list.files(r_folder, pattern = "\\.R$", full.names = TRUE)
+        for (f in script_files) {
+          source(f, echo = TRUE, max.deparse.length = Inf)
+        }
+
+    - name: Upload output artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: r-output-files
+        path: Outputs/
