@@ -41,9 +41,11 @@ test_that("All installed packages meet version requirements", {
 
   for( i in seq_along(final_names)) {
     n <- final_names[i]
-    v <- final_ver[i]
-    testthat::expect_equivalent(package_ver[which(package_names == n)], v,
-                                info = paste("Package", n, "version mismatch: expected", v, "but found", package_ver[which(package_names == n)]))
+    required_version <- final_ver[i]
+    installed_version <- package_ver[which(package_names == n)]
+    testthat::expect_equivalent(installed_version, 
+                                required_version,
+                                info = paste("Package", n, "version mismatch: expected", required_version, "but found", installed_version))
   }
   
 })
