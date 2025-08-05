@@ -64,4 +64,22 @@ for( i in seq_along(final_names)) {
   renv::record(glue("{n}@{v}"))
 }
 
+inst_packages <- installed.packages()
+
+package_names <- inst_packages[,"Package"]
+package_ver   <- inst_packages[,"Version"]
+
+final_names   <- names[names %in% package_names]
+final_ver     <- ver[names %in% package_names]
+
+if("askpass" %in% final_names) final_ver[final_names == "askpass"]   <- "1.1"
+if("gridExtra" %in% final_names) final_ver[final_names == "gridExtra"] <- "2.3"
+
+for( i in seq_along(final_names)) {
+  n <- final_names[i]
+  v <- final_ver[i]
+  if ( length(package_ver[which(package_names == n)]) == 1 && package_ver[which(package_names == n)] == v ) next
+  renv::record(glue("{n}@{v}"))
+}
+
 renv::restore()
