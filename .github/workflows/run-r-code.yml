@@ -84,7 +84,8 @@ jobs:
           libharfbuzz-dev libfribidi-dev libfreetype6-dev \
           libpng-dev libtiff5-dev libjpeg-dev \
           libudunits2-dev libgdal-dev gdal-bin \
-          libgeos-dev libproj-dev libgettextpo-dev gettext 
+          libgeos-dev libproj-dev libgettextpo-dev gettext \
+          libx11-dev
           
     - name: Install gfortran (Windows)
       if: runner.os == 'Windows'
@@ -92,20 +93,14 @@ jobs:
         choco install -y mingw
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           
-    - name: Install renv and restore environment
-      shell: Rscript {0}
+    - name: Extract package names from renv.lock and install
       run: |
-        install.packages("renv", repos = "https://packagemanager.posit.co/cran/latest")
-        options(repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
-        tryCatch({
-          renv::restore(prompt = FALSE)
-        }, error = function(e) {
-          message("RENV RESTORE ERROR: ", conditionMessage(e))
-          renv::status()
-          quit(status = 1)
-        })
-        renv::update(prompt = FALSE)
-
+        Rscript -e '
+          pkgs <- names(jsonlite::fromJSON("renv.lock")$Packages)
+          options(repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
+          install.packages(pkgs)
+        '
+    
     - name: Run testthat tests
       run: |
         Rscript -e 'install.packages("testthat", repos = "https://cloud.r-project.org")'
