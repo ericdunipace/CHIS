@@ -120,7 +120,7 @@ jobs:
         remotes::install_version("renv", version = "1.1.4")
         remove.packages("remotes")
         tryCatch({
-          renv::restore(prompt = FALSE, rebuild = TRUE)
+          renv::restore(prompt = FALSE)
         }, error = function(e) {
           message("RENV RESTORE ERROR: ", conditionMessage(e))
           renv::status()
