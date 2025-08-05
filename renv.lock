@@ -1088,11 +1088,6 @@
       "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
       "Repository": "REPO"
     },
-    "fs": {
-      "Package": "fs",
-      "Version": "1.6.1",
-      "Source": "Repository"
-    },
     "generics": {
       "Package": "generics",
       "Version": "0.1.3",
