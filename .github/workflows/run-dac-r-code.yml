@@ -23,7 +23,6 @@ jobs:
       RENV_CONFIG_CACHE_SYMLINKS: FALSE
       RENV_ROBOCOPY_SAFETY: false
       RENV_CONFIG_VERBOSE: TRUE
-      RENV_CONFIG_PACKAGE_TYPE: binary
 
     steps:
     - name: Checkout code
@@ -103,30 +102,25 @@ jobs:
         gfortran --version
       shell: bash
       
-    - name: Install units of macOS
-      if: runner.os == 'macOS'
+    - name: Install remotes
       shell: Rscript {0}
       run: |
         install.packages("remotes")
-        remotes::install_version("units", version = "0.8-1", type = 'source', configure.args = c(units = '--with-udunits2-lib=/opt/homebrew/lib --with-udunits2-include=/opt/homebrew/include'))
-        
-    - name: Preinstall fs from binary on macOS
+      
+    - name: Install units and fs on macOS
       if: runner.os == 'macOS'
       shell: Rscript {0}
       run: |
-        options(install.packages.check.source = "no")
-        install.packages("fs", repos = "https://cran.r-project.org", type = "binary")
-    
+        remotes::install_version("units", version = "0.8-1", type = 'source', configure.args = c(units = '--with-udunits2-lib=/opt/homebrew/lib --with-udunits2-include=/opt/homebrew/include'))
+        remotes::install_version("fs", version = "1.6.1", type = 'source')
+        
     - name: Install renv and restore environment
       shell: Rscript {0}
       run: |
-        install.packages("renv", repos = "https://packagemanager.posit.co/cran/latest")
-        options(
-          repos = c(REPO = "https://packagemanager.posit.co/cran/latest"),
-          install.packages.check.source = "no"
-        )
+        remotes::install_version("renv", version = "1.1.4")
+        remove.packages("remotes")
         tryCatch({
-          renv::restore(prompt = FALSE)
+          renv::restore(prompt = FALSE, rebuild = TRUE)
         }, error = function(e) {
           message("RENV RESTORE ERROR: ", conditionMessage(e))
           renv::status()
