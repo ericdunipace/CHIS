@@ -50,8 +50,9 @@ jobs:
     - name: Extract package names from renv.lock and install
       shell: Rscript {0}
       run: |
-        pkgs <- names(jsonlite::fromJSON("renv.lock")$Packages)
         options(repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
+        install.packages("jsonlite")
+        pkgs <- names(jsonlite::fromJSON("renv.lock")$Packages)
         install.packages(pkgs)
     
     - name: Run testthat tests
