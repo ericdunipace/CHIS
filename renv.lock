@@ -3653,6 +3653,11 @@
       "Package": "xml2",
       "Version": "1.3.3",
       "Source": "Repository"
+    },
+    "yaml": {
+      "Package": "yaml",
+      "Version": "2.3.7",
+      "Source": "Repository"
     }
   }
 }
