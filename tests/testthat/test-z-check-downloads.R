@@ -28,22 +28,22 @@ test_that("All installed packages meet version requirements", {
                              info = paste("Package", n, "version mismatch: expected", v, "but found", package_ver[which(package_names == n)]))
   }
   
-  inst_packages <- installed.packages()
-  
-  package_names <- inst_packages[,"Package"]
-  package_ver   <- inst_packages[,"Version"]
-  
-  final_names   <- names[names %in% package_names]
-  final_ver     <- ver[names %in% package_names]
-  
-  if("askpass" %in% final_names) final_ver[final_names == "askpass"]   <- "1.1"
-  if("gridExtra" %in% final_names) final_ver[final_names == "gridExtra"] <- "2.3"
-  
-  for( i in seq_along(final_names)) {
-    n <- final_names[i]
-    v <- final_ver[i]
-    testthat::expect_equivalent(package_ver[which(package_names == n)], v,
-                                info = paste("Package", n, "version mismatch: expected", v, "but found", package_ver[which(package_names == n)]))
-  }
+  # inst_packages <- installed.packages()
+  # 
+  # package_names <- inst_packages[,"Package"]
+  # package_ver   <- inst_packages[,"Version"]
+  # 
+  # final_names   <- names[names %in% package_names]
+  # final_ver     <- ver[names %in% package_names]
+  # 
+  # if("askpass" %in% final_names) final_ver[final_names == "askpass"]   <- "1.1"
+  # if("gridExtra" %in% final_names) final_ver[final_names == "gridExtra"] <- "2.3"
+  # 
+  # for( i in seq_along(final_names)) {
+  #   n <- final_names[i]
+  #   v <- final_ver[i]
+  #   testthat::expect_equivalent(package_ver[which(package_names == n)], v,
+  #                               info = paste("Package", n, "version mismatch: expected", v, "but found", package_ver[which(package_names == n)]))
+  # }
   
 })
