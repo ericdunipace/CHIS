@@ -1,18 +1,16 @@
-name: Run R Code with renv and testthat
+name: Run local R Code and Save Artifacts
 
 on:
-  push:
-  pull_request:
-    branches: [main, master, dac]
+  workflow_dispatch:
 
 jobs:
   test:
     name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [macos-latest]
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -35,18 +33,6 @@ jobs:
       run: |
         brew install gcc udunits gettext jq gdal
     
-    - name: Install system dependencies (Linux)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          libcurl4-openssl-dev libssl-dev libxml2-dev \
-          libharfbuzz-dev libfribidi-dev libfreetype6-dev \
-          libpng-dev libtiff5-dev libjpeg-dev \
-          libudunits2-dev libgdal-dev gdal-bin \
-          libgeos-dev libproj-dev libgettextpo-dev gettext \
-          libx11-dev
-          
     - name: Extract package names from renv.lock and install
       shell: Rscript {0}
       run: |
@@ -54,8 +40,17 @@ jobs:
         install.packages("jsonlite")
         pkgs <- names(jsonlite::fromJSON("renv.lock")$Packages)
         install.packages(pkgs)
-    
-    - name: Run testthat tests
+  
+    - name: Run local R code
       run: |
-        Rscript -e 'install.packages("testthat", repos = "https://cloud.r-project.org")'
-        Rscript tests/testthat.R
+        r_folder <- here::here("R","localCode")
+        script_files <- list.files(r_folder, pattern = "\\.R$", full.names = TRUE)
+        for (f in script_files) {
+          source(f, echo = TRUE, max.deparse.length = Inf)
+        }
+
+    - name: Upload output artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: r-output-files
+        path: Outputs/

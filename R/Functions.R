@@ -820,6 +820,7 @@ chis_clean <- function(data) {
     mutate(
       age_group = factor(ifelse(srage_p %in% c("12","13","14"),
                                 "12-14", "15-17")),
+      cont_age  = as.numeric(as.character(srage_p)),
       ombsrtn_p1 = forcats::fct_recode(ombsrtn_p1,
                                        "Hispanic" = "Hispanic",
                                        "White, Non-Hispanic" = "White, Non-hispanic (nh)",
@@ -880,3 +881,134 @@ chis_clean <- function(data) {
            survey_years  = lubridate::year(survey_dates),
            survey_months = lubridate::month(survey_dates))
 }
+
+# adapted from lemon, not currently in DAC packages unfortunately
+fix_reposition_legend <- function(aplot,
+                              position=NULL,
+                              legend=NULL,
+                              panel='panel',
+                              x=NULL,
+                              y=NULL,
+                              just=NULL,
+                              name='guide-box',
+                              clip='on',
+                              offset=c(0,0),
+                              z=Inf,
+                              plot=TRUE) {
+  
+  g_legend<-function(a.gplot){
+    if (!gtable::is.gtable(a.gplot))
+      a.gplot <- ggplotGrob(a.gplot)
+    #gtable_filter(a.gplot, 'guide-box', fixed=TRUE)
+    leg <- which(sapply(a.gplot$grobs, function(x) x$name) == "guide-box")
+    a.gplot$grobs[[leg]]
+  }
+  
+  # Work out positioning
+  if (!is.null(position)) {
+    if (length(offset) == 1) offset <- offset[c(1,1)]
+    if (!grid::is.unit(offset)) offset <- grid::unit(offset, 'npc')
+    
+    position <- match.arg(position, c('bottom right','right bottom','bottom','bottom left','left bottom','left','top left','top','top right','left top','right top','right','center'))
+    just <- switch(position,
+                   'bottom right' = c(x=1, y=0),
+                   'right bottom' = c(x=1, y=0),
+                   'bottom' = c(x=0.5, y=0),
+                   'bottom left' = c(x=0, y=0),
+                   'left bottom' = c(x=0, y=0),
+                   'left' = c(x=0, y=0.5),
+                   'top left' = c(x=0, y=1),
+                   'left top' = c(x=0, y=1),
+                   'top' = c(x=0.5, y=1),
+                   'top right' = c(x=1, y=1),
+                   'right top' = c(x=1, y=1),
+                   'right' = c(x=1, y=0.5),
+                   'center' = c(x=0.5, y=0.5)
+    )
+    if (is.null(x)) x = unit(just[1], 'npc') + offset[1] *
+      ifelse(grepl('right', position), -1, ifelse(grepl('left', position), 1, 0))
+    if (is.null(y)) y = unit(just[2], 'npc') + offset[2] *
+      ifelse(grepl('top', position), -1, ifelse(grepl('bottom', position), 1, 0))
+  }
+  if (!is.null(x) && !grid::is.unit(x)) x <- unit(x, 'npc')
+  if (!is.null(y) && !grid::is.unit(y)) y <- unit(y, 'npc')
+  
+  if (is.null(x) | is.null(y) | is.null(just)) {
+    stop('Please supply either `position`, or `x`, `y`, and `just` arguments.')
+  }
+  
+  # Extract legends and gtable
+  if (is.null(legend) & inherits(aplot, 'ggplot'))
+    legend <- g_legend(aplot)
+  
+  if (is.null(legend) || inherits(legend, 'zeroGrob'))
+    stop('No legend given in arguments, or could not extract legend from plot.')
+  
+  if (!inherits(aplot, 'gtable')) {
+    aplot$theme$legend.position <- 'hidden'
+    aplot <- ggplotGrob(aplot)
+    #aplot <- ggplot_gtable(ggplot_build(aplot + theme(legend.position='hidden')))
+  }
+  
+  # Update name if already found. No idea why this is necessary.
+  if (any(grepl(name, aplot$layout$name))) {
+    add <- gregexpr(paste0('(?!', name, '-?)([[:digit:]]+)'), aplot$layout$name, perl = TRUE)
+    add <- regmatches(aplot$layout$name, add)
+    add <- as.integer(unlist(add))
+    if (length(add) > 0) {
+      add <- max(add) + 1
+    } else {
+      add <- 1
+    }
+    name <- paste(name, add, sep='-')
+  }
+  
+  legend$vp <- viewport(x=x, y=y, just=just,  width=sum(legend$widths), height=sum(legend$heights))
+  legend$name <- name
+  
+  # Place legend *under* the lowest axis-line, if z is Inf
+  if (is.infinite(z)) {
+    axes <- grepl('axis', aplot$layout$name)
+    .z <- min(aplot$layout$z[axes]) - 1
+  } else {
+    .z <- z
+  }
+  .clip <- clip
+  
+  if (is.character(panel)) {
+    pn <- which(aplot$layout$name %in% panel)
+    if (length(pn) == 0) stop('Could not find panel named `',panel,'`.')
+    
+    aplot <- with(aplot$layout[pn,],
+                  gtable::gtable_add_grob(aplot,
+                                  legend,
+                                  t = min(t),
+                                  l = min(l),
+                                  r = max(r),
+                                  b = max(b),
+                                  z = .z,
+                                  clip = .clip,
+                                  name = legend$name
+                  ))
+  } else if ((is.numeric(panel) | is.integer(panel)) & length(panel) %in% c(2,4)) {
+    panel <- rep(as.integer(panel), length.out=4)
+    aplot <- gtable::gtable_add_grob(aplot,
+                             legend,
+                             t = panel[1],
+                             l = panel[2],
+                             b = panel[3],
+                             r = panel[4],
+                             z = .z,
+                             clip = .clip,
+                             name = legend$name
+    )
+  }
+  
+  if (plot) {
+    grid::grid.newpage()
+    grid::grid.draw(aplot)
+  }
+  
+  invisible(aplot)
+}
+
