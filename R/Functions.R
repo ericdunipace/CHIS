@@ -1,5 +1,6 @@
 #### Functions for analysis and variable creation ####
 pooling <- function(chis_list) {
+  require(dplyr)
   
   for(i in 1:length(chis_list)) {
     
@@ -57,6 +58,7 @@ pooling <- function(chis_list) {
 }
 
 K6_coding <- function(x) {
+  require(dplyr)
   out <- case_when(
     x == "All Of The Time" ~ 4,
     x == "Most Of The Time" ~ 3,
@@ -69,13 +71,15 @@ K6_coding <- function(x) {
 }
 
 create_K6_score <- function(x) {
-  
+  require(dplyr)
   x <- x %>% 
     mutate(across(everything(),~ K6_coding(.x))) %>%
     rowSums(na.rm = TRUE)
 }
 
 mean_svy_rep <- function(data, full_data, variable, by, ...) {
+  require(dplyr)
+  require(survey)
   
   out <- dplyr::tibble()
   
@@ -814,7 +818,7 @@ parse_my_to_date <- function(my_str) {
   as.Date(paste0(lubridate::year(dt), "-", lubridate::month(dt), "-15"))
 }
 
-chis_clean <- function(data) {
+chis_clean_puf <- function(data) {
   pooling(data) %>%
     mutate(across(where(is.factor), fct_drop)) %>% 
     mutate(
@@ -881,6 +885,89 @@ chis_clean <- function(data) {
            survey_years  = lubridate::year(survey_dates),
            survey_months = lubridate::month(survey_dates))
 }
+
+chis_clean <- function(data) {
+  pooling(data) %>%
+    mutate(
+      age_group = factor(ifelse(srage %in% c("12","13","14"),
+                                "12-14", "15-17")),
+      cont_age  = as.numeric(as.character(srage)),
+      ombsrreo = forcats::fct_recode(ombsrreo,
+                                       "Hispanic" = "Hispanic",
+                                       "White" = "White, Non-hispanic (nh)",
+                                       "Asian" = "Asian Only, Nh",
+                                       "African American" = "African American Only, Not Hispanic",
+                                       "American Indian" = "American Indian/alaska Native Only, Nh",
+                                       "Pacific Islander" = "Native Hawaiian/pacific Islander, Nh",
+                                       
+                                       "Two Or More Races" = "Two Or More Races, Nh"),
+      povll_binary = forcats::fct_recode(povll,
+                                         "Less than 300% FPL" = "0-99% Fpl",
+                                         "Less than 300% FPL" = "100-199% Fpl",
+                                         "Less than 300% FPL" = "200-299% Fpl",
+                                         "300% FPL And Above" = "300% Fpl And Above"),
+      povll = forcats::fct_recode(povll,
+                                  "0-99% FPL" = "0-99% Fpl",
+                                  "100-199% FPL" = "100-199% Fpl",
+                                  "200-299% FPL" = "200-299% Fpl",
+                                  "300% FPL And Above" = "300% Fpl And Above"),
+      ahedtc_binary = forcats::fct_recode(aheduc,
+                                          "Not known" = "Not Ascertained",
+                                          "Not known" = "Dont Know",
+                                          "Not known" = "Refused",
+                                          "Not known" = "Inapplicable",
+                                          "Not known" = "Proxy Skipped",
+                                          "No college" = "No Formal Education",
+                                          "No college" = "Grade 1-8",
+                                          "No college" = "Grade 9-11",
+                                          "No college" = "Grade 12/h.s. Diploma",
+                                          "College or more" = "Some College",
+                                          "College or more" = "Aa Or As Degree",
+                                          "College or more" = "Vocational School",
+                                          "College or more" = "Ba Or Bs Degree",
+                                          "College or more" = "Some Grad. School",
+                                          "College or more" = "Ma Or Ms Degree",
+                                          "College or more" = "Ph.d. Or Equivalent"
+      ),
+      lnghmt_binary = forcats::fct_recode(langhome,
+                                          "English" = "English & Spanish",
+                                          "English" = "English & One Other Language",
+                                          "English" = "English & European Language",
+                                          "English" = "English & Another Asian Language",
+                                          "Non-English" = "Spanish",
+                                          "Non-English" = "Chinese",
+                                          "Non-English" = "Korean",
+                                          "Non-English" = "Vietnamese",
+                                          "Non-English" = "Other Languages (2+)"
+      ),
+      uninsured = factor(ifelse(as.character(instype) == "Uninsured",
+                                "Yes", "No")),
+      health_office = forcats::fct_recode(tf2,
+                                          "Primary care office" = "Doctor's Office/kaiser/hmo",
+                                          "Primary care office" = "Clinic/health Center/hospital Clinic",
+                                          "Primary care office" = "Other Health Professional (not Md)/alternative Medicine", 
+                                          "Not primary care office" = "Inapplicable"   ,
+                                          "Not primary care office" = "Emergency Room" ,
+                                          "Not primary care office" = "Family Members/friends Residence/who Are Health Professionals",
+                                          "Not primary care office" = "Some Other Place",
+                                          "Not primary care office" = "No One Place"),
+      school_last_week = forcats::fct_recode(ta4,
+                                             "No" = "On Vacation",
+                                             "No" = "Not Ascertained",
+                                             "No" = "Don't Know",
+                                             "No" = "Refused",
+                                             "No" = "Inapplicable",
+                                             "Yes" = "Home Schooled"
+      ),
+      tl53 = forcats::fct_rev(tl53),
+      
+    ) %>% 
+    mutate(survey_dates = parse_my_to_date(tadate_mm),
+           survey_years  = lubridate::year(survey_dates),
+           survey_months = lubridate::month(survey_dates)) %>% 
+    mutate(across(where(is.factor), fct_drop))
+}
+
 
 # adapted from lemon, not currently in DAC packages unfortunately
 fix_reposition_legend <- function(aplot,
