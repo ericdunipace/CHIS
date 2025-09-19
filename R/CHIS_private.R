@@ -2,6 +2,7 @@
 
 ### Import and read stuff in ######################################################################
 # Load required libraries (ensure they are installed)
+library(methods)
 library(stats)
 library(utils)
 library(haven)       # Reading .dta files
@@ -16,6 +17,7 @@ library(glue)
 library(here)
 library(forcats)     # Factor manipulation
 library(dplyr)       # data manipulation
+library(grid)        # for repositioning legends
 
 # confirm file location
 here::i_am("R/CHIS_private.R")  # adjust this to your actual file location
@@ -118,8 +120,8 @@ chis_design <- survey::svrepdesign(
 baseline_demographics <- c(
   "age_group",      # SELF-REPORTED AGE
   "srsex",        # SELF-REPORTED GENDER
-  "ombsrtn_p1",   # OMB/CURRENT DOF RACE - ETHNICITY
-  "schtyp_p1",    # TYPE OF SCHOOL ATTENDED
+  "ombsrreo",   # OMB/CURRENT DOF RACE - ETHNICITY
+  "sch_typ",    # TYPE OF SCHOOL ATTENDED
   "ahedtc_binary",    # ADULT EDUCATIONAL ATTAINMENT
   "povll_binary",        # POVERTY LEVEL
   "lnghmt_binary",    # LANGUAGE SPOKEN AT HOME,
@@ -183,38 +185,38 @@ glmer.formula <- paste0(formula, "+ (1 | county)")
 
 # variables for table 1
 table_demographics <- c(
-  "srage_p" , 
+  "srage" , 
   "srsex",
-  "ombsrtn_p1",
-  "schtyp_p1",
-  "ahedtc_p1",
+  "ombsrreo",
+  "sch_typ",
+  "aheduc",
   "povll",
-  "lnghmt_p1",
+  "langhome",
   "ur_clrt2")
 
 attr(table_demographics,"label") <-list(
   "tf45"          = "Climate Anxiety", #CLIMATE CHANGE MAKES YOU NERVOUS/DEPRESSED/STRESSED
   "cont_age"     = "Age", 
-  "srage_p"        = "Age",     # SELF-REPORTED AGE
+  "srage"        = "Age",     # SELF-REPORTED AGE
   "srsex"        = "Sex",        # SELF-REPORTED GENDER
-  "ombsrtn_p1"   = "Ethnicity",   # OMB/CURRENT DOF RACE - ETHNICITY
-  "schtyp_p1"    = "Type of School Attended",    # TYPE OF SCHOOL ATTENDED
-  "ahedtc_p1"    = "Parents' Educational Attainment",    # ADULT EDUCATIONAL ATTAINMENT
+  "ombsrreo"   = "Ethnicity",   # OMB/CURRENT DOF RACE - ETHNICITY
+  "sch_typ"    = "Type of School Attended",    # TYPE OF SCHOOL ATTENDED
+  "aheduc"    = "Parents' Educational Attainment",    # ADULT EDUCATIONAL ATTAINMENT
   "povll"        = "Poverty Level",        # POVERTY LEVEL
-  "lnghmt_p1"    = "Language Spoken at Home",     # LANGUAGE SPOKEN AT HOME
+  "langhome"    = "Language Spoken at Home",     # LANGUAGE SPOKEN AT HOME
   "ur_clrt2"     = "Rural/Urban (Claritas ZIP, 2-level)"   # URBAN/RURAL CLASSIFICATION
 )
 
 attr(table_demographics,"type") <-list(
   "tf45"          = "categorical", #CLIMATE CHANGE MAKES YOU NERVOUS/DEPRESSED/STRESSED
   "cont_age"     = "continuous",     # SELF-REPORTED AGE
-  "srage_p"       = "categorical",
+  "srage"       = "categorical",
   "srsex"       = "categorical",        # SELF-REPORTED GENDER
-  "ombsrtn_p1"  = "categorical",   # OMB/CURRENT DOF RACE - ETHNICITY
-  "schtyp_p1"   = "categorical",    # TYPE OF SCHOOL ATTENDED
-  "ahedtc_p1"   = "categorical",    # ADULT EDUCATIONAL ATTAINMENT
+  "ombsrreo"  = "categorical",   # OMB/CURRENT DOF RACE - ETHNICITY
+  "sch_typ"   = "categorical",    # TYPE OF SCHOOL ATTENDED
+  "aheduc"   = "categorical",    # ADULT EDUCATIONAL ATTAINMENT
   "povll"       = "categorical",        # POVERTY LEVEL
-  "lnghmt_p1"   = "categorical",     # LANGUAGE SPOKEN AT HOME
+  "langhome"   = "categorical",     # LANGUAGE SPOKEN AT HOME
   "ur_clrt2"    = "categorical"   # URBAN/RURAL CLASSIFICATION
 )
 
