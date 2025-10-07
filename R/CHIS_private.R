@@ -29,7 +29,10 @@ cat("Running in testthat:", is_testthat, "\n")
 # which data is being used
 # stata or sas
 stata_or_sas <- Sys.getenv("CHIS_DATA_TYPE")
+cat("Environment variable 'CHIS_DATA_TYPE':", stata_or_sas, "\n")
 # stata_or_sas <- "sas" # one of "stata" or "sas"
+
+
 if ( is.na(stata_or_sas) || identical(stata_or_sas, "") ) {
   warning("Environment variable 'CHIS_DATA_TYPE' not set. Defaulting to using stata.")
   stata_or_sas <- "stata"
