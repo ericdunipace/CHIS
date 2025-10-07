@@ -20,14 +20,29 @@ library(dplyr)       # data manipulation
 library(grid)        # for repositioning legends
 
 # confirm file location
-here::i_am("R/CHIS_private.R")  # adjust this to your actual file location
+here::i_am(file.path("R","CHIS_private.R"))  # adjust this to your actual file location
 
 # skip expensive calls on testthat
 is_testthat <- isTRUE(Sys.getenv("TESTTHAT") == "true")
+cat("Running in testthat:", is_testthat, "\n")
+
+# which data is being used
+# stata or sas
+stata_or_sas <- Sys.getenv("CHIS_DATA_TYPE")
+# stata_or_sas <- "sas" # one of "stata" or "sas"
+if ( is.na(stata_or_sas) || identical(stata_or_sas, "") ) {
+  warning("Environment variable 'CHIS_DATA_TYPE' not set. Defaulting to using stata.")
+  stata_or_sas <- "stata"
+}
+stata_or_sas <- match.arg(stata_or_sas, choices = c("stata","sas"))
+cat("Using CHIS data type:", stata_or_sas, "\n")
 
 #### Setup output directory ####
 if (!dir.exists(output_dir <- here::here("Outputs"))) {
   dir.create(output_dir)
+  cat("Created output directory:", output_dir, "\n")
+} else {
+  cat("Output directory already exists:", output_dir, "\n")
 }
 
 #### load Functions ####
@@ -35,20 +50,63 @@ source(here::here("R","Functions.R"))
 
 #### load data ####
 # load chis data 2021-2023
-d_chis_2023 <- haven::read_dta(here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')) %>%
-  rename_all(tolower) %>%
-  mutate(year = 2023) %>% 
-  haven::as_factor()
 
-d_chis_2022 <- haven::read_dta(here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')) %>%
-  rename_all(tolower) %>%
-  mutate(year = 2022) %>% 
-  haven::as_factor()
+if (stata_or_sas == "stata") {
+  d_chis_2023 <- haven::read_dta(here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')) %>%
+    rename_all(tolower) %>%
+    mutate(year = 2023) %>% 
+    haven::as_factor()
+  
+  d_chis_2022 <- haven::read_dta(here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')) %>%
+    rename_all(tolower) %>%
+    mutate(year = 2022) %>% 
+    haven::as_factor()
+  
+  d_chis_2021 <- haven::read_dta(here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')) %>%
+    rename_all(tolower) %>%
+    mutate(year = 2021) %>% 
+    haven::as_factor()
+  
+} else if (stata_or_sas == "sas") {
+  
+  # load chis data 2021-2023
+  d_chis_2023 <- haven::read_sas(here::here('Data', 'dummyfiles_2023_teen_sas', 'dummy_teen.sas7bdat')) %>%
+    rename_all(tolower) %>%
+    sas_to_label(d_chis_2023_stata_to_sas_list) %>%
+    mutate(year = 2023) %>% 
+    haven::as_factor()
+  
+  d_chis_2022 <- haven::read_sas(here::here('Data', 'dummyfiles_2022_teen_sas', 'dummy_teen.sas7bdat')) %>%
+    rename_all(tolower) %>%
+    sas_to_label(d_chis_2022_stata_to_sas_list) %>%
+    mutate(year = 2022) %>% 
+    haven::as_factor()
+  
+  d_chis_2021 <- haven::read_sas(here::here('Data', 'dummyfiles_2021_teen_sas', 'dummy_teen.sas7bdat')) %>%
+    rename_all(tolower) %>%
+    sas_to_label(d_chis_2021_stata_to_sas_list) %>%
+    mutate(year = 2021) %>% 
+    haven::as_factor()
+  
+} else {
+  
+  warning("Data file type 'stata' or 'sas' not specified. Defaulting to using stata.")
+  d_chis_2023 <- haven::read_dta(here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')) %>%
+    rename_all(tolower) %>%
+    mutate(year = 2023) %>% 
+    haven::as_factor()
+  
+  d_chis_2022 <- haven::read_dta(here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')) %>%
+    rename_all(tolower) %>%
+    mutate(year = 2022) %>% 
+    haven::as_factor()
+  
+  d_chis_2021 <- haven::read_dta(here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')) %>%
+    rename_all(tolower) %>%
+    mutate(year = 2021) %>% 
+    haven::as_factor()
+}
 
-d_chis_2021 <- haven::read_dta(here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')) %>%
-  rename_all(tolower) %>%
-  mutate(year = 2021) %>% 
-  haven::as_factor()
 
 chis_list <- list(
   d_chis_2021,
@@ -57,14 +115,9 @@ chis_list <- list(
 )
 
 # supporting data files
-# can uncomment on personal machine
-# county_shapefile <- readRDS(here::here("Data","ca_county.rds"))
-# census_shapefile <- readRDS(here::here("Data","ca_tract_2010.rds"))
 aux_data <- readRDS(here::here("Data","auxiliary_data.rds"))
 
 #### Clean and combine CHIS data ####
-# chis <- readRDS(here::here("data', 'chis_combined.Rds") )
-
 chis <- chis_clean(chis_list) %>% 
   mutate(county = fips_cnt) %>% 
   left_join(y = aux_data$prism$census %>% select(-year),
