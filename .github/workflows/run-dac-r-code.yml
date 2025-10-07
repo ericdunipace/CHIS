@@ -127,7 +127,13 @@ jobs:
           quit(status = 1)
         })
 
-    - name: Run testthat tests
+    - name: Run testthat tests for stata
       run: |
+        Rscript -e 'Sys.setenv(CHIS_DATA_TYPE="stata")'
         Rscript -e 'install.packages("testthat", repos = "https://cloud.r-project.org")'
+        Rscript tests/testthat.R
+        
+    - name: Run testthat tests for sas
+      run: |
+        Rscript -e 'Sys.setenv(CHIS_DATA_TYPE="sas")'
         Rscript tests/testthat.R
