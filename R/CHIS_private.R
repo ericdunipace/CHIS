@@ -19,6 +19,25 @@ library(forcats)     # Factor manipulation
 library(dplyr)       # data manipulation
 library(grid)        # for repositioning legends
 
+file_name_2021 <- file_name_2022 <- file_name_2023 <- NULL # used to pull in file down below
+
+#### Section of code to add your desired file path for DAC statistician ####
+# uncomment as desired
+# rootFolder <- file.path("P:","Project Files","Clients","DAC250735508- Hwong")
+# setwd(rootFolder)
+# 
+# dataFolder <- file.path(rootFolder, "Data")
+# outputFolder <- file.path(rootFolder, "Output")
+# folder_location<-dataFolder
+# 
+# setwd("//hpitsfsa/chis$/Project Files/Clients/DAC250735508- Hwong/Submitted Programs/20250926")
+# 
+# 
+# file_name_2023 <- file.path(folder_location,"teen_2023.sas7bdat")
+# file_name_2022 <- file.path(folder_location,"teen_2022.sas7bdat")
+# file_name_2021 <- file.path(folder_location,"teen_2021.sas7bdat")
+
+#### Begin user code
 # confirm file location
 here::i_am(file.path("R","CHIS_private.R"))  # adjust this to your actual file location
 
@@ -29,13 +48,24 @@ cat("Running in testthat:", is_testthat, "\n")
 # which data is being used
 # stata or sas
 stata_or_sas <- Sys.getenv("CHIS_DATA_TYPE")
+
 cat("Environment variable 'CHIS_DATA_TYPE':", stata_or_sas, "\n")
 # stata_or_sas <- "sas" # one of "stata" or "sas"
 
 
 if ( is.na(stata_or_sas) || identical(stata_or_sas, "") ) {
-  warning("Environment variable 'CHIS_DATA_TYPE' not set. Defaulting to using stata.")
-  stata_or_sas <- "stata"
+  if (!is.null(file_name_2021) && !is.null(file_name_2022) && !is.null(file_name_2023)) {
+   sas_present <-  grepl("\\.sas7bdat$", tolower(file_name_2021)) ||
+      grepl("\\.sas7bdat$", tolower(file_name_2022)) ||
+      grepl("\\.sas7bdat$", tolower(file_name_2023))
+   if(sas_present) stata_or_sas <- "sas"
+   warning("Environment variable 'CHIS_DATA_TYPE' not set but file names appear to be sas files. Using sas prep code")
+   stata_or_sas <- "stata"
+  } else {
+    warning("Environment variable 'CHIS_DATA_TYPE' not set. Defaulting to using stata.")
+    stata_or_sas <- "stata"
+  }
+  
 }
 stata_or_sas <- match.arg(stata_or_sas, choices = c("stata","sas"))
 cat("Using CHIS data type:", stata_or_sas, "\n")
@@ -55,37 +85,45 @@ source(here::here("R","Functions.R"))
 # load chis data 2021-2023
 
 if (stata_or_sas == "stata") {
-  d_chis_2023 <- haven::read_dta(here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')) %>%
+  if (is.null(file_name_2021)) file_name_2021 <- here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')
+  if (is.null(file_name_2022)) file_name_2022 <- here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')
+  if (is.null(file_name_2023)) file_name_2023 <- here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')
+  
+  d_chis_2023 <- haven::read_dta(file_name_2023) %>%
     rename_all(tolower) %>%
     mutate(year = 2023) %>% 
     haven::as_factor()
   
-  d_chis_2022 <- haven::read_dta(here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')) %>%
+  d_chis_2022 <- haven::read_dta(file_name_2022) %>%
     rename_all(tolower) %>%
     mutate(year = 2022) %>% 
     haven::as_factor()
   
-  d_chis_2021 <- haven::read_dta(here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')) %>%
+  d_chis_2021 <- haven::read_dta(file_name_2021) %>%
     rename_all(tolower) %>%
     mutate(year = 2021) %>% 
     haven::as_factor()
   
 } else if (stata_or_sas == "sas") {
   
+  if (is.null(file_name_2021)) file_name_2021 <- here::here('Data', 'dummyfiles_2021_teen_sas', 'dummy_teen.sas7bdat')
+  if (is.null(file_name_2022)) file_name_2022 <- here::here('Data', 'dummyfiles_2022_teen_sas', 'dummy_teen.sas7bdat')
+  if (is.null(file_name_2023)) file_name_2023 <- here::here('Data', 'dummyfiles_2023_teen_sas', 'dummy_teen.sas7bdat')
+  
   # load chis data 2021-2023
-  d_chis_2023 <- haven::read_sas(here::here('Data', 'dummyfiles_2023_teen_sas', 'dummy_teen.sas7bdat')) %>%
+  d_chis_2023 <- haven::read_sas(file_name_2023) %>%
     rename_all(tolower) %>%
     sas_to_label(d_chis_2023_stata_to_sas_list) %>%
     mutate(year = 2023) %>% 
     haven::as_factor()
   
-  d_chis_2022 <- haven::read_sas(here::here('Data', 'dummyfiles_2022_teen_sas', 'dummy_teen.sas7bdat')) %>%
+  d_chis_2022 <- haven::read_sas(file_name_2022) %>%
     rename_all(tolower) %>%
     sas_to_label(d_chis_2022_stata_to_sas_list) %>%
     mutate(year = 2022) %>% 
     haven::as_factor()
   
-  d_chis_2021 <- haven::read_sas(here::here('Data', 'dummyfiles_2021_teen_sas', 'dummy_teen.sas7bdat')) %>%
+  d_chis_2021 <- haven::read_sas(file_name_2021) %>%
     rename_all(tolower) %>%
     sas_to_label(d_chis_2021_stata_to_sas_list) %>%
     mutate(year = 2021) %>% 
