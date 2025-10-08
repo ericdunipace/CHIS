@@ -126,14 +126,24 @@ jobs:
           renv::status()
           quit(status = 1)
         })
+    
+    - name: Set CHIS_DATA_TYPE to "stata"
+      run: echo "CHIS_DATA_TYPE=stata" >> $GITHUB_ENV
+      
+    - name: Confirm data value
+      run: echo "CHIS_DATA_TYPE is $CHIS_DATA_TYPE"
 
     - name: Run testthat tests for stata
       run: |
-        Rscript -e 'Sys.setenv(CHIS_DATA_TYPE="stata")'
         Rscript -e 'install.packages("testthat", repos = "https://cloud.r-project.org")'
         Rscript tests/testthat.R
-        
+    
+    - name: Set CHIS_DATA_TYPE to "sas"
+      run: echo "CHIS_DATA_TYPE=sas" >> $GITHUB_ENV
+      
+    - name: Confirm new value
+      run: echo "Now CHIS_DATA_TYPE is $CHIS_DATA_TYPE"
+    
     - name: Run testthat tests for sas
       run: |
-        Rscript -e 'Sys.setenv(CHIS_DATA_TYPE="sas")'
         Rscript tests/testthat.R
