@@ -67,11 +67,6 @@
       "Version": "0.3.3.9.3",
       "Source": "Repository"
     },
-    "V8": {
-      "Package": "V8",
-      "Version": "4.3.0",
-      "Source": "Repository"
-    },
     "askpass": {
       "Package": "askpass",
       "Version": "1.1",
