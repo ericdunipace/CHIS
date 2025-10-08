@@ -128,9 +128,11 @@ jobs:
         })
     
     - name: Set CHIS_DATA_TYPE to "stata"
-      run: echo "CHIS_DATA_TYPE=stata" >> $GITHUB_ENV
-      
+      shell: bash
+      run: echo "CHIS_DATA_TYPE=stata" >> "$GITHUB_ENV"
+
     - name: Confirm data value
+      shell: bash
       run: echo "CHIS_DATA_TYPE is $CHIS_DATA_TYPE"
 
     - name: Run testthat tests for stata
@@ -139,9 +141,11 @@ jobs:
         Rscript tests/testthat.R
     
     - name: Set CHIS_DATA_TYPE to "sas"
+      shell: bash
       run: echo "CHIS_DATA_TYPE=sas" >> $GITHUB_ENV
       
     - name: Confirm new value
+      shell: bash
       run: echo "Now CHIS_DATA_TYPE is $CHIS_DATA_TYPE"
     
     - name: Run testthat tests for sas
