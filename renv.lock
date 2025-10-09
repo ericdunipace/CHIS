@@ -1086,11 +1086,6 @@
       "Version": "0.38",
       "Source": "Repository"
     },
-    "xml2": {
-      "Package": "xml2",
-      "Version": "1.3.3",
-      "Source": "Repository"
-    },
     "yaml": {
       "Package": "yaml",
       "Version": "2.3.7",
