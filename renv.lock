@@ -379,11 +379,6 @@
       "Version": "0.8-84",
       "Source": "Repository"
     },
-    "fs": {
-      "Package": "fs",
-      "Version": "1.6.1",
-      "Source": "Repository"
-    },
     "generics": {
       "Package": "generics",
       "Version": "0.1.3",
