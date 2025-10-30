@@ -81,74 +81,20 @@ if (!dir.exists(output_dir <- here::here("Outputs"))) {
 #### load Functions ####
 source(here::here("R","Functions.R"))
 
+#### verify file names are specified and set to local defaults if not ####
+fn_list <- verify_file_names_and_data_type(file_name_2023, file_name_2022, file_name_2021, stata_or_sas)
+file_name_2023 <- fn_list$file_name_2023
+file_name_2022 <- fn_list$file_name_2022
+file_name_2021 <- fn_list$file_name_2021
+haven_loader   <- fn_list$haven_loader
+
 #### load data ####
 # load chis data 2021-2023
 
-if (stata_or_sas == "stata") {
-  if (is.null(file_name_2021)) file_name_2021 <- here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')
-  if (is.null(file_name_2022)) file_name_2022 <- here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')
-  if (is.null(file_name_2023)) file_name_2023 <- here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')
+d_chis_2023 <- load_chain(file_name_2023, 2023, haven_loader, stata_or_sas)
+d_chis_2022 <- load_chain(file_name_2022, 2022, haven_loader, stata_or_sas)
+d_chis_2021 <- load_chain(file_name_2021, 2021, haven_loader, stata_or_sas)
   
-  d_chis_2023 <- haven::read_dta(file_name_2023) %>%
-    rename_all(tolower) %>%
-    mutate(year = 2023) %>% 
-    haven::as_factor()
-  
-  d_chis_2022 <- haven::read_dta(file_name_2022) %>%
-    rename_all(tolower) %>%
-    mutate(year = 2022) %>% 
-    haven::as_factor()
-  
-  d_chis_2021 <- haven::read_dta(file_name_2021) %>%
-    rename_all(tolower) %>%
-    mutate(year = 2021) %>% 
-    haven::as_factor()
-  
-} else if (stata_or_sas == "sas") {
-  
-  if (is.null(file_name_2021)) file_name_2021 <- here::here('Data', 'dummyfiles_2021_teen_sas', 'dummy_teen.sas7bdat')
-  if (is.null(file_name_2022)) file_name_2022 <- here::here('Data', 'dummyfiles_2022_teen_sas', 'dummy_teen.sas7bdat')
-  if (is.null(file_name_2023)) file_name_2023 <- here::here('Data', 'dummyfiles_2023_teen_sas', 'dummy_teen.sas7bdat')
-  
-  # load chis data 2021-2023
-  d_chis_2023 <- haven::read_sas(file_name_2023) %>%
-    rename_all(tolower) %>%
-    sas_to_label(d_chis_2023_stata_to_sas_list) %>%
-    mutate(year = 2023) %>% 
-    haven::as_factor()
-  
-  d_chis_2022 <- haven::read_sas(file_name_2022) %>%
-    rename_all(tolower) %>%
-    sas_to_label(d_chis_2022_stata_to_sas_list) %>%
-    mutate(year = 2022) %>% 
-    haven::as_factor()
-  
-  d_chis_2021 <- haven::read_sas(file_name_2021) %>%
-    rename_all(tolower) %>%
-    sas_to_label(d_chis_2021_stata_to_sas_list) %>%
-    mutate(year = 2021) %>% 
-    haven::as_factor()
-  
-} else {
-  
-  warning("Data file type 'stata' or 'sas' not specified. Defaulting to using stata.")
-  d_chis_2023 <- haven::read_dta(here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')) %>%
-    rename_all(tolower) %>%
-    mutate(year = 2023) %>% 
-    haven::as_factor()
-  
-  d_chis_2022 <- haven::read_dta(here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')) %>%
-    rename_all(tolower) %>%
-    mutate(year = 2022) %>% 
-    haven::as_factor()
-  
-  d_chis_2021 <- haven::read_dta(here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')) %>%
-    rename_all(tolower) %>%
-    mutate(year = 2021) %>% 
-    haven::as_factor()
-}
-
-
 chis_list <- list(
   d_chis_2021,
   d_chis_2022,

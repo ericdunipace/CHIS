@@ -1099,6 +1099,63 @@ fix_reposition_legend <- function(aplot,
   invisible(aplot)
 }
 
+load_chain <- function(..data, ..year, haven_loader, stata_or_sas) {
+  stata_or_sas <- match.arg(stata_or_sas, choices = c("stata","sas"))
+  ..data <- haven_loader(..data) %>%
+    rename_all(tolower)
+  
+  if (stata_or_sas == "sas") {
+   ..data <- ..data %>% 
+     sas_to_label(d_chis_2023_stata_to_sas_list) 
+  }
+  ..data %>% 
+    select(any_of(varnames_teeny)) %>% 
+    mutate(year = ..year) %>% 
+    haven::as_factor()
+}
+
+verify_file_names_and_data_type <- function(file_name_2023 = NULL, 
+                                            file_name_2022 = NULL, 
+                                            file_name_2021 = NULL,
+                                            stata_or_sas) {
+  stata_or_sas <- match.arg(stata_or_sas, choices = c("stata","sas"))
+  
+  if (stata_or_sas == "stata") {
+    if (is.null(file_name_2021)) file_name_2021 <- here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')
+    if (is.null(file_name_2022)) file_name_2022 <- here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')
+    if (is.null(file_name_2023)) file_name_2023 <- here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')
+    
+    haven_loader <- haven::read_dta
+    
+  } else if (stata_or_sas == "sas") {
+    
+    if (is.null(file_name_2021)) file_name_2021 <- here::here('Data', 'dummyfiles_2021_teen_sas', 'dummy_teen.sas7bdat')
+    if (is.null(file_name_2022)) file_name_2022 <- here::here('Data', 'dummyfiles_2022_teen_sas', 'dummy_teen.sas7bdat')
+    if (is.null(file_name_2023)) file_name_2023 <- here::here('Data', 'dummyfiles_2023_teen_sas', 'dummy_teen.sas7bdat')
+    
+    haven_loader <- haven::read_sas
+    
+  } else {
+    warning("Data file type 'stata' or 'sas' not specified. Defaulting to using stata.")
+    
+    if (is.null(file_name_2021)) file_name_2021 <- here::here('Data', 'dummyfile_2023_teen_stata', 'TEEN_with_format.dta')
+    if (is.null(file_name_2022)) file_name_2022 <- here::here('Data', 'teen 2022 dummy STATA', 'TEEN_with_format.dta')
+    if (is.null(file_name_2023)) file_name_2023 <- here::here('Data', 'dummyfile_2021_teen_stata', 'TEEN_with_format.dta')
+    
+    haven_loader <- haven::read_dta
+  }
+  
+  return(
+    list(
+      file_name_2021 = file_name_2021,
+      file_name_2022 = file_name_2022,
+      file_name_2023 = file_name_2023,
+      haven_loader   = haven_loader
+    )
+  )
+  
+}
+
 sas_to_label <- function(data, chis_label_list) {
   data_out <- data %>%
     mutate(
@@ -1110,8 +1167,43 @@ sas_to_label <- function(data, chis_label_list) {
   return(data_out)
 }
 
-
 ###### Below is the lists used for SAS factor variable labeling #######
+varnames_teeny <-
+c("aheduc", "povgwd", "povgwd2", "povll", "povll_aca", "povll2", 
+"srage", "srsex", "ta1ayr", "sch_typ", "ta4", "ta4c", "tadate_mm", 
+"ta20", "ta21v2", "ovrwt2v2", "rbmiv2", "bmi", "tb1", "tb4", 
+"tb5", "tb17", "tb18", "tb19", "tb20", "tb24", "tb27", "asts", 
+"tb28", "tb29", "astcur", "tf4a", "tb31", "tb6", "tb34", "tb32", 
+"tb33", "smkcur", "tc38", "te19", "te20", "te22", "te24", "te24a", 
+"te68_13", "te70", "tf11", "ti11", "tg11", "tg12", "tg13", "tg14", 
+"tg15", "tg16", "dstrs30", "dstrsyr", "dstrs12", "distress", 
+"tf30", "tf31", "tf32", "tf33", "tf34", "tf35", "tf36", "tf45", 
+"ti13", "tf38", "tf39", "tf40", "tf41", "tf42", "tf43", "tf44", 
+"covrdca", "cc_subs", "elgmagi4", "elgmagi5", "elgmagi64", "forgo", 
+"ia18", "ins", "insmd", "instype", "rsn_uni2", "rsn_unin", "tf2", 
+"tf3", "tf9", "th57", "bestzip", "catribe", "chinese", "citizen1", 
+"citizen3", "cntrys", "cntrys2", "fips_cnt", "langhome", "ombsrreo", 
+"racecen", "region44", "region7", "srcnty", "tract10", "ur_clrt2", 
+"ur_bg4", "ur_clrt4", "ur_tract4", "yrus", "yrus6p", "tk1", "tk2", 
+"tk3", "tk4", "tk5", "tl25", "tl27", "tl28", "tl50", "tl10", 
+"tl52", "tl53", "tl54", "tc25", "td34", "td45", "td36", "sochess3", 
+"te64", "tq1", "tq2", "tq3", "tq4", "tq5", "tq6", "tq7", "tq8", 
+"tq9", "tq10", "tq11", "tq12", "tq13", "tq14", "tq15", "tq16", 
+"tq17v2", "tq20", "tq21", "ace_t", "pce", "tq17", "tq18", "tq19", 
+"rakedw0", "rakedw1", "rakedw2", "rakedw3", "rakedw4", "rakedw5", 
+"rakedw6", "rakedw7", "rakedw8", "rakedw9", "rakedw10", "rakedw11", 
+"rakedw12", "rakedw13", "rakedw14", "rakedw15", "rakedw16", "rakedw17", 
+"rakedw18", "rakedw19", "rakedw20", "rakedw21", "rakedw22", "rakedw23", 
+"rakedw24", "rakedw25", "rakedw26", "rakedw27", "rakedw28", "rakedw29", 
+"rakedw30", "rakedw31", "rakedw32", "rakedw33", "rakedw34", "rakedw35", 
+"rakedw36", "rakedw37", "rakedw38", "rakedw39", "rakedw40", "rakedw41", 
+"rakedw42", "rakedw43", "rakedw44", "rakedw45", "rakedw46", "rakedw47", 
+"rakedw48", "rakedw49", "rakedw50", "rakedw51", "rakedw52", "rakedw53", 
+"rakedw54", "rakedw55", "rakedw56", "rakedw57", "rakedw58", "rakedw59", 
+"rakedw60", "rakedw61", "rakedw62", "rakedw63", "rakedw64", "rakedw65", 
+"rakedw66", "rakedw67", "rakedw68", "rakedw69", "rakedw70", "rakedw71", 
+"rakedw72", "rakedw73", "rakedw74", "rakedw75", "rakedw76", "rakedw77", 
+"rakedw78", "rakedw79", "rakedw80")
 d_chis_2021_stata_to_sas_list <-
 list(ia10a = c(`NOT ASCERTAINED` = -9, `DON'T KNOW` = -8, REFUSED = -7, 
 `ADULT/HOUSEHOLD INFO NOT COLLECTED` = -5, `PROXY SKIPPED` = -2, 
