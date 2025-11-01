@@ -1,5 +1,23 @@
 ### Disparities research in barriers to mental health #############################################
 
+##### README ####
+# The following code loads the required packages, data, and runs analyses. The assumed file structure of the code is :
+#   - Root Folder (working directory)
+#     - Data
+#       - auxiliary_data.rds
+#     - R
+#       - CHIS_private.R (this file)
+#       - Functions.R
+#     - Outputs
+#       - (output files will be saved here)
+# 
+# Important to-dos for the DAC statistician:
+#   1. Please set your desired file path for the data files in the section indicated below
+#   2. Ensure that the required packages are installed in your R environment
+#   3. Make sure that the file "Functions.R" is in the "R" folder in your working directory
+#   4. Make sure that the auxiliary data file "auxiliary_data.rds" is in the "Data" folder in your working directory
+  
+
 ### Import and read stuff in ######################################################################
 # Load required libraries (ensure they are installed)
 library(methods)
@@ -19,9 +37,10 @@ library(forcats)     # Factor manipulation
 library(dplyr)       # data manipulation
 library(grid)        # for repositioning legends
 
+# set to NULL 
 file_name_2021 <- file_name_2022 <- file_name_2023 <- NULL # used to pull in file down below
 
-#### Section of code to add your desired file path for DAC statistician ####
+#### Section of code to add your desired file path ####
 # uncomment as desired
 # rootFolder <- file.path("P:","Project Files","Clients","DAC250735508- Hwong")
 # setwd(rootFolder)
@@ -37,38 +56,30 @@ file_name_2021 <- file_name_2022 <- file_name_2023 <- NULL # used to pull in fil
 # file_name_2022 <- file.path(folder_location,"teen_2022.sas7bdat")
 # file_name_2021 <- file.path(folder_location,"teen_2021.sas7bdat")
 
-#### Begin user code
-# confirm file location
-here::i_am(file.path("R","CHIS_private.R"))  # adjust this to your actual file location
+#### Begin user code ####
+######################################################################
+######################################################################
 
+
+# confirm file location
+here::i_am(file.path("R","CHIS_private.R"))  
+
+#### load Functions ####
+source(here::here("R","Functions.R"))
+
+#### Confirm environmental variables and confirm data types
 # skip expensive calls on testthat
 is_testthat <- isTRUE(Sys.getenv("TESTTHAT") == "true")
 cat("Running in testthat:", is_testthat, "\n")
 
 # which data is being used
-# stata or sas
 stata_or_sas <- Sys.getenv("CHIS_DATA_TYPE")
-
-cat("Environment variable 'CHIS_DATA_TYPE':", stata_or_sas, "\n")
 # stata_or_sas <- "sas" # one of "stata" or "sas"
 
-
-if ( is.na(stata_or_sas) || identical(stata_or_sas, "") ) {
-  if (!is.null(file_name_2021) && !is.null(file_name_2022) && !is.null(file_name_2023)) {
-   sas_present <-  grepl("\\.sas7bdat$", tolower(file_name_2021)) ||
-      grepl("\\.sas7bdat$", tolower(file_name_2022)) ||
-      grepl("\\.sas7bdat$", tolower(file_name_2023))
-   if(sas_present) stata_or_sas <- "sas"
-   warning("Environment variable 'CHIS_DATA_TYPE' not set but file names appear to be sas files. Using sas prep code")
-   stata_or_sas <- "stata"
-  } else {
-    warning("Environment variable 'CHIS_DATA_TYPE' not set. Defaulting to using stata.")
-    stata_or_sas <- "stata"
-  }
-  
-}
-stata_or_sas <- match.arg(stata_or_sas, choices = c("stata","sas"))
+# attempt to detect file type if stata_or_sas is not set
+stata_or_sas <- set_sas_or_stata(stata_or_sas, file_name_2023, file_name_2022, file_name_2021)
 cat("Using CHIS data type:", stata_or_sas, "\n")
+
 
 #### Setup output directory ####
 if (!dir.exists(output_dir <- here::here("Outputs"))) {
@@ -77,9 +88,6 @@ if (!dir.exists(output_dir <- here::here("Outputs"))) {
 } else {
   cat("Output directory already exists:", output_dir, "\n")
 }
-
-#### load Functions ####
-source(here::here("R","Functions.R"))
 
 #### verify file names are specified and set to local defaults if not ####
 fn_list <- verify_file_names_and_data_type(file_name_2023, file_name_2022, file_name_2021, stata_or_sas)
