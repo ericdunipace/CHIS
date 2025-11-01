@@ -1106,7 +1106,7 @@ load_chain <- function(..data, ..year, haven_loader, stata_or_sas) {
   
   if (stata_or_sas == "sas") {
    ..data <- ..data %>% 
-     sas_to_label(d_chis_2023_stata_to_sas_list) 
+     sas_to_label(sas_to_factor_list[[as.character(..year)]]) 
   }
   ..data %>% 
     select(any_of(varnames_teeny)) %>% 
@@ -1156,10 +1156,50 @@ verify_file_names_and_data_type <- function(file_name_2023 = NULL,
   
 }
 
+sas_in_filenames <- function(...) {
+  dots <- list(...)
+  sas_found <- lapply(dots, function(x) {
+    grepl("\\.sas", tolower(x))
+  }) %>% unlist()
+  if (length(sas_found) == 0) return (FALSE) # no files provided
+  
+  # check if filenames are specified
+  sas_present <-   all(sas_found)
+  if(any(!sas_found) && !all(!sas_found)) warning("Some file names do not appear to be sas files based on file extensions")
+  
+  return(sas_present)
+}
+
+set_sas_or_stata <- function(stata_or_sas = NA, 
+                             file_name_2021, file_name_2022, file_name_2023) {
+  # is sas extension present in all file names?
+  sas_present <- sas_in_filenames(file_name_2021, file_name_2022, file_name_2023)
+  
+  # check if stata_or_sas is set via environment variable
+  if ( is.na(stata_or_sas) || identical(stata_or_sas, "") ) {
+    if (!is.null(file_name_2021) && !is.null(file_name_2022) && !is.null(file_name_2023)) {
+      if(sas_present) stata_or_sas <- "sas"
+      warning("Environment variable 'CHIS_DATA_TYPE' not set but file names appear to be sas files. Using sas prep code")
+      stata_or_sas <- "stata"
+    } else {
+      warning("Environment variable 'CHIS_DATA_TYPE' not set. Defaulting to using stata.")
+      stata_or_sas <- "stata"
+    }
+    
+  } else{
+    if(isTRUE(sas_present) && stata_or_sas == "stata") {
+      warning("Environment variable 'CHIS_DATA_TYPE' set to 'stata' but file names appear to be sas files. Please make sure this is correct as there will likely be an error downstream")
+    }
+  }
+  
+  stata_or_sas <- match.arg(stata_or_sas, choices = c("stata","sas"))
+  return(stata_or_sas)
+}
+
 sas_to_label <- function(data, chis_label_list) {
   data_out <- data %>%
     mutate(
-      across(all_of(names(chis_label_list)), 
+      across(any_of(names(chis_label_list)), 
              ~ factor(as.character(.), 
                       labels = names(chis_label_list[[cur_column()]]), 
                       levels = chis_label_list[[cur_column()]]))
@@ -1204,9 +1244,9 @@ c("aheduc", "povgwd", "povgwd2", "povll", "povll_aca", "povll2",
 "rakedw66", "rakedw67", "rakedw68", "rakedw69", "rakedw70", "rakedw71", 
 "rakedw72", "rakedw73", "rakedw74", "rakedw75", "rakedw76", "rakedw77", 
 "rakedw78", "rakedw79", "rakedw80")
-d_chis_2021_stata_to_sas_list <-
-list(ia10a = c(`NOT ASCERTAINED` = -9, `DON'T KNOW` = -8, REFUSED = -7, 
-`ADULT/HOUSEHOLD INFO NOT COLLECTED` = -5, `PROXY SKIPPED` = -2, 
+sas_to_factor_list <-
+list(`2021` = list(ia10a = c(`NOT ASCERTAINED` = -9, `DON'T KNOW` = -8, 
+REFUSED = -7, `ADULT/HOUSEHOLD INFO NOT COLLECTED` = -5, `PROXY SKIPPED` = -2, 
 INAPPLICABLE = -1, YES = 1, NO = 2), ai94 = c(`NOT ASCERTAINED` = -9, 
 DK = -8, REFUSED = -7, `ADULT/HOUSEHOLD INFO NOT COLLECTED` = -5, 
 `PROXY SKIPPED` = -2, INAPPLICABLE = -1, EMPLOYER = 1, UNION = 2, 
@@ -2960,10 +3000,8 @@ OTHER = 16, OTHER = 91, `COVERED BY HEALTH INSURANCE` = 92),
     IMPERIAL = 75), region7 = c(`NORTH./SIERRA COUNTIES` = 10, 
     `GREATER BAY AREA` = 20, `SACRAMENTO AREA` = 30, `SAN JOAQUIN VALLEY` = 40, 
     `CENTRAL COAST` = 50, `LOS ANGELES` = 60, `OTHER SOUTHERN CAL.` = 70
-    ))
-d_chis_2022_stata_to_sas_list <-
-list(ia10a = c(`NOT ASCERTAINED` = -9, `DON'T KNOW` = -8, REFUSED = -7, 
-`ADULT/HOUSEHOLD INFO NOT COLLECTED` = -5, `PROXY SKIPPED` = -2, 
+    )), `2022` = list(ia10a = c(`NOT ASCERTAINED` = -9, `DON'T KNOW` = -8, 
+REFUSED = -7, `ADULT/HOUSEHOLD INFO NOT COLLECTED` = -5, `PROXY SKIPPED` = -2, 
 INAPPLICABLE = -1, YES = 1, NO = 2), ai94 = c(`NOT ASCERTAINED` = -9, 
 DK = -8, REFUSED = -7, `ADULT/HOUSEHOLD INFO NOT COLLECTED` = -5, 
 `PROXY SKIPPED` = -2, INAPPLICABLE = -1, EMPLOYER = 1, UNION = 2, 
@@ -4773,10 +4811,8 @@ OTHER = 16, OTHER = 91, `COVERED BY HEALTH INSURANCE` = 92),
     IMPERIAL = 75), region7 = c(`NORTH./SIERRA COUNTIES` = 10, 
     `GREATER BAY AREA` = 20, `SACRAMENTO AREA` = 30, `SAN JOAQUIN VALLEY` = 40, 
     `CENTRAL COAST` = 50, `LOS ANGELES` = 60, `OTHER SOUTHERN CAL.` = 70
-    ))
-d_chis_2023_stata_to_sas_list <-
-list(ai94 = c(`NOT ASCERTAINED` = -9, DK = -8, REFUSED = -7, 
-`ADULT/HOUSEHOLD INFO NOT COLLECTED` = -5, `PROXY SKIPPED` = -2, 
+    )), `2023` = list(ai94 = c(`NOT ASCERTAINED` = -9, DK = -8, 
+REFUSED = -7, `ADULT/HOUSEHOLD INFO NOT COLLECTED` = -5, `PROXY SKIPPED` = -2, 
 INAPPLICABLE = -1, EMPLOYER = 1, UNION = 2, `SHOP / COVERED CALIFORNIA` = 3, 
 OTHER = 91), ai95 = c(`NOT ASCERTAINED` = -9, DK = -8, REFUSED = -7, 
 `ADULT/HOUSEHOLD INFO NOT COLLECTED` = -5, `PROXY SKIPPED` = -2, 
@@ -7031,5 +7067,5 @@ TRANSGENDER = 3, NONBINARY = 5, `I USE A DIFFERENT TERM` = 7,
     SHASTA = 89, SIERRA = 91, SISKIYOU = 93, SOLANO = 95, SONOMA = 97, 
     STANISLAUS = 99, SUTTER = 101, TEHAMA = 103, TRINITY = 105, 
     TULARE = 107, TUOLUMNE = 109, VENTURA = 111, YOLO = 113, 
-    YUBA = 115))
+    YUBA = 115)))
 

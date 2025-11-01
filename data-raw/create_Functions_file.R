@@ -10,8 +10,13 @@ file.copy(from = here::here("R","localCode","BaseFileFunctions.R"),
           overwrite = TRUE
 )
 
+sas_to_factor_list <- list(
+  "2021" = d_chis_2021_stata_to_sas_list,
+  "2022" = d_chis_2022_stata_to_sas_list,
+  "2023" = d_chis_2023_stata_to_sas_list)
+
 dump(
-  list = c("varnames_teeny","d_chis_2021_stata_to_sas_list", "d_chis_2022_stata_to_sas_list", "d_chis_2023_stata_to_sas_list"),
+  list = c("varnames_teeny","sas_to_factor_list"),
   file = to_file,
   append = TRUE
 )
