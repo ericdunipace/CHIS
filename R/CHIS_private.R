@@ -16,6 +16,14 @@
 #   2. Ensure that the required packages are installed in your R environment
 #   3. Make sure that the file "Functions.R" is in the "R" folder in your working directory
 #   4. Make sure that the auxiliary data file "auxiliary_data.rds" is in the "Data" folder in your working directory
+#   5. Make sure you set `stata_or_sas` to either "stata" or "sas" depending on the data files you have
+#      - If *not* set, the code will attempt to detect the file type based on the provided file names (using functions verify_file_names_and_data_types)
+#   6. Run the code and check the "Outputs" folder for the results
+#   7. I have tried to mark areas where you need to change values with a `#***` comment, you can search these below
+
+# of note, there are some helper functions to check file name and data type
+######################################################################
+
   
 
 ### Import and read stuff in ######################################################################
@@ -52,9 +60,9 @@ file_name_2021 <- file_name_2022 <- file_name_2023 <- NULL # used to pull in fil
 # setwd("//hpitsfsa/chis$/Project Files/Clients/DAC250735508- Hwong/Submitted Programs/20250926")
 # 
 # 
-# file_name_2023 <- file.path(folder_location,"teen_2023.sas7bdat")
-# file_name_2022 <- file.path(folder_location,"teen_2022.sas7bdat")
-# file_name_2021 <- file.path(folder_location,"teen_2021.sas7bdat")
+# file_name_2023 <- file.path(folder_location,"teen_2023.sas7bdat") #***
+# file_name_2022 <- file.path(folder_location,"teen_2022.sas7bdat") #***
+# file_name_2021 <- file.path(folder_location,"teen_2021.sas7bdat") #***
 
 #### Begin user code ####
 ######################################################################
@@ -73,8 +81,8 @@ is_testthat <- isTRUE(Sys.getenv("TESTTHAT") == "true")
 cat("Running in testthat:", is_testthat, "\n")
 
 # which data is being used
-stata_or_sas <- Sys.getenv("CHIS_DATA_TYPE")
-# stata_or_sas <- "sas" # one of "stata" or "sas"
+stata_or_sas <- Sys.getenv("CHIS_DATA_TYPE") #***
+# stata_or_sas <- "sas" # one of "stata" or "sas" #***
 
 # attempt to detect file type if stata_or_sas is not set
 stata_or_sas <- set_sas_or_stata(stata_or_sas, file_name_2023, file_name_2022, file_name_2021)
@@ -91,36 +99,47 @@ if (!dir.exists(output_dir <- here::here("Outputs"))) {
 
 #### verify file names are specified and set to local defaults if not ####
 fn_list <- verify_file_names_and_data_type(file_name_2023, file_name_2022, file_name_2021, stata_or_sas)
+
+# If file names are NULL, returns defaults
+# If file names are not NULL, returns the provided names
 file_name_2023 <- fn_list$file_name_2023
 file_name_2022 <- fn_list$file_name_2022
 file_name_2021 <- fn_list$file_name_2021
-haven_loader   <- fn_list$haven_loader
+
+# this is either haven::read_dta or haven::read_sas depending on values of file names
+# and or stata_or_sas
+haven_loader   <- fn_list$haven_loader 
+
 
 #### load data ####
 # load chis data 2021-2023
-
+# this will use the appropriate haven loader based on stata_or_sas
+# sas files need additional cleaning at least acccording to what is in the dummy 
+# data
 d_chis_2023 <- load_chain(file_name_2023, 2023, haven_loader, stata_or_sas)
 d_chis_2022 <- load_chain(file_name_2022, 2022, haven_loader, stata_or_sas)
 d_chis_2021 <- load_chain(file_name_2021, 2021, haven_loader, stata_or_sas)
   
+# create list of chis files
 chis_list <- list(
   d_chis_2021,
   d_chis_2022,
   d_chis_2023
 )
 
-# supporting data files
+# load supporting data files
 aux_data <- readRDS(here::here("Data","auxiliary_data.rds"))
 
 #### Clean and combine CHIS data ####
+# run cleanning and pooling functions
 chis <- chis_clean(chis_list) %>% 
-  mutate(county = fips_cnt) %>% 
+  mutate(county = fips_cnt) %>% # rename count vars
   left_join(y = aux_data$prism$census %>% select(-year),
-            by = c("tract10", "survey_years","survey_months")) %>% 
+            by = c("tract10", "survey_years","survey_months")) %>% # join prism census data
   left_join(y = aux_data$prism$county %>% select(-year),
-            by = c("county", "survey_years","survey_months")) 
+            by = c("county", "survey_years","survey_months")) # join prism county data
 
-
+# copy over variable labels from 2023 data where available
 for(j in colnames(d_chis_2023)) {
   attr(chis[[j]], "label") <- attr(d_chis_2023[[j]], "label")
 }
