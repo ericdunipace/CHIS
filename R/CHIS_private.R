@@ -469,21 +469,9 @@ utils::write.csv(glm.summ$coefficients,
 utils::write.csv(glm.vcov,
           file = here::here("Outputs","glm_vcov.csv"))
 
-# mixed effects model
-ctrl <- lme4::glmerControl(
-  optimizer = "bobyqa",
-  optCtrl   = list( maxfun=1E5L ) 
-  )
-
-if ( isTRUE(is_testthat) ) {
-  message("Running on GitHub Actions. Limiting max function evaluations for glmer")
-  ctrl$optCtrl$maxfun <- 5L     # limit total function evaluations
-  glmer.formula <- "I(tf45 == 'Yes') ~ 1 + (1 | county)" # simplify formula for speed
-}
 mixef.model <- glmer.svyrep.design(glmer.formula,
                             , family   = "binomial"
                             , design   = chis_design
-                            , control  = ctrl
                             , get.coef = TRUE
                             , verbose  = TRUE
 )
