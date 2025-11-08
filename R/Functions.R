@@ -151,24 +151,66 @@ mean_svy_rep <- function(data, full_data, variable, by, ...) {
 
 lmer.svyrep.design <- function(formula, design = NULL, data = NULL,
                                get.coef = FALSE,
+                               fast_reps = TRUE,              # cheaper settings for replicates
+                               control_base = lme4::lmerControl(
+                                 optimizer = "nloptwrap",
+                                 calc.derivs = FALSE,
+                                 check.conv.singular = "ignore",
+                                 check.conv.grad = "ignore"
+                               ),
+                               control_rep  = lme4::lmerControl(
+                                 optimizer = "nloptwrap",
+                                 calc.derivs = FALSE,
+                                 check.conv.singular = "ignore",
+                                 check.conv.grad = "ignore",
+                                 optCtrl = list(maxfun = 1e4)  # trim tail work
+                               ),
                                ...) {
   
-  data <- design$variables
-  w0   <- design$pweights
-  weights <- design$repweights
+  # ---- prep ----
+  dat   <- design$variables
+  w0    <- as.numeric(design$pweights)
+  Wrep  <- as.data.frame(design$repweights)  # columns = replicates
+  n     <- nrow(dat)
   
-  rscales <- design$rscales
-  scale  <- design$scale
+  rscales <- as.numeric(design$rscales)
+  scale   <- as.numeric(design$scale)
   
-  data$.weights <- w0/sum(w0) * nrow(data)
-  fit <- lmer(formula = formula, data = data, weights = .weights,
-              ...)
-  fit@call$data <- substitute(design$variables)
+  # normalize once (columns sum to n)
+  Wrep <- sweep(Wrep, 2, colSums(Wrep), "/") 
+  dat$.weights <- w0 / sum(w0) 
+  
+  # ---- baseline fit ----
+  if (isTRUE(verbose)) message("Running baseline model…")
+  fit <- lme4::lmer(formula = formula,
+                    data    = dat,
+                    weights = .weights,
+                    REML    = TRUE,
+                    control = control_base,
+                    ...)
+  fit@call$data    <- substitute(design$variables)
   fit@call$weights <- substitute(design$pweights)
   
-  rep_fit <- lapply(weights, function(w) {
-    new_args <- list(object = fit, weights = w/sum(w) * nrow(data) )
-    do.call(update, new_args)
+  # warm starts
+  theta0 <- lme4::getME(fit, "theta")
+  beta0  <- lme4::getME(fit, "fixef")
+  
+  # ---- replicate fits (sequential, no update()) ----
+  if (isTRUE(verbose)) message("Running replicate weights (sequential)…")
+  rep_names <- names(Wrep)
+  
+  # We'll reuse the same data object and just overwrite a single column
+  dat$.wrep <- dat$.weights
+  
+  rep_fit <- lapply(rep_names, function(rw) {
+    dat$.wrep <- Wrep[[rw]]                   # swap weights in place
+    lme4::lmer(formula = formula,
+               data    = dat,
+               weights = .wrep,               # evaluate to the column we just wrote
+               REML    = TRUE,
+               start   = list(theta = theta0, fixef = beta0),  # warm start from baseline
+               control = if (isTRUE(fast_reps)) control_rep else control_base,
+               ...)
   })
   
   # Extract the coefficients and standard errors
@@ -220,28 +262,83 @@ lmer.svyrep.design <- function(formula, design = NULL, data = NULL,
 
 glmer.svyrep.design <- function(formula, design = NULL, data = NULL,
                                 get.coef = FALSE, verbose = FALSE,
+                                fast_reps = TRUE,
+                                control_base = lme4::glmerControl(
+                                  optimizer = "nloptwrap",
+                                  calc.derivs = FALSE,
+                                  check.conv.singular = "ignore",
+                                  check.conv.grad = "ignore"
+                                ),
+                                control_rep  = lme4::glmerControl(
+                                  optimizer = "nloptwrap",
+                                  calc.derivs = FALSE,
+                                  check.conv.singular = "ignore",
+                                  check.conv.grad = "ignore",
+                                  optCtrl = list(maxfun = 1e4)
+                                ),
                                 ...) {
   
-  data <- design$variables
-  w0   <- design$pweights
-  weights <- design$repweights
-  n    <- nrow(data)
+  # capture user ... once so we can reuse/merge safely
+  dot_args <- list(...)
   
-  rscales <- design$rscales
-  scale  <- design$scale
+  # ---- prep ----
+  dat <- design$variables
+  w0  <- as.numeric(design$pweights)
+  Wrep <- as.data.frame(design$repweights)   # columns = replicates
   
-  data$.weights <- w0/sum(w0) * n
+  n <- nrow(dat)
+  rscales <- as.numeric(design$rscales)
+  scale   <- as.numeric(design$scale)
+  
+  # normalize once (column-wise) to sum to n
+  Wrep <- sweep(Wrep, 2, colSums(Wrep), "/") * n
+  dat$.weights <- w0 / sum(w0) * n
+  
+  ## ---------- baseline fit ----------
+  base_args <- c(
+    list(formula = formula,
+         data    = dat,
+         weights = dat$.weights,
+         control = control_base),
+    dot_args
+  )
+  
+  
+  # Ensure a proper family object (e.g., binomial()), not "binomial"
+  if (!"family" %in% names(base_args)) stop("Pass a GLM family, e.g. family = binomial()")
+  if (is.character(base_args$family)) base_args$family <- match.fun(base_args$family)()
   
   if (isTRUE(verbose)) message("Running model")
-  fit <- lme4::glmer(formula = formula, data = data, weights = .weights,
-               ...)
-  fit@call$data <- substitute(design$variables)
-  fit@call$weights <- substitute(design$pweights/sum(design$pweights) * nrow(design$variables))
+  fit <- do.call(lme4::glmer, base_args)
+  fit@call$data    <- substitute(design$variables)
+  fit@call$weights <- substitute(design$pweights)
+  
+  # extract warm starts
+  theta0 <- lme4::getME(fit, "theta")
+  beta0  <- lme4::getME(fit, "fixef")
   
   if (isTRUE(verbose)) message("Running replicate weights. Please be patient.")
-  rep_fit <- lapply(weights, function(w) {
-    new_args <- list(object = fit, weights = w/sum(w) * n )
-    do.call(update, new_args)
+  
+  ## ---------- replicate fits (sequential) ----------
+  rep_names <- names(Wrep)
+  
+  # extra args for replicates (optionally nAGQ=0 if user didn't set it)
+  rep_dot_args <- dot_args
+  if (isTRUE(fast_reps) && !"nAGQ" %in% names(rep_dot_args)) {
+    rep_dot_args$nAGQ <- 0L
+  }
+  
+  if (isTRUE(verbose)) message("Running replicate weights. Please be patient.")
+  rep_fit <- lapply(rep_names, function(rw) {
+    rep_args <- c(
+      list(formula = formula,
+           data    = dat,
+           weights = Wrep[[rw]],
+           start   = list(theta = theta0),
+           control = control_rep),
+      rep_dot_args
+    )
+    do.call(lme4::glmer, rep_args)
   })
   
   if (isTRUE(verbose)) message("Calculating variance-covariance matrices.")
