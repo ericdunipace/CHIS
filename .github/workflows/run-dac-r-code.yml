@@ -88,7 +88,7 @@ jobs:
           libpng-dev libtiff5-dev libjpeg-dev \
           libudunits2-dev libgdal-dev gdal-bin \
           libgeos-dev libproj-dev libgettextpo-dev gettext \
-          gfortran
+          gfortran libx11-dev libnode-dev
           
     - name: Install gfortran (Windows)
       if: runner.os == 'Windows'
