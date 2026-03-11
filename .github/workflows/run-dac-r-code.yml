@@ -36,7 +36,7 @@ jobs:
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
       run: |
-        brew install gcc udunits gettext jq udunits
+        brew install gcc udunits gettext jq
         found_gdal=""
         for v in 3.11 3.10 3.9; do
           if brew info "gdal@$v" >/dev/null 2>&1; then
@@ -117,12 +117,11 @@ jobs:
       run: |
         install.packages("remotes")
       
-    - name: Install units and fs on macOS
+    - name: Install units on macOS
       if: runner.os == 'macOS'
       shell: Rscript {0}
       run: |
         remotes::install_version("units", version = "0.8-1", type = 'source', configure.args = c(units = '--with-udunits2-lib=/opt/homebrew/lib --with-udunits2-include=/opt/homebrew/include'))
-        remotes::install_version("fs", version = "1.6.1", type = 'source')
 
     - name: Ignore terra during renv restore (macOS only)
       if: runner.os == 'macOS'
@@ -135,7 +134,11 @@ jobs:
         remotes::install_version("renv", version = "1.1.4")
         remove.packages("remotes")
         tryCatch({
-          renv::restore(prompt = FALSE)
+          if (Sys.info()[["sysname"]] == "Darwin") {
+            renv::restore(prompt = FALSE, exclude = "terra")
+          } else {
+            renv::restore(prompt = FALSE)
+          }
         }, error = function(e) {
           message("RENV RESTORE ERROR: ", conditionMessage(e))
           renv::status()
@@ -146,7 +149,7 @@ jobs:
       if: runner.os == 'macOS'
       shell: Rscript {0}
       run: |
-        install.packages("terra")
+        install.packages("terra", type = "source")
     
     - name: Set CHIS_DATA_TYPE to "stata"
       shell: bash
