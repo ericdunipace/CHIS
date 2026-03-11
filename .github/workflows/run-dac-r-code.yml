@@ -36,7 +36,12 @@ jobs:
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
       run: |
-        brew install gcc udunits gettext jq gdal udunits
+        brew install gcc udunits gettext jq gdal@3.10 udunits
+        brew unlink gdal || true
+        brew link --force --overwrite gdal@3.10
+        echo "/opt/homebrew/opt/gdal@3.10/bin" >> $GITHUB_PATH
+        echo "PKG_CONFIG_PATH=/opt/homebrew/opt/gdal@3.10/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        echo "GDAL_CONFIG=/opt/homebrew/opt/gdal@3.10/bin/gdal-config" >> $GITHUB_ENV
         if [ -d /opt/homebrew ]; then BREW_PREFIX=/opt/homebrew; else BREW_PREFIX=/usr/local; fi
         GCCVER=$(brew info gcc --json | jq -r '.[0].installed[0].version | split(".")[0]')
         sudo ln -sf $BREW_PREFIX/bin/gfortran /usr/local/bin/gfortran
@@ -61,12 +66,6 @@ jobs:
         echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
         echo "UDUNITS2_XML_PATH=/opt/homebrew/share/udunits/udunits2.xml" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=/opt/homebrew/lib" >> $GITHUB_ENV
-        # Repeat for Intel prefix (for universal workflows)
-        echo "UDUNITS2_INCLUDE=/usr/local/include" >> $GITHUB_ENV
-        echo "UDUNITS2_LIBS='-L/usr/local/lib -ludunits2'" >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> $GITHUB_ENV
-        echo "UDUNITS2_XML_PATH=/usr/local/share/udunits/udunits2.xml" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=/usr/local/lib" >> $GITHUB_ENV
         
     - name: Debug udunits presence
       if: runner.os == 'macOS'
