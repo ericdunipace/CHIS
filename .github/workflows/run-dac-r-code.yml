@@ -36,12 +36,23 @@ jobs:
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
       run: |
-        brew install gcc udunits gettext jq gdal@3.10 udunits
-        brew unlink gdal || true
-        brew link --force --overwrite gdal@3.10
-        echo "/opt/homebrew/opt/gdal@3.10/bin" >> $GITHUB_PATH
-        echo "PKG_CONFIG_PATH=/opt/homebrew/opt/gdal@3.10/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
-        echo "GDAL_CONFIG=/opt/homebrew/opt/gdal@3.10/bin/gdal-config" >> $GITHUB_ENV
+        brew install gcc udunits gettext jq udunits
+        found_gdal=""
+        for v in 3.11 3.10 3.9; do
+          if brew info "gdal@$v" >/dev/null 2>&1; then
+            brew install "gdal@$v"
+            brew unlink gdal || true
+            brew link --force --overwrite "gdal@$v"
+            echo "/opt/homebrew/opt/gdal@$v/bin" >> $GITHUB_PATH
+            echo "PKG_CONFIG_PATH=/opt/homebrew/opt/gdal@$v/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+            echo "GDAL_CONFIG=/opt/homebrew/opt/gdal@$v/bin/gdal-config" >> $GITHUB_ENV
+            found_gdal="yes"
+            break
+          fi
+        done
+        if [ -z "$found_gdal" ]; then
+          brew install gdal
+        fi
         if [ -d /opt/homebrew ]; then BREW_PREFIX=/opt/homebrew; else BREW_PREFIX=/usr/local; fi
         GCCVER=$(brew info gcc --json | jq -r '.[0].installed[0].version | split(".")[0]')
         sudo ln -sf $BREW_PREFIX/bin/gfortran /usr/local/bin/gfortran
@@ -112,6 +123,11 @@ jobs:
       run: |
         remotes::install_version("units", version = "0.8-1", type = 'source', configure.args = c(units = '--with-udunits2-lib=/opt/homebrew/lib --with-udunits2-include=/opt/homebrew/include'))
         remotes::install_version("fs", version = "1.6.1", type = 'source')
+
+    - name: Ignore terra during renv restore (macOS only)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: echo "RENV_CONFIG_IGNORED_PACKAGES=terra" >> "$GITHUB_ENV"
         
     - name: Install renv and restore environment
       shell: Rscript {0}
@@ -125,6 +141,12 @@ jobs:
           renv::status()
           quit(status = 1)
         })
+
+    - name: Install terra after restore (macOS only)
+      if: runner.os == 'macOS'
+      shell: Rscript {0}
+      run: |
+        install.packages("terra")
     
     - name: Set CHIS_DATA_TYPE to "stata"
       shell: bash
