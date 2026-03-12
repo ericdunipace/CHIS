@@ -136,8 +136,10 @@ jobs:
         tryCatch({
           if (Sys.info()[["sysname"]] == "Darwin") {
             lock <- renv::lockfile_read()
-            pkgs <- setdiff(names(lock$Packages), "terra")
-            renv::restore(prompt = FALSE, packages = pkgs)
+            lock$Packages$terra <- NULL
+            tmp_lock <- tempfile(fileext = ".lock")
+            renv::lockfile_write(lock, tmp_lock)
+            renv::restore(prompt = FALSE, lockfile = tmp_lock)
           } else {
             renv::restore(prompt = FALSE)
           }
@@ -164,6 +166,8 @@ jobs:
         if (file.exists(src)) {
           txt <- readLines(src, warn = FALSE)
           txt <- sub("OGRSpatialReference \\*poSRS = poLayer->GetSpatialRef\\(\\);",
+                     "const OGRSpatialReference *poSRS = poLayer->GetSpatialRef();", txt)
+          txt <- sub("const OGRSpatialReference \\*poSRS = poLayer->GetSpatialRef\\(\\);",
                      "const OGRSpatialReference *poSRS = poLayer->GetSpatialRef();", txt)
           writeLines(txt, src)
         }
