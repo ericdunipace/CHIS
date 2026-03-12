@@ -135,7 +135,9 @@ jobs:
         remove.packages("remotes")
         tryCatch({
           if (Sys.info()[["sysname"]] == "Darwin") {
-            renv::restore(prompt = FALSE, exclude = "terra")
+            lock <- renv::lockfile_read()
+            pkgs <- setdiff(names(lock$Packages), "terra")
+            renv::restore(prompt = FALSE, packages = pkgs)
           } else {
             renv::restore(prompt = FALSE)
           }
@@ -149,7 +151,23 @@ jobs:
       if: runner.os == 'macOS'
       shell: Rscript {0}
       run: |
-        install.packages("terra", type = "source")
+        lock <- renv::lockfile_read()
+        ver <- lock$Packages$terra$Version
+        pkg <- sprintf("terra_%s.tar.gz", ver)
+        url <- sprintf("https://cran.r-project.org/src/contrib/Archive/terra/%s", pkg)
+        dest <- file.path(tempdir(), pkg)
+        download.file(url, dest, quiet = TRUE)
+        pkgdir <- file.path(tempdir(), "terra-src")
+        if (dir.exists(pkgdir)) unlink(pkgdir, recursive = TRUE)
+        untar(dest, exdir = pkgdir)
+        src <- file.path(pkgdir, "terra", "src", "read_ogr.cpp")
+        if (file.exists(src)) {
+          txt <- readLines(src, warn = FALSE)
+          txt <- sub("OGRSpatialReference \\*poSRS = poLayer->GetSpatialRef\\(\\);",
+                     "const OGRSpatialReference *poSRS = poLayer->GetSpatialRef();", txt)
+          writeLines(txt, src)
+        }
+        install.packages(file.path(pkgdir, "terra"), type = "source", repos = NULL)
     
     - name: Set CHIS_DATA_TYPE to "stata"
       shell: bash
