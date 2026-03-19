@@ -212,14 +212,14 @@ baseline_demographics <- c(
 
 
 modifiable_protective <- c(
-  "scale(as.numeric(tl25))", # CARES DEEPLY ABOUT ISSUES IN COMMUNITY strong agree -> strong dis
-  "scale(as.numeric(tl27))", # BELIEVES CAN MAKE A DIFFERENCE IN THE COMMUNITY strong agree -> strong dis
+  "tl25_pos", # CARES DEEPLY ABOUT ISSUES IN COMMUNITY strong agree -> strong dis
+  "tl27_pos", # BELIEVES CAN MAKE A DIFFERENCE IN THE COMMUNITY strong agree -> strong dis
   "tl50", # EVER VOLUNTEERED TO SOLVE PROBLEM IN THE COMMUNITY Yes, No
-  "scale(as.numeric(tl53))", # CONFIDENCE TO CONTACT SOMEONE IN THE GOVT WHO REPRESENTS COMMUNITY Definitely Could -> Definitely Could Not
-  "scale(as.numeric(tq10))", # HOW OFTEN FELT ABLE TO TALK TO FAMILY ABOUT FEELINGS All Of The Time -> Never
-  "scale(as.numeric(tq11))", # HOW OFTEN FELT FAMILY STOOD BY YOU DURING DIFFICULT TIMES All Of The Time -> Never
-  "scale(as.numeric(tq14))", # HOW OFTEN FELT SUPPORTED BY FRIENDS  All Of The Time -> Never
-  "scale(as.numeric(tq16))" # HOW OFTEN ENJOYED PARTICIPATING IN COMMUNITY TRADITIONS  All Of The Time -> Never
+  "tl53_pos", # CONFIDENCE TO CONTACT SOMEONE IN THE GOVT WHO REPRESENTS COMMUNITY Definitely Could -> Definitely Could Not
+  "tq10_pos", # HOW OFTEN FELT ABLE TO TALK TO FAMILY ABOUT FEELINGS All Of The Time -> Never
+  "tq11_pos", # HOW OFTEN FELT FAMILY STOOD BY YOU DURING DIFFICULT TIMES All Of The Time -> Never
+  "tq14_pos", # HOW OFTEN FELT SUPPORTED BY FRIENDS  All Of The Time -> Never
+  "tq16_pos" # HOW OFTEN ENJOYED PARTICIPATING IN COMMUNITY TRADITIONS  All Of The Time -> Never
 )
 
 access_to_care <- c(
@@ -233,18 +233,18 @@ civic_engagement <- c(
   # "ta4c_p1",         # ATTENDED SCHOOL DURING LAST SCHOOL YR, only in 2023 data
   "scale(I(as.numeric(school_last_week ==  'Yes')) * tb4)", # Number OF DAYS OF SCHOOL MISSED FOR HEALTH PROBLEM PAST MO -1 -> 15 in raw data, -1 is
   "tl10", # PARTICIPATE IN CLUBS/ORGS OUTSIDE SCHOOL PAST YR, Yes, No
-  "scale(as.numeric(tq15))" # HOW OFTEN FELT SENSE OF BELONGING AT SCHOOL All Of The Time -> Never
+  "tq15_pos" # HOW OFTEN FELT SENSE OF BELONGING AT SCHOOL All Of The Time -> Never
 )
 
 climate_variables <- c(
-  "scale(tmax_tract10_prior_90_days_count32_delta)", # Tmax above 32 for the 90 days prior to survey date
-  "scale(tmax_tract10_prior_90_days_mean_delta)", # Mean Tmaxfor the 90 days prior to survey date
-  "scale(tmax_tract10_prior_yr_mean_delta)", # Mean Tmax for the year prior to survey date
-  "scale(tmax_tract10_prior_yr_count32_delta)", # Count of Tmax above 32 for the year prior to survey date
-  "scale(tmax_county_prior_90_days_count32_delta)", # Tmax above 32 for the 90 days prior to survey date
-  "scale(tmax_county_prior_90_days_mean_delta)", # Mean Tmaxfor the 90 days prior to survey date
-  "scale(tmax_county_prior_yr_mean_delta)", # Mean Tmax for the year prior to survey date
-  "scale(tmax_county_prior_yr_count32_delta)" # Count of Tmax above 32 for the year prior to survey date
+  "tmax_tract10_prior_90_days_count32_delta", # Tmax above 32 for the 90 days prior to survey date
+  "tmax_tract10_prior_90_days_mean_delta", # Mean Tmaxfor the 90 days prior to survey date
+  "tmax_tract10_prior_yr_mean_delta", # Mean Tmax for the year prior to survey date
+  "tmax_tract10_prior_yr_count32_delta", # Count of Tmax above 32 for the year prior to survey date
+  "tmax_county_prior_90_days_count32_delta", # Tmax above 32 for the 90 days prior to survey date
+  "tmax_county_prior_90_days_mean_delta", # Mean Tmaxfor the 90 days prior to survey date
+  "tmax_county_prior_yr_mean_delta", # Mean Tmax for the year prior to survey date
+  "tmax_county_prior_yr_count32_delta" # Count of Tmax above 32 for the year prior to survey date
 )
 
 # Aggregate all the variables
@@ -539,13 +539,13 @@ utils::write.csv(fe.vcov, file = here::here("Outputs", "fe_vcov.csv"))
 
 
 # mixef model
-mixef.model <- glmer.svyrep.design(
-  glmer.formula,
-  family = "binomial",
-  design = chis_design,
-  get.coef = TRUE,
-  verbose = TRUE
-)
+# mixef.model <- glmer.svyrep.design(
+#   glmer.formula,
+#   family = "binomial",
+#   design = chis_design,
+#   get.coef = TRUE,
+#   verbose = TRUE
+# )
 
 # # get summary of mixef
 # mixef.summ <- mixef.model %>% summary()

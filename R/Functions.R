@@ -1215,6 +1215,52 @@ chis_clean_puf <- function(data) {
         "Yes" = "Home Schooled"
       ),
       tl53 = forcats::fct_rev(tl53),
+      tl25_pos = case_when(
+        tl25 == "Somewhat Agree" ~ "Yes",
+        tl25 == "Strongly Agree" ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tl27_pos = case_when(
+        tl27 == "Somewhat Agree" ~ "Yes",
+        tl27 == "Strongly Agree" ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tl53_pos = case_when(
+        tl53 == "Definitely Could" ~ "Yes",
+        tl53 == "Probably Could" ~ "Yes",
+        tl53 == "Maybe Could"  ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tq10_pos = case_when(
+        tq10 == "All Of The Time"  ~ "Yes",
+        tq10 == "Most Of The Time" ~ "Yes",
+        tq10 == "Some Of The Time"  ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tq11_pos = case_when(
+        tq11 == "All Of The Time" ~ "Yes",
+        tq11 == "Most Of The Time" ~ "Yes",
+        tq11 == "Some Of The Time" ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tq14_pos = case_when(
+        tq14 == "All Of The Time" ~ "Yes",
+        tq14 == "Most Of The Time" ~ "Yes",
+        tq14 == "Some Of The Time" ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tq15_pos = case_when(
+        tq15 == "All Of The Time"  ~ "Yes",
+        tq15 == "Most Of The Time" ~ "Yes",
+        tq15 == "Some Of The Time" ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tq16_pos = case_when(
+        tq16 == "All Of The Time"  ~ "Yes",
+        tq16 == "Most Of The Time" ~ "Yes",
+        tq16 == "Some Of The Time" ~ "Yes",
+        TRUE ~ "No"
+      )
     ) %>%
     mutate(
       survey_dates = parse_my_to_date(tadate_mm),
@@ -1318,6 +1364,52 @@ chis_clean <- function(data) {
         "Yes" = "Home Schooled"
       ),
       tl53 = forcats::fct_rev(tl53),
+      tl25_pos = case_when(
+        tl25 == "Somewhat Agree" ~ "Yes",
+        tl25 == "Strongly Agree" ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tl27_pos = case_when(
+        tl27 == "Somewhat Agree" ~ "Yes",
+        tl27 == "Strongly Agree" ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tl53_pos = case_when(
+        tl53 == "Definitely Could" ~ "Yes",
+        tl53 == "Probably Could" ~ "Yes",
+        tl53 == "Maybe Could"  ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tq10_pos = case_when(
+        tq10 == "All Of The Time"  ~ "Yes",
+        tq10 == "Most Of The Time" ~ "Yes",
+        tq10 == "Some Of The Time"  ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tq11_pos = case_when(
+        tq11 == "All Of The Time" ~ "Yes",
+        tq11 == "Most Of The Time" ~ "Yes",
+        tq11 == "Some Of The Time" ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tq14_pos = case_when(
+        tq14 == "All Of The Time" ~ "Yes",
+        tq14 == "Most Of The Time" ~ "Yes",
+        tq14 == "Some Of The Time" ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tq15_pos = case_when(
+        tq15 == "All Of The Time"  ~ "Yes",
+        tq15 == "Most Of The Time" ~ "Yes",
+        tq15 == "Some Of The Time" ~ "Yes",
+        TRUE ~ "No"
+      ),
+      tq16_pos = case_when(
+        tq16 == "All Of The Time"  ~ "Yes",
+        tq16 == "Most Of The Time" ~ "Yes",
+        tq16 == "Some Of The Time" ~ "Yes",
+        TRUE ~ "No"
+      )
     ) %>%
     mutate(
       survey_dates = parse_my_to_date(tadate_mm),
