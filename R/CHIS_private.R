@@ -537,6 +537,8 @@ utils::write.csv(
 )
 utils::write.csv(fe.vcov, file = here::here("Outputs", "fe_vcov.csv"))
 
+test <- anova(glm.model, fe.model, test = "Chisq")
+test$p %>% print()
 
 # mixef model
 # mixef.model <- glmer.svyrep.design(
