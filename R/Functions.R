@@ -1228,13 +1228,13 @@ chis_clean_puf <- function(data) {
       tl53_pos = case_when(
         tl53 == "Definitely Could" ~ "Yes",
         tl53 == "Probably Could" ~ "Yes",
-        tl53 == "Maybe Could"  ~ "Yes",
+        tl53 == "Maybe Could" ~ "Yes",
         TRUE ~ "No"
       ),
       tq10_pos = case_when(
-        tq10 == "All Of The Time"  ~ "Yes",
+        tq10 == "All Of The Time" ~ "Yes",
         tq10 == "Most Of The Time" ~ "Yes",
-        tq10 == "Some Of The Time"  ~ "Yes",
+        tq10 == "Some Of The Time" ~ "Yes",
         TRUE ~ "No"
       ),
       tq11_pos = case_when(
@@ -1250,13 +1250,13 @@ chis_clean_puf <- function(data) {
         TRUE ~ "No"
       ),
       tq15_pos = case_when(
-        tq15 == "All Of The Time"  ~ "Yes",
+        tq15 == "All Of The Time" ~ "Yes",
         tq15 == "Most Of The Time" ~ "Yes",
         tq15 == "Some Of The Time" ~ "Yes",
         TRUE ~ "No"
       ),
       tq16_pos = case_when(
-        tq16 == "All Of The Time"  ~ "Yes",
+        tq16 == "All Of The Time" ~ "Yes",
         tq16 == "Most Of The Time" ~ "Yes",
         tq16 == "Some Of The Time" ~ "Yes",
         TRUE ~ "No"
@@ -1377,13 +1377,13 @@ chis_clean <- function(data) {
       tl53_pos = case_when(
         tl53 == "Definitely Could" ~ "Yes",
         tl53 == "Probably Could" ~ "Yes",
-        tl53 == "Maybe Could"  ~ "Yes",
+        tl53 == "Maybe Could" ~ "Yes",
         TRUE ~ "No"
       ),
       tq10_pos = case_when(
-        tq10 == "All Of The Time"  ~ "Yes",
+        tq10 == "All Of The Time" ~ "Yes",
         tq10 == "Most Of The Time" ~ "Yes",
-        tq10 == "Some Of The Time"  ~ "Yes",
+        tq10 == "Some Of The Time" ~ "Yes",
         TRUE ~ "No"
       ),
       tq11_pos = case_when(
@@ -1399,13 +1399,13 @@ chis_clean <- function(data) {
         TRUE ~ "No"
       ),
       tq15_pos = case_when(
-        tq15 == "All Of The Time"  ~ "Yes",
+        tq15 == "All Of The Time" ~ "Yes",
         tq15 == "Most Of The Time" ~ "Yes",
         tq15 == "Some Of The Time" ~ "Yes",
         TRUE ~ "No"
       ),
       tq16_pos = case_when(
-        tq16 == "All Of The Time"  ~ "Yes",
+        tq16 == "All Of The Time" ~ "Yes",
         tq16 == "Most Of The Time" ~ "Yes",
         tq16 == "Some Of The Time" ~ "Yes",
         TRUE ~ "No"
@@ -1802,6 +1802,227 @@ sas_to_label <- function(data, chis_label_list) {
       )
     )
   return(data_out)
+}
+
+recover_df <- function(q, p) {
+  pt_val <- p * 0.5
+  logp <- log(pt_val)
+
+  obj <- function(x) {
+    (logp - stats::pt(abs(q), x, lower.tail = FALSE, log.p = TRUE))^2
+  }
+  rs <- optimize(f = obj, interval = c(1, 1e6))
+  return(rs$minimum)
+}
+
+make_stat_display <- function(n, p, m, s) {
+  fmt  <- function(x) {
+    formatC(x, big.mark = ',', digits = 1, format = "f")
+  }
+  dplyr::case_when(
+    !is.na(m) & !is.na(s) ~ sprintf("%s (%.1f)", fmt(m), s),
+    !is.na(n) & !is.na(p) ~ sprintf("%s (%.1f%%)", fmt(n), p),
+    !is.na(n) ~ sprintf("%s", fmt(n)),
+    TRUE ~ NA_character_
+  )
+}
+
+mode_from_table1 <- function(data, var_name, collapse_fun = NULL) {
+  mode_df <- data |>
+    dplyr::filter(
+      variable == var_name,
+      !is.na(label),
+      label != "",
+      !is.na(N)
+    ) |>
+    dplyr::transmute(label = as.character(label), N = as.numeric(N))
+
+  if (!is.null(collapse_fun)) {
+    mode_df <- mode_df |>
+      dplyr::mutate(label = collapse_fun(label)) |>
+      dplyr::filter(!is.na(label), label != "")
+  }
+
+  if (nrow(mode_df) == 0) {
+    return(NA_character_)
+  }
+
+  mode_df |>
+    dplyr::group_by(label) |>
+    dplyr::summarise(N = sum(N, na.rm = TRUE), .groups = "drop") |>
+    dplyr::arrange(dplyr::desc(N), label) |>
+    dplyr::slice(1) |>
+    dplyr::pull(label)
+}
+
+collapse_ahedtc_binary <- function(x) {
+  dplyr::case_when(
+    x %in%
+      c(
+        "No Formal Education",
+        "Grade 1-8",
+        "Grade 9-11",
+        "Grade 12/H.S. Diploma",
+        "Grade 12/h.s. Diploma"
+      ) ~ "No college",
+    x %in%
+      c(
+        "Some College",
+        "Vocational School",
+        "AA or AS Degree",
+        "Aa Or As Degree",
+        "BA or BS Degree",
+        "Ba Or Bs Degree",
+        "Some Grad. School",
+        "MA or MS Degree",
+        "Ma Or Ms Degree",
+        "Ph.D. or Equivalent",
+        "Ph.d. Or Equivalent"
+      ) ~ "College or more",
+    TRUE ~ NA_character_
+  )
+}
+
+collapse_povll_binary <- function(x) {
+  dplyr::case_when(
+    grepl("^300%", x) ~ "300% FPL And Above",
+    grepl("^[0-9]+-[0-9]+%", x) ~ "Less than 300% FPL",
+    TRUE ~ NA_character_
+  )
+}
+
+collapse_lnghmt_binary <- function(x) {
+  dplyr::case_when(
+    grepl("^English", x) ~ "English",
+    TRUE ~ "Non-English"
+  )
+}
+
+extract_model_var <- function(term_name) {
+  dplyr::case_when(
+    term_name == "(Intercept)" ~ NA_character_,
+    grepl("^age_group", term_name) ~ "age_group",
+    grepl("^srsex", term_name) ~ "srsex",
+    grepl("^ombsrreo", term_name) ~ "ombsrreo",
+    grepl("^sch_typ", term_name) ~ "sch_typ",
+    grepl("^ahedtc_binary", term_name) ~ "ahedtc_binary",
+    grepl("^povll_binary", term_name) ~ "povll_binary",
+    grepl("^lnghmt_binary", term_name) ~ "lnghmt_binary",
+    grepl("^ur_clrt2", term_name) ~ "ur_clrt2",
+    grepl("^uninsured", term_name) ~ "uninsured",
+    grepl("^health_office", term_name) ~ "health_office",
+    grepl("^tf9", term_name) ~ "tf9",
+    grepl("^tl25_pos", term_name) ~ "tl25_pos",
+    grepl("^tl27_pos", term_name) ~ "tl27_pos",
+    grepl("^tl50", term_name) ~ "tl50",
+    grepl("^tl53_pos", term_name) ~ "tl53_pos",
+    grepl("^tq10_pos", term_name) ~ "tq10_pos",
+    grepl("^tq11_pos", term_name) ~ "tq11_pos",
+    grepl("^tq14_pos", term_name) ~ "tq14_pos",
+    grepl("^tq16_pos", term_name) ~ "tq16_pos",
+    grepl("^tl10", term_name) ~ "tl10",
+    grepl("^school_last_week", term_name) ~ "school_last_week",
+    grepl(
+      "^scale\\(I\\(as.numeric\\(school_last_week == \"Yes\"\\)\\) \\* tb4\\)$",
+      term_name
+    ) ~ "tb4",
+    grepl("^tq15_pos", term_name) ~ "tq15_pos",
+    TRUE ~ term_name
+  )
+}
+set_missing_baseline <- function(data, var_name, baseline_value) {
+  if (!(var_name %in% names(data))) {
+    return(data)
+  }
+  cur <- data[[var_name]]
+  if (all(is.na(cur))) {
+    if (is.factor(cur)) {
+      data[[var_name]] <- factor(baseline_value, levels = levels(cur))
+    } else {
+      data[[var_name]] <- baseline_value
+    }
+  }
+  data
+}
+
+term_to_design_value <- function(term_name, data_row) {
+  if (term_name == "(Intercept)") {
+    return(1)
+  }
+
+  if (term_name == "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)") {
+    return(
+      as.numeric(as.character(data_row$school_last_week) == "Yes") *
+        as.numeric(data_row$tb4)
+    )
+  }
+
+  if (term_name %in% names(data_row)) {
+    return(as.numeric(data_row[[term_name]]))
+  }
+
+  factor_map <- data.frame(
+    pattern = c(
+      "^age_group",
+      "^srsex",
+      "^ombsrreo",
+      "^sch_typ",
+      "^ahedtc_binary",
+      "^povll_binary",
+      "^lnghmt_binary",
+      "^ur_clrt2",
+      "^uninsured",
+      "^health_office",
+      "^tf9",
+      "^tl25_pos",
+      "^tl27_pos",
+      "^tl50",
+      "^tl53_pos",
+      "^tq10_pos",
+      "^tq11_pos",
+      "^tq14_pos",
+      "^tq16_pos",
+      "^school_last_week",
+      "^tl10",
+      "^tq15_pos"
+    ),
+    var = c(
+      "age_group",
+      "srsex",
+      "ombsrreo",
+      "sch_typ",
+      "ahedtc_binary",
+      "povll_binary",
+      "lnghmt_binary",
+      "ur_clrt2",
+      "uninsured",
+      "health_office",
+      "tf9",
+      "tl25_pos",
+      "tl27_pos",
+      "tl50",
+      "tl53_pos",
+      "tq10_pos",
+      "tq11_pos",
+      "tq14_pos",
+      "tq16_pos",
+      "school_last_week",
+      "tl10",
+      "tq15_pos"
+    ),
+    stringsAsFactors = FALSE
+  )
+
+  for (ii in seq_len(nrow(factor_map))) {
+    patt <- factor_map$pattern[ii]
+    var_name <- factor_map$var[ii]
+    if (grepl(patt, term_name) && var_name %in% names(data_row)) {
+      level_name <- sub(patt, "", term_name)
+      return(as.numeric(as.character(data_row[[var_name]]) == level_name))
+    }
+  }
+
+  NA_real_
 }
 
 ###### Below is the lists used for SAS factor variable labeling #######

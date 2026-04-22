@@ -231,7 +231,7 @@ access_to_care <- c(
 civic_engagement <- c(
   "school_last_week", # ATTENDED SCHOOL LAST WEEK Yes, No
   # "ta4c_p1",         # ATTENDED SCHOOL DURING LAST SCHOOL YR, only in 2023 data
-  "scale(I(as.numeric(school_last_week ==  'Yes')) * tb4)", # Number OF DAYS OF SCHOOL MISSED FOR HEALTH PROBLEM PAST MO -1 -> 15 in raw data, -1 is
+  "(I(as.numeric(school_last_week ==  'Yes')) * tb4)", # Number OF DAYS OF SCHOOL MISSED FOR HEALTH PROBLEM PAST MO -1 -> 15 in raw data, -1 is
   "tl10", # PARTICIPATE IN CLUBS/ORGS OUTSIDE SCHOOL PAST YR, Yes, No
   "tq15_pos" # HOW OFTEN FELT SENSE OF BELONGING AT SCHOOL All Of The Time -> Never
 )
