@@ -231,7 +231,7 @@ access_to_care <- c(
 civic_engagement <- c(
   "school_last_week", # ATTENDED SCHOOL LAST WEEK Yes, No
   # "ta4c_p1",         # ATTENDED SCHOOL DURING LAST SCHOOL YR, only in 2023 data
-  "(I(as.numeric(school_last_week ==  'Yes')) * tb4)", # Number OF DAYS OF SCHOOL MISSED FOR HEALTH PROBLEM PAST MO -1 -> 15 in raw data, -1 is
+  "I((as.numeric(school_last_week ==  'Yes')) * tb4)", # Number OF DAYS OF SCHOOL MISSED FOR HEALTH PROBLEM PAST MO -1 -> 15 in raw data, -1 is
   "tl10", # PARTICIPATE IN CLUBS/ORGS OUTSIDE SCHOOL PAST YR, Yes, No
   "tq15_pos" # HOW OFTEN FELT SENSE OF BELONGING AT SCHOOL All Of The Time -> Never
 )
@@ -518,6 +518,56 @@ utils::write.csv(
 utils::write.csv(glm.vcov, file = here::here("Outputs", "glm_vcov.csv"))
 
 
+# setup survey object from design matrix
+mod.df <- glm.model %>% 
+  model.matrix() %>% 
+  as.data.frame() %>%
+  select(-starts_with("(weights)"))
+
+svymod <-  mod.df %>% 
+  cbind(glm.model$data %>% select(starts_with("fnwgt"))) %>% 
+  survey::svrepdesign(data = .,
+                      weights = ~fnwgt0,
+                      repweights = "fnwgt[1-9]",
+                      type = "other",
+                      scale = 1,
+                      rscales = 1,
+                      mse = TRUE)
+
+# save means and sds of variables and ranges for construction of prediction contrasts later:
+covar_means <- sapply(colnames(mod.df), function(nm) 
+  survey::svymean(as.formula(paste0("~ `", nm, "`")), design = svymod, na.rm = TRUE))
+covar_sds <- sapply(colnames(mod.df), function(nm) 
+  survey::svyvar(as.formula(paste0("~ `", nm, "`")), design = svymod, na.rm = TRUE) %>% 
+    as.numeric() %>% 
+    sqrt())
+
+
+# save modes of variables for prediction contrasts later
+modes <- sapply(colnames(mod.df), function(nm) {
+  weighted_counts <- survey::svytable(as.formula(paste0("~ `", nm, "`")), design = svymod, na.rm = TRUE)  
+  mode_value <- names(weighted_counts)[which.max(weighted_counts)] %>% as.numeric()
+  return(mode_value)
+}
+  )
+
+range <-  sapply(colnames(mod.df), function(nm) {
+    range(mod.df[[nm]])
+  }
+  )
+
+# output sufficient stats 
+utils::write.csv(
+  data.frame( names = colnames(mod.df),
+        mean = covar_means %>% as.numeric(),
+        sd = covar_sds %>% as.numeric(),
+        mode = modes %>% as.numeric(),
+        min = range[1,] %>% as.numeric(),
+        max = range[2,] %>% as.numeric()
+        ),
+  file = here::here("Outputs", "glm_suf_stat.csv")
+)
+
 #fixed effects model with county pred
 fe.model <- survey::svyglm(
   as.formula(fe.formula),
@@ -538,7 +588,7 @@ utils::write.csv(
 utils::write.csv(fe.vcov, file = here::here("Outputs", "fe_vcov.csv"))
 
 test <- anova(glm.model, fe.model, test = "Chisq")
-test$p %>% print()
+cat("p-value for test if fixed effects do better: ", test$p %>% print())
 
 # mixef model
 # mixef.model <- glmer.svyrep.design(
