@@ -1279,15 +1279,22 @@ chis_clean <- function(data) {
         "15-17"
       )),
       cont_age = as.numeric(as.character(srage)),
+      sch_typ = forcats::fct_recode(
+        as.factor(sch_typ),
+        "Inapplicable/Other" = "Other",
+        "Inapplicable/Other" = "Inapplicable"
+        # c(`NOT ASCERTAINED` = -9, `DON'T KNOW` = -8, REFUSED = -7, 
+        #   INAPPLICABLE = -1, `PUBLIC SCHOOL` = 1, `PRIVATE SCHOOL` = 2, 
+        #   OTHER = 3)
+      ),
       ombsrreo = forcats::fct_recode(
         ombsrreo,
         "Hispanic" = "Hispanic",
         "White" = "White, Non-hispanic (nh)",
         "Asian" = "Asian Only, Nh",
         "African American" = "African American Only, Not Hispanic",
-        "American Indian" = "American Indian/alaska Native Only, Nh",
-        "Pacific Islander" = "Native Hawaiian/pacific Islander, Nh",
-
+        "American Indian/Pacific Islander" = "American Indian/alaska Native Only, Nh",
+        "American Indian/Pacific Islander" = "Native Hawaiian/pacific Islander, Nh",
         "Two Or More Races" = "Two Or More Races, Nh"
       ),
       povll_binary = forcats::fct_recode(
