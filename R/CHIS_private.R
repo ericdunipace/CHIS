@@ -1,3 +1,7 @@
+# TODO
+# [] may need to combine race categories of American Indian, pacific islander.
+# [] may need to collapse further to make sure has more chance of success. maybe combining with Asian?
+
 ### Disparities research in barriers to mental health ####
 
 #### README ####
@@ -519,52 +523,68 @@ utils::write.csv(glm.vcov, file = here::here("Outputs", "glm_vcov.csv"))
 
 
 # setup survey object from design matrix
-mod.df <- glm.model %>% 
-  model.matrix() %>% 
+mod.df <- glm.model %>%
+  model.matrix() %>%
   as.data.frame() %>%
   select(-starts_with("(weights)"))
 
-svymod <-  mod.df %>% 
-  cbind(glm.model$data %>% select(starts_with("fnwgt"))) %>% 
-  survey::svrepdesign(data = .,
-                      weights = ~fnwgt0,
-                      repweights = "fnwgt[1-9]",
-                      type = "other",
-                      scale = 1,
-                      rscales = 1,
-                      mse = TRUE)
+svymod <- mod.df %>%
+  cbind(glm.model$data %>% select(starts_with("fnwgt"))) %>%
+  survey::svrepdesign(
+    data = .,
+    weights = ~fnwgt0,
+    repweights = "fnwgt[1-9]",
+    type = "other",
+    scale = 1,
+    rscales = 1,
+    mse = TRUE
+  )
 
 # save means and sds of variables and ranges for construction of prediction contrasts later:
-covar_means <- sapply(colnames(mod.df), function(nm) 
-  survey::svymean(as.formula(paste0("~ `", nm, "`")), design = svymod, na.rm = TRUE))
-covar_sds <- sapply(colnames(mod.df), function(nm) 
-  survey::svyvar(as.formula(paste0("~ `", nm, "`")), design = svymod, na.rm = TRUE) %>% 
-    as.numeric() %>% 
-    sqrt())
+covar_means <- sapply(colnames(mod.df), function(nm) {
+  survey::svymean(
+    as.formula(paste0("~ `", nm, "`")),
+    design = svymod,
+    na.rm = TRUE
+  )
+})
+covar_sds <- sapply(colnames(mod.df), function(nm) {
+  survey::svyvar(
+    as.formula(paste0("~ `", nm, "`")),
+    design = svymod,
+    na.rm = TRUE
+  ) %>%
+    as.numeric() %>%
+    sqrt()
+})
 
 
 # save modes of variables for prediction contrasts later
 modes <- sapply(colnames(mod.df), function(nm) {
-  weighted_counts <- survey::svytable(as.formula(paste0("~ `", nm, "`")), design = svymod, na.rm = TRUE)  
-  mode_value <- names(weighted_counts)[which.max(weighted_counts)] %>% as.numeric()
+  weighted_counts <- survey::svytable(
+    as.formula(paste0("~ `", nm, "`")),
+    design = svymod,
+    na.rm = TRUE
+  )
+  mode_value <- names(weighted_counts)[which.max(weighted_counts)] %>%
+    as.numeric()
   return(mode_value)
-}
-  )
+})
 
-range <-  sapply(colnames(mod.df), function(nm) {
-    range(mod.df[[nm]])
-  }
-  )
+range <- sapply(colnames(mod.df), function(nm) {
+  range(mod.df[[nm]])
+})
 
-# output sufficient stats 
+# output sufficient stats
 utils::write.csv(
-  data.frame( names = colnames(mod.df),
-        mean = covar_means %>% as.numeric(),
-        sd = covar_sds %>% as.numeric(),
-        mode = modes %>% as.numeric(),
-        min = range[1,] %>% as.numeric(),
-        max = range[2,] %>% as.numeric()
-        ),
+  data.frame(
+    names = colnames(mod.df),
+    mean = covar_means %>% as.numeric(),
+    sd = covar_sds %>% as.numeric(),
+    mode = modes %>% as.numeric(),
+    min = range[1, ] %>% as.numeric(),
+    max = range[2, ] %>% as.numeric()
+  ),
   file = here::here("Outputs", "glm_suf_stat.csv")
 )
 
