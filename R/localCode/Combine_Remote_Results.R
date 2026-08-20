@@ -179,11 +179,11 @@ tab1 <- tab1_display |>
         stat_2023_No = "No"
     ) |>
     gt::fmt_number(sep_mark = ",")
-  
+
 
 # output to formats
 col_names <- tab1$`_boxhead`$column_label |>
-  unlist()
+    unlist()
 
 col_names[1:2] <- " "
 
@@ -194,62 +194,83 @@ tab1 |>
     gt::gtsave(filename = here::here(doc_dir, "table1.html"))
 
 tab1df <- tab1 |>
-  gt::extract_body() |>
-  mutate(`::rowname::` = if_else(grepl("&amp;", `::rowname::`),gsub("&amp;", "&",`::rowname::`),  `::rowname::`) )
+    gt::extract_body() |>
+    mutate(
+        `::rowname::` = if_else(
+            grepl("&amp;", `::rowname::`),
+            gsub("&amp;", "&", `::rowname::`),
+            `::rowname::`
+        )
+    )
 
 group_index <- tab1df %>%
-  mutate(row = row_number()) %>%
-  summarise(start = min(row), end = max(row), .by = `::group_id::`)
+    mutate(row = row_number()) %>%
+    summarise(start = min(row), end = max(row), .by = `::group_id::`)
 
 tab1df |>
-  setNames(col_names) |>
-  subset(select = -1) |>
-  kableExtra::kbl(format = "latex", booktabs = TRUE, escape = TRUE,
-                  align = c("l", rep("r", 6))) |>
-  purrr::reduce(
-    seq_len(nrow(group_index)),
-    .init = _,
-    .f = function(tbl, i) {
-      kableExtra::group_rows(
-        tbl,
-        group_label = group_index$`::group_id::`[i],
-        start_row   = group_index$start[i],
-        end_row     = group_index$end[i]
-      )
-    }
-  ) |>
-  kableExtra::kable_styling(latex_options = c("hold_position", "scale_down")) |>
-  kableExtra::add_header_above(c(" " = 1, "2021" = 2, "2022" = 2, "2023" = 2)) |>
-  kableExtra::row_spec(0, align = "c") |>
-  kableExtra::row_spec(seq(1, nrow(tab1df), 2), background = "#f5f5f5") |>
-  cat(file = here::here(doc_dir, "table1.tex"))
+    setNames(col_names) |>
+    subset(select = -1) |>
+    kableExtra::kbl(
+        format = "latex",
+        booktabs = TRUE,
+        escape = TRUE,
+        align = c("l", rep("r", 6))
+    ) |>
+    purrr::reduce(
+        seq_len(nrow(group_index)),
+        .init = _,
+        .f = function(tbl, i) {
+            kableExtra::group_rows(
+                tbl,
+                group_label = group_index$`::group_id::`[i],
+                start_row = group_index$start[i],
+                end_row = group_index$end[i]
+            )
+        }
+    ) |>
+    kableExtra::kable_styling(
+        latex_options = c("hold_position", "scale_down")
+    ) |>
+    kableExtra::add_header_above(c(
+        " " = 1,
+        "2021" = 2,
+        "2022" = 2,
+        "2023" = 2
+    )) |>
+    kableExtra::row_spec(0, align = "c") |>
+    kableExtra::row_spec(seq(1, nrow(tab1df), 2), background = "#f5f5f5") |>
+    cat(file = here::here(doc_dir, "table1.tex"))
 
-tab1ft <- tab1df |> 
-  flextable::as_grouped_data(groups = "::group_id::") |>
-  flextable::flextable() |> 
-  flextable::set_header_labels(
-    "::group_id::" = "",
-    "::rowname::" = "",
-    stat_2021_Yes = "Yes",
-    stat_2021_No = "No",
-    stat_2022_Yes = "Yes",
-    stat_2022_No = "No",
-    stat_2023_Yes = "Yes",
-    stat_2023_No = "No"
-  ) |>
-  flextable::add_header_row(
-    values = c("", "2021", "2022", "2023"),
-    colwidths = c(2, 2, 2, 2)
-  ) |>
-  flextable::vline(j = c(2, 4,6), border = fp_border(color = "gray50", width = 1), part = "all") |>
-  flextable::fit_to_width(max_width = 6.5) |>
-  flextable::fontsize(size = 8, part = "all")
+tab1ft <- tab1df |>
+    flextable::as_grouped_data(groups = "::group_id::") |>
+    flextable::flextable() |>
+    flextable::set_header_labels(
+        "::group_id::" = "",
+        "::rowname::" = "",
+        stat_2021_Yes = "Yes",
+        stat_2021_No = "No",
+        stat_2022_Yes = "Yes",
+        stat_2022_No = "No",
+        stat_2023_Yes = "Yes",
+        stat_2023_No = "No"
+    ) |>
+    flextable::add_header_row(
+        values = c("", "2021", "2022", "2023"),
+        colwidths = c(2, 2, 2, 2)
+    ) |>
+    flextable::vline(
+        j = c(2, 4, 6),
+        border = fp_border(color = "gray50", width = 1),
+        part = "all"
+    ) |>
+    flextable::fit_to_width(max_width = 6.5) |>
+    flextable::fontsize(size = 8, part = "all")
 
 tab1ft |>
-  flextable::save_as_docx(path = here::here(doc_dir, "table1.docx"))
+    flextable::save_as_docx(path = here::here(doc_dir, "table1.docx"))
 
 tab1ft |>
-  saveRDS(file = here::here(doc_dir, "table1_ft.rds"))
+    saveRDS(file = here::here(doc_dir, "table1_ft.rds"))
 
 #### Load Regression Results Files ####
 # glm model
@@ -273,24 +294,23 @@ glm_vcov <- utils::read.csv(
 
 #### generate tables for glm coeficients ####
 group_labels <- dplyr::tribble(
-  ~variable, ~group,
-  "tl25_pos", "Modifiable Protective Factors",
-  "tl27_pos", "Modifiable Protective Factors",
-  "tl50", "Modifiable Protective Factors",
-  "tl53_pos", "Modifiable Protective Factors",
-  "tq10_pos", "Modifiable Protective Factors",
-  "tq11_pos", "Modifiable Protective Factors",
-  "tq14_pos", "Modifiable Protective Factors",
-  "tq16_pos", "Modifiable Protective Factors",
-  "uninsured", "Access to Care",
-  "health_office", "Access to Care",
-  "tf9", "Access to Care",
-  "school_last_week", "Civic Engagement",
-  # "scale(I(as.numeric(school_last_week ==  'Yes')) * tb4)", 
-  "I((as.numeric(school_last_week ==  'Yes')) * tb4)", 
-  "Civic Engagement",
-  "tl10", "Civic Engagement",
-  "tq15_pos", "Civic Engagement"
+    ~variable                                           , ~group             ,
+    "tl25_pos"                                          , "Civic Engagement" , #"Cares Deeply About Community Issues"
+    "tl27_pos"                                          , "Civic Engagement" , #"Believes Can Make a Difference"
+    "tl50"                                              , "Civic Engagement" , #"Volunteered to Solve Community Problem"
+    "tl53_pos"                                          , "Civic Engagement" , #"Can Contact Gov't to Solve Problem"
+    "tq10_pos"                                          , "Civic Engagement" , #"Able to Talk to Family About Feelings"
+    "tq11_pos"                                          , "Civic Engagement" , #"Felt Supported by Family"
+    "tq14_pos"                                          , "Civic Engagement" , #"Felt Supported by Friends"
+    "tq16_pos"                                          , "Civic Engagement" , #"Enjoyed Community Traditions"
+    "uninsured"                                         , "Access to Care"   ,
+    "health_office"                                     , "Access to Care"   ,
+    "tf9"                                               , "Access to Care"   , #"Did Not Delay Medical Care"
+    "school_last_week"                                  , "Overall Health"   ,
+    # "scale(I(as.numeric(school_last_week ==  'Yes')) * tb4)",
+    "I((as.numeric(school_last_week ==  'Yes')) * tb4)" , "Overall Health"   ,
+    "tl10"                                              , "Civic Engagement" , #"Participated in Clubs in Last Year"
+    "tq15_pos"                                          , "Civic Engagement" # "Often Felt A Sense of Belonging at School"
 )
 glm_lor_table <- glm_coef |>
     rename(
@@ -313,8 +333,8 @@ glm_lor_table <- glm_coef |>
                 "age_group15-17",
                 "srsexFemale",
                 "ombsrreoAfrican American",
-                "ombsrreoAmerican Indian/Pacific Islander",
-                "ombsrreoAsian",
+                "ombsrreoAsian/American Indian/Pacific Islander",
+                # "ombsrreoAsian",
                 "ombsrreoTwo Or More Races",
                 "ombsrreoWhite",
                 "sch_typPublic School",
@@ -326,20 +346,20 @@ glm_lor_table <- glm_coef |>
                 "ur_clrt2Rural",
                 "uninsuredYes",
                 "health_officePrimary care office",
-                "tf9No",
-                "tl25_posYes",
-                "tl27_posYes",
-                "tl50No",
-                "tl53_posYes",
-                "tq10_posYes",
-                "tq11_posYes",
-                "tq14_posYes",
+                "tf9No", #"Did Not Delay Medical Care"
+                "tl25_posYes", #"Cares Deeply About Community Issues"
+                "tl27_posYes", #"Believes Can Make a Difference"
+                "tl50No", #"Volunteered to Solve Community Problem"
+                "tl53_posYes", #"Can Contact Gov't to Solve Problem"
+                "tq10_posYes", #"Able to Talk to Family About Feelings"
+                "tq11_posYes", #"Felt Supported by Family"
+                "tq14_posYes", #"Felt Supported by Friends"
                 "tq16_posYes",
-                "tl10No",
+                "tl10No", #"Participated in Clubs in Last Year"
                 "school_last_weekYes",
                 "I((as.numeric(school_last_week == \"Yes\")) * tb4)",
                 # "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)",
-                "tq15_posYes",
+                "tq15_posYes", # "Often Felt A Sense of Belonging at School"
                 "tmax_tract10_prior_90_days_count32_delta",
                 "tmax_tract10_prior_90_days_mean_delta",
                 "tmax_tract10_prior_yr_count32_delta",
@@ -357,8 +377,8 @@ glm_lor_table <- glm_coef |>
             "Female" = "srsexFemale",
             "Race" = "ombsrreoWhite",
             "Race" = "ombsrreoAfrican American",
-            "Race" = "ombsrreoAmerican Indian/Pacific Islander",
-            "Race" = "ombsrreoAsian",
+            "Race" = "ombsrreoAsian/American Indian/Pacific Islander",
+            # "Race" = "ombsrreoAsian",
             "Race" = "ombsrreoTwo Or More Races",
             "School Type" = "sch_typPublic School",
             "School Type" = "sch_typPrivate School",
@@ -367,23 +387,23 @@ glm_lor_table <- glm_coef |>
             "300% FPL And Above" = "povll_binary300% FPL And Above",
             "Speaks English at Home" = "lnghmt_binaryNon-English", # note we flip sign below
             "Lives in a Rural Zip Code" = "ur_clrt2Rural",
-            "Modifiable Protective Factors" = "tl25_posYes",
-            "Modifiable Protective Factors" = "tl27_posYes",
-            "Modifiable Protective Factors" = "tl50No", # note we flip the sign below
-            "Modifiable Protective Factors" = "tl53_posYes",
-            "Modifiable Protective Factors" = "tq10_posYes",
-            "Modifiable Protective Factors" = "tq11_posYes",
-            "Modifiable Protective Factors" = "tq14_posYes",
-            "Modifiable Protective Factors" = "tq16_posYes",
+            "Civic Engagement" = "tl25_posYes", #"Cares Deeply About Community Issues"
+            "Civic Engagement" = "tl27_posYes", #"Believes Can Make a Difference"
+            "Civic Engagement" = "tl50No", #"Volunteered to Solve Community Problem" # note we flip the sign below
+            "Civic Engagement" = "tl53_posYes", #"Can Contact Gov't to Solve Problem"
+            "Civic Engagement" = "tq10_posYes", #"Able to Talk to Family About Feelings"
+            "Civic Engagement" = "tq11_posYes", #"Felt Supported by Family"
+            "Civic Engagement" = "tq14_posYes", #"Felt Supported by Friends"
+            "Civic Engagement" = "tq16_posYes",
             "Access to Care" = "uninsuredYes",
             "Access to Care" = "health_officePrimary care office",
-            "Access to Care" = "tf9No",
-            "Civic Engagement" = "school_last_weekYes",
+            "Access to Care" = "tf9No", #"Did Not Delay Medical Care"
+            "Overall Health" = "school_last_weekYes",
             # "Civic Engagement" = "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)",
-            "Civic Engagement" =  "I((as.numeric(school_last_week == \"Yes\")) * tb4)",
+            "Overall Health" = "I((as.numeric(school_last_week == \"Yes\")) * tb4)",
 
-            "Civic Engagement" = "tl10No",
-            "Civic Engagement" = "tq15_posYes",
+            "Civic Engagement" = "tl10No", #"Participated in Clubs in Last Year"
+            "Civic Engagement" = "tq15_posYes", # "Often Felt A Sense of Belonging at School"
             "Census Tract Climate" = "tmax_tract10_prior_90_days_count32_delta",
             "Census Tract Climate" = "tmax_tract10_prior_90_days_mean_delta",
             "Census Tract Climate" = "tmax_tract10_prior_yr_mean_delta",
@@ -472,7 +492,7 @@ glm_lor_table <- glm_coef |>
     mutate(
         term = as.character(term),
         label = as.character(label)
-    ) 
+    )
 
 race_before <- which(glm_lor_table$label == "Race")[1]
 glm_lor_table <- tibble::add_row(
@@ -619,92 +639,99 @@ glm_tab |> saveRDS(file = here::here(doc_dir, "glm_tab_gt.rds"))
 glm_tab |> gt::gtsave(filename = here::here(doc_dir, "glm_tab.html"))
 
 
-glm_tab_df <- glm_tab |> 
-  gt::extract_body()
+glm_tab_df <- glm_tab |>
+    gt::extract_body()
 
 boxhead <- glm_tab$`_boxhead`
 vars_in_order <- names(glm_tab_df)[-1:-2]
 
 label_df <- boxhead |>
-  dplyr::filter(var %in% vars_in_order) |>
-  dplyr::mutate(var = factor(var, levels = vars_in_order)) |>
-  dplyr::arrange(var) |>
-  dplyr::transmute(
-    var,
-    label = column_label,
-    column_type = type
-  )
+    dplyr::filter(var %in% vars_in_order) |>
+    dplyr::mutate(var = factor(var, levels = vars_in_order)) |>
+    dplyr::arrange(var) |>
+    dplyr::transmute(
+        var,
+        label = column_label,
+        column_type = type
+    )
 colnames(glm_tab_df)[-1:-2] <- label_df$label
 colnames(glm_tab_df)[c(2)] <- "  "
 colnames(glm_tab_df)[c(6)] <- " "
 # colnames(glm_tab_df)[1:2] <- c("", "")
 
 glm_tab_ft <- glm_tab_df |>
-  flextable::as_grouped_data(groups = "::group_id::") |>
-  flextable::flextable() |>
-  flextable::set_header_labels(
-    "::group_id::" = " ",
-    "::rowname::" = " ",
-    `O.R.` = "O.R.",
-    `Conf. Int` = "Conf. Int",
-    `p-value` = "p-value",
-    " " = " "
-  )
+    flextable::as_grouped_data(groups = "::group_id::") |>
+    flextable::flextable() |>
+    flextable::set_header_labels(
+        "::group_id::" = " ",
+        "::rowname::" = " ",
+        `O.R.` = "O.R.",
+        `Conf. Int` = "Conf. Int",
+        `p-value` = "p-value",
+        " " = " "
+    )
 
 glm_tab_ft |>
-  flextable::save_as_docx(path = here::here(doc_dir, "glm_tab.docx"))
+    flextable::save_as_docx(path = here::here(doc_dir, "glm_tab.docx"))
 
-glm_tab_ft |> 
-  saveRDS(file = here::here(doc_dir, "glm_tab_ft.rds"))
+glm_tab_ft |>
+    saveRDS(file = here::here(doc_dir, "glm_tab_ft.rds"))
 
 group_glm <- glm_tab_df %>%
-  mutate(row = row_number()) %>%
-  summarise(
-    start = min(row),
-    end   = max(row),
-    n     = dplyr::n(),
-    .by = `::group_id::`
-  )
+    mutate(row = row_number()) %>%
+    summarise(
+        start = min(row),
+        end = max(row),
+        n = dplyr::n(),
+        .by = `::group_id::`
+    )
 
 group_index_glm <- group_glm %>%
-  filter(n > 1)
+    filter(n > 1)
 
 singleton_index_glm <- group_glm %>%
-  filter(n == 1) %>%
-  pull(`start`)
+    filter(n == 1) %>%
+    pull(`start`)
 
-glm_tab_df |> 
-  add_count(`::group_id::`, name = "n_group") %>%
-  mutate(
-    `  ` = if_else(n_group == 1, `::group_id::`, `  `)
-  ) %>%
-  mutate(`  `  = if_else(
-    n_group == 1,
-    kableExtra::cell_spec(`  `, format = "latex", bold = TRUE),
-    `  `
-  )) |>
-  select(-n_group) |>
-  subset(select = -1) %>%
-  kableExtra::kbl(format = "latex", booktabs = TRUE, 
-                  escape = FALSE,
-                  align = c(rep("l",2), rep("r",2),"c")) |>
-  purrr::reduce(
-    seq_len(nrow(group_index_glm)),
-    .init = _,
-    .f = function(tbl, i) {
-      kableExtra::group_rows(
-        tbl,
-        group_label = group_index_glm$`::group_id::`[i],
-        start_row   = group_index_glm$start[i],
-        end_row     = group_index_glm$end[i]
-      )
-    }
-  ) |>
-  kableExtra::row_spec(0, align = "c") |>
-  kableExtra::row_spec(seq(1, nrow(glm_tab_df), 2), background = "#f5f5f5") |>
-  kableExtra::kable_styling(latex_options = c("hold_position", "scale_down"),
-                            font_size = 9) |>
-  cat(file = here::here(doc_dir, "glm_tab.tex"))
+glm_tab_df |>
+    add_count(`::group_id::`, name = "n_group") %>%
+    mutate(
+        `  ` = if_else(n_group == 1, `::group_id::`, `  `)
+    ) %>%
+    mutate(
+        `  ` = if_else(
+            n_group == 1,
+            kableExtra::cell_spec(`  `, format = "latex", bold = TRUE),
+            `  `
+        )
+    ) |>
+    select(-n_group) |>
+    subset(select = -1) %>%
+    kableExtra::kbl(
+        format = "latex",
+        booktabs = TRUE,
+        escape = FALSE,
+        align = c(rep("l", 2), rep("r", 2), "c")
+    ) |>
+    purrr::reduce(
+        seq_len(nrow(group_index_glm)),
+        .init = _,
+        .f = function(tbl, i) {
+            kableExtra::group_rows(
+                tbl,
+                group_label = group_index_glm$`::group_id::`[i],
+                start_row = group_index_glm$start[i],
+                end_row = group_index_glm$end[i]
+            )
+        }
+    ) |>
+    kableExtra::row_spec(0, align = "c") |>
+    kableExtra::row_spec(seq(1, nrow(glm_tab_df), 2), background = "#f5f5f5") |>
+    kableExtra::kable_styling(
+        latex_options = c("hold_position", "scale_down"),
+        font_size = 9
+    ) |>
+    cat(file = here::here(doc_dir, "glm_tab.tex"))
 
 
 #### Generate Forest Plots ####
@@ -733,7 +760,12 @@ pdf(here::here(fig_dir, "forest_plots.pdf"), height = 5, width = 4)
 forest_sig |> print()
 dev.off()
 
-png(here::here(fig_dir, "forest_plots.png"), height = 5 * 600, width = 4 * 600, res = 600)
+png(
+    here::here(fig_dir, "forest_plots.png"),
+    height = 5 * 600,
+    width = 4 * 600,
+    res = 600
+)
 forest_sig |> print()
 dev.off()
 
@@ -861,16 +893,16 @@ if ("ur_clrt2" %in% names(dummy.data)) {
 binary_vars <- c(
     "uninsured",
     "health_office",
-    "tf9",
-    "tl25_pos",
-    "tl27_pos",
-    "tl53_pos",
-    "tq10_pos",
-    "tq11_pos",
-    "tq14_pos",
-    "tq16_pos",
+    "tf9", #"Did Not Delay Medical Care"
+    "tl25_pos", #"Cares Deeply About Community Issues"
+    "tl27_pos", #"Believes Can Make a Difference"
+    "tl53_pos", #"Can Contact Gov't to Solve Problem"
+    "tq10_pos", #"Able to Talk to Family About Feelings"
+    "tq11_pos", #"Felt Supported by Family"
+    "tq14_pos", #"Felt Supported by Friends"
+    "tq16_pos", #"Enjoyed Community Traditions"
     "school_last_week",
-    "tq15_pos"
+    "tq15_pos" # "Often Felt A Sense of Belonging at School"
 )
 for (var_name in binary_vars) {
     if (var_name %in% names(dummy.data)) {
@@ -898,18 +930,18 @@ baseline_lookup <- c(
     ur_clrt2 = "Urban",
     uninsured = "No",
     health_office = "Not primary care office",
-    tf9 = "Yes",
-    tl25_pos = "No",
-    tl27_pos = "No",
-    tl50 = "Yes",
-    tl53_pos = "No",
-    tq10_pos = "No",
-    tq11_pos = "No",
-    tq14_pos = "No",
-    tq16_pos = "No",
+    tf9 = "Yes", #"Did Not Delay Medical Care"
+    tl25_pos = "No", #"Cares Deeply About Community Issues"
+    tl27_pos = "No", #"Believes Can Make a Difference"
+    tl50 = "Yes", #"Volunteered to Solve Community Problem"
+    tl53_pos = "No", #"Can Contact Gov't to Solve Problem"
+    tq10_pos = "No", #"Able to Talk to Family About Feelings"
+    tq11_pos = "No", #"Felt Supported by Family"
+    tq14_pos = "No", #"Felt Supported by Friends"
+    tq16_pos = "No", #"Enjoyed Community Traditions"
     school_last_week = "No",
-    tl10 = "Yes",
-    tq15_pos = "No"
+    tl10 = "Yes", #"Participated in Clubs in Last Year"
+    tq15_pos = "No" # "Often Felt A Sense of Belonging at School"
 )
 for (var_name in names(baseline_lookup)) {
     dummy.data <- set_missing_baseline(
@@ -973,7 +1005,7 @@ dummy_model_matrix[, "health_officePrimary care office"] <- 0
 beta <- glm_coef[, 2]
 V <- glm_vcov |> as.matrix()
 
-fem_d <- dummy_model_matrix  %>% 
+fem_d <- dummy_model_matrix %>%
     {
         .[, "srsexFemale"] <- 1
         .
@@ -1014,7 +1046,12 @@ pdf(file = here::here("Figures", "maleVfemale.pdf"), 3.5, 3.5)
 mf_plot |> print()
 dev.off()
 
-png(file = here::here("Figures", "maleVfemale.png"), 3.5 * 600, 3.5 * 600, res = 600)
+png(
+    file = here::here("Figures", "maleVfemale.png"),
+    3.5 * 600,
+    3.5 * 600,
+    res = 600
+)
 mf_plot |> print()
 dev.off()
 
@@ -1067,10 +1104,10 @@ school_plot <- school_plot_df |>
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         plot.margin = margin(
-          t = 5.5,
-          r = 30,
-          b = 5.5,
-          l = 5.5
+            t = 5.5,
+            r = 30,
+            b = 5.5,
+            l = 5.5
         )
     )
 
@@ -1078,7 +1115,12 @@ pdf(file = here::here("Figures", "missed_school.pdf"), 3.5, 3.5)
 school_plot |> print()
 dev.off()
 
-png(file = here::here("Figures", "missed_school.png"), 3.5 * 600, 3.5*600, res = 600)
+png(
+    file = here::here("Figures", "missed_school.png"),
+    3.5 * 600,
+    3.5 * 600,
+    res = 600
+)
 school_plot |> print()
 dev.off()
 
@@ -1118,7 +1160,7 @@ missing_counties <- california_heatmap_year |>
     dplyr::select(county, year)
 
 for (i in unique(missing_counties$county)) {
-    missing_years <- missing_counties |>filter(county == i) |>pull(year)
+    missing_years <- missing_counties |> filter(county == i) |> pull(year)
     for (j in 2021:2023) {
         if (!(j %in% missing_years)) {
             california_heatmap_year <- california_heatmap_year |>
@@ -1228,12 +1270,21 @@ pdf(here::here("Figures", "tmax_map2.pdf"), width = 6, height = 6)
 grid::grid.draw(final_tmax_plot)
 dev.off()
 
-png(here::here("Figures", "heatwave_map2.png"), width = 6 * 600, height = 6 * 600, res = 600)
+png(
+    here::here("Figures", "heatwave_map2.png"),
+    width = 6 * 600,
+    height = 6 * 600,
+    res = 600
+)
 grid::grid.draw(final_heatwave_plot)
 dev.off()
 
 
-png(here::here("Figures", "tmax_map2.png"), width = 6 * 600, height = 6 * 600, res = 600)
+png(
+    here::here("Figures", "tmax_map2.png"),
+    width = 6 * 600,
+    height = 6 * 600,
+    res = 600
+)
 grid::grid.draw(final_tmax_plot)
 dev.off()
-
