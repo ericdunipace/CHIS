@@ -1283,18 +1283,18 @@ chis_clean <- function(data) {
         as.factor(sch_typ),
         "Inapplicable/Other" = "Other",
         "Inapplicable/Other" = "Inapplicable"
-        # c(`NOT ASCERTAINED` = -9, `DON'T KNOW` = -8, REFUSED = -7, 
-        #   INAPPLICABLE = -1, `PUBLIC SCHOOL` = 1, `PRIVATE SCHOOL` = 2, 
+        # c(`NOT ASCERTAINED` = -9, `DON'T KNOW` = -8, REFUSED = -7,
+        #   INAPPLICABLE = -1, `PUBLIC SCHOOL` = 1, `PRIVATE SCHOOL` = 2,
         #   OTHER = 3)
       ),
       ombsrreo = forcats::fct_recode(
         ombsrreo,
         "Hispanic" = "Hispanic",
         "White" = "White, Non-hispanic (nh)",
-        "Asian" = "Asian Only, Nh",
+        "Asian/American Indian/Pacific Islander" = "Asian Only, Nh",
         "African American" = "African American Only, Not Hispanic",
-        "American Indian/Pacific Islander" = "American Indian/alaska Native Only, Nh",
-        "American Indian/Pacific Islander" = "Native Hawaiian/pacific Islander, Nh",
+        "Asian/American Indian/Pacific Islander" = "American Indian/alaska Native Only, Nh",
+        "Asian/American Indian/Pacific Islander" = "Native Hawaiian/pacific Islander, Nh",
         "Two Or More Races" = "Two Or More Races, Nh"
       ),
       povll_binary = forcats::fct_recode(
@@ -1495,7 +1495,7 @@ fix_reposition_legend <- function(
       'center' = c(x = 0.5, y = 0.5)
     )
     if (is.null(x)) {
-      x = unit(just[1], 'npc') +
+      x <- unit(just[1], 'npc') +
         offset[1] *
           ifelse(
             grepl('right', position),
@@ -1504,7 +1504,7 @@ fix_reposition_legend <- function(
           )
     }
     if (is.null(y)) {
-      y = unit(just[2], 'npc') +
+      y <- unit(just[2], 'npc') +
         offset[2] *
           ifelse(
             grepl('top', position),
@@ -1823,7 +1823,7 @@ recover_df <- function(q, p) {
 }
 
 make_stat_display <- function(n, p, m, s) {
-  fmt  <- function(x) {
+  fmt <- function(x) {
     formatC(x, big.mark = ',', digits = 1, format = "f")
   }
   dplyr::case_when(
@@ -1952,12 +1952,18 @@ set_missing_baseline <- function(data, var_name, baseline_value) {
   data
 }
 
+# Create a custom function
+get_mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
 term_to_design_value <- function(term_name, data_row) {
   if (term_name == "(Intercept)") {
     return(1)
   }
 
-  if (term_name == "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)") {
+  if (term_name == "I((as.numeric(school_last_week == \"Yes\")) * tb4)") {
     return(
       as.numeric(as.character(data_row$school_last_week) == "Yes") *
         as.numeric(data_row$tb4)
