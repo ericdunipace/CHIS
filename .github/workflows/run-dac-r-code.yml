@@ -3,7 +3,7 @@ name: Run DAC R Code with renv and testthat
 on:
   push:
   pull_request:
-    branches: [main, master, dac]
+    branches: [main, master, dac, combine_cat]
 
 jobs:
   test:
