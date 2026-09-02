@@ -20,21 +20,84 @@ dir.create(doc_dir, showWarnings = FALSE)
 fig_dir <- here::here("Figures")
 dir.create(fig_dir, showWarnings = FALSE)
 
-#### unzip and transfer outputs ####
-# if (dir.exists(here::here("Outputs"))) {
-#     unlink(here::here("Outputs"), recursive = TRUE, force = TRUE)
-# }
-# dir.create(here::here("Outputs"))
-# unzip(
-#     here::here("Outputs_DAC_original", "DAC250735508_20260327_JR.zip"),
-#     exdir = here::here("Outputs"),
-#     junkpaths = TRUE
-# )
+output_dir <- here::here("Outputs")
+dir.create(output_dir, showWarnings = FALSE)
+
+restore_outputs_from_archive <- function(required_file) {
+    required_path <- here::here("Outputs", required_file)
+    if (file.exists(required_path)) {
+        return(invisible(TRUE))
+    }
+
+    archives <- list.files(
+        here::here("Outputs_DAC_original"),
+        pattern = "\\.zip$",
+        full.names = TRUE
+    )
+
+    if (length(archives) == 0L) {
+        return(invisible(FALSE))
+    }
+
+    archive_info <- file.info(archives)
+    archive <- archives[order(archive_info$mtime, decreasing = TRUE)][1]
+    utils::unzip(archive, exdir = output_dir, junkpaths = TRUE)
+
+    invisible(file.exists(required_path))
+}
+
+read_output_csv <- function(filename, ...) {
+    restore_outputs_from_archive(filename)
+    path <- here::here("Outputs", filename)
+    if (!file.exists(path)) {
+        stop(
+            "Missing required output file: ",
+            path,
+            call. = FALSE
+        )
+    }
+
+    utils::read.csv(path, ...)
+}
+
+normalize_table1_input <- function(tbl) {
+    if (!"tf45" %in% names(tbl) && "status" %in% names(tbl)) {
+        tbl <- dplyr::rename(tbl, tf45 = status)
+    }
+
+    if (!"mean" %in% names(tbl)) {
+        tbl$mean <- NA_real_
+    }
+    if (!"sd" %in% names(tbl)) {
+        tbl$sd <- NA_real_
+    }
+    if (!"suppress" %in% names(tbl)) {
+        tbl$suppress <- FALSE
+    }
+
+    tbl
+}
 
 #### load table 1 information ####
-tabl_1_long <- utils::read.csv(here::here("Outputs", "table1_basic.csv"))
-tab1_long <- utils::read.csv(here::here("Outputs", "table1.csv"))
-tab1_display <- utils::read.csv(here::here("Outputs", "table1_display.csv"))
+if (file.exists(here::here("Outputs", "table1_basic.csv"))) {
+    tabl_1_long <- read_output_csv("table1_basic.csv")
+} else {
+    tabl_1_long <- read_output_csv("table1.csv")
+}
+tabl_1_long <- normalize_table1_input(tabl_1_long)
+
+tab1_long <- read_output_csv("table1.csv")
+
+if (file.exists(here::here("Outputs", "table1_display.csv"))) {
+    tab1_display <- read_output_csv("table1_display.csv")
+} else {
+    tab1_display <- build_table1(tabl_1_long, suppression_cutoff = 500)$display
+    utils::write.csv(
+        tab1_display,
+        file = here::here("Outputs", "table1_display.csv"),
+        row.names = FALSE
+    )
+}
 
 saveRDS(tab1_display, file = here::here("Outputs", "table1_display.rds"))
 
@@ -47,37 +110,41 @@ render_table1(
 
 
 #### raw number for table 1 in the appendix ####
-tabl_1_long_raw <- utils::read.csv(here::here(
-    "Outputs",
-    "table1_raw_basic.csv"
-))
-tab1_long_raw <- utils::read.csv(here::here("Outputs", "table1_raw.csv"))
-tab1_display_raw <- utils::read.csv(here::here(
-    "Outputs",
+raw_table_files <- c(
+    "table1_raw_basic.csv",
+    "table1_raw.csv",
     "table1_raw_display.csv"
-))
-
-saveRDS(
-    tab1_display_raw,
-    file = here::here("Outputs", "table1_display_raw.rds")
 )
 
-render_table1(
-    tab1_display_raw,
-    doc_dir = doc_dir,
-    prefix = "raw_table_1",
-    suffix = "_appendix"
-)
+if (all(file.exists(here::here("Outputs", raw_table_files)))) {
+    tabl_1_long_raw <- read_output_csv("table1_raw_basic.csv")
+    tab1_long_raw <- read_output_csv("table1_raw.csv")
+    tab1_display_raw <- read_output_csv("table1_raw_display.csv")
+
+    saveRDS(
+        tab1_display_raw,
+        file = here::here("Outputs", "table1_display_raw.rds")
+    )
+
+    render_table1(
+        tab1_display_raw,
+        doc_dir = doc_dir,
+        prefix = "raw_table_1",
+        suffix = "_appendix"
+    )
+} else {
+    message(
+        "Skipping raw Table 1 appendix; raw table output files are not available."
+    )
+}
 
 #### Load Regression Results Files ####
 # glm model
 # estimates from model
-glm_coef <- utils::read.csv(
-    file = here::here("Outputs", "glm_model_summary.csv")
-)
+glm_coef <- read_output_csv("glm_model_summary.csv")
 # vcov for predictions
-glm_vcov <- utils::read.csv(
-    file = here::here("Outputs", "glm_vcov.csv"),
+glm_vcov <- read_output_csv(
+    "glm_vcov.csv",
     row.names = 1
 )
 
@@ -583,10 +650,7 @@ census_heatwave <- aux_data$map_census_heat |>
 
 
 # load anxiety by country
-county_result_year <- utils::read.csv(here::here(
-    "Outputs",
-    "climiate_anxiety_map_data.csv"
-))
+county_result_year <- read_output_csv("climiate_anxiety_map_data.csv")
 
 # create shapes
 california_heatmap_year <- full_join(
