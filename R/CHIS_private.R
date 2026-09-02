@@ -1,7 +1,3 @@
-# TODO
-# [] may need to combine race categories of American Indian, pacific islander.
-# [] may need to collapse further to make sure has more chance of success. maybe combining with Asian?
-
 ### Disparities research in barriers to mental health ####
 
 #### README ####
@@ -320,6 +316,10 @@ attr(table_demographics, "type") <- list(
 table1_output <- list()
 
 for (nn in table_demographics) {
+  if (nn == "srage") {
+    next
+  }
+  print(nn)
   vartype <- attr(table_demographics, "type")[[nn]]
   svy_summ <- switch(
     vartype,
@@ -342,11 +342,13 @@ for (nn in table_demographics) {
       design = chis_design,
       FUN = svyvar,
       na.rm = TRUE
-    )$V1
+    )$V1 %>%
+      sqrt()
     temp_stat <- temp_stat %>%
       rename(sd = se) %>%
       rename(mean := !!sym(nn)) %>%
-      mutate(label = NA_character_)
+      mutate(label = NA_character_) %>%
+      mutate(suppress = FALSE, N = NA_real_, N_display = NA_real_)
   } else if (vartype == "categorical") {
     temp_stat <- temp_stat %>%
       select(-starts_with("se")) %>%
@@ -356,7 +358,9 @@ for (nn in table_demographics) {
         values_to = "N"
       ) %>%
       mutate(perc = N / sum(N, na.rm = TRUE) * 100) %>%
-      mutate(label = gsub(nn, "", label))
+      mutate(label = gsub(nn, "", label)) %>%
+      mutate(suppress = N < 500 & N > 0) %>%
+      mutate(N_display = if_else(suppress, NA_real_, N))
   }
 
   temp_stat$variable <- attr(table_demographics, "label")[[nn]]
@@ -368,10 +372,100 @@ for (nn in table_demographics) {
 table1_output %>%
   bind_rows() %>%
   utils::write.csv(
+    file = here::here("Outputs", "table1_basic.csv"),
+    row.names = FALSE
+  )
+
+table1_display_list <- table1_output %>%
+  bind_rows() %>%
+  build_table1(
+    suppression_cutoff = 500
+  )
+
+table1_display_list$raw %>%
+  utils::write.csv(
     file = here::here("Outputs", "table1.csv"),
     row.names = FALSE
   )
 
+table1_display_list$display %>%
+  utils::write.csv(
+    file = here::here("Outputs", "table1_display.csv"),
+    row.names = FALSE
+  )
+
+# get raw counts for appendix
+table1_output_raw <- list()
+
+for (nn in table_demographics) {
+  if (nn == "srage") {
+    next
+  }
+  print(nn)
+  vartype <- attr(table_demographics, "type")[[nn]]
+  variable_label <- attr(table_demographics, "label")[[nn]]
+
+  if (vartype == "continuous") {
+    temp_stat <- chis %>%
+      dplyr::group_by(year, tf45) %>%
+      dplyr::summarise(
+        mean = mean(.data[[nn]], na.rm = TRUE),
+        sd = stats::sd(.data[[nn]], na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      dplyr::mutate(
+        label = NA_character_,
+        variable = variable_label,
+        suppress = FALSE,
+        N = NA_real_,
+        N_display = NA_real_,
+        perc = NA_real_
+      )
+  } else if (vartype == "categorical") {
+    temp_stat <- chis %>%
+      dplyr::filter(!is.na(.data[[nn]])) %>%
+      dplyr::count(
+        year,
+        tf45,
+        label = .data[[nn]],
+        name = "N"
+      ) %>%
+      dplyr::mutate(
+        perc = N / sum(N, na.rm = TRUE) * 100,
+        label = as.character(label),
+        variable = variable_label,
+        suppress = N < 3 & N > 0
+      ) %>%
+      dplyr::mutate(N_display = if_else(suppress, NA_real_, N))
+  }
+
+  table1_output_raw[[nn]] <- temp_stat
+}
+
+table1_output_raw %>%
+  bind_rows() %>%
+  utils::write.csv(
+    file = here::here("Outputs", "table1_raw_basic.csv"),
+    row.names = FALSE
+  )
+
+
+table1_raw_display_list <- table1_output_raw %>%
+  bind_rows() %>%
+  build_table1(
+    suppression_cutoff = 3
+  )
+table1_raw_display_list$raw %>%
+  utils::write.csv(
+    file = here::here("Outputs", "table1_raw.csv"),
+    row.names = FALSE
+  )
+
+table1_raw_display_list$display %>%
+  utils::write.csv(
+    file = here::here("Outputs", "table1_raw_display.csv"),
+    row.names = FALSE
+  )
 
 #### ANALYSIS #1- SPATIAL HEATMAP #####################################################################################
 # Goal: To create a spatial heatmap of climate anxiety across California counties
