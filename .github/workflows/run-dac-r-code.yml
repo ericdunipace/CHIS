@@ -36,6 +36,7 @@ jobs:
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
       run: |
+        brew install --cask xquartz
         brew install gcc udunits gettext jq
         found_gdal=""
         for v in 3.11 3.10 3.9; do
