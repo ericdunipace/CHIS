@@ -34,7 +34,6 @@ version_overrides <- c(
   V8 = "4.4.2",
   gdtools = "0.5.1",
   fs = "1.6.6",
-  systemfonts = "1.3.1",
   ggplot = "3.5.0",
   gtable = "0.3.6",
   scales = "1.4.0"
