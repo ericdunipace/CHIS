@@ -10,7 +10,9 @@ dac_packages <- readxl::read_xlsx(
   col_type = c("text", "text")
 )
 
-dac_packages <- dac_packages[!is.na(dac_packages$Package) & !is.na(dac_packages$Version), ]
+dac_packages <- dac_packages[
+  !is.na(dac_packages$Package) & !is.na(dac_packages$Version),
+]
 dac_names <- trimws(dac_packages$Package)
 dac_versions <- trimws(dac_packages$Version)
 
@@ -29,7 +31,13 @@ version_overrides <- c(
   sass = "0.4.10",
   commonmark = "2.0.0",
   Rcpp = "1.1.0",
-  fs = "1.6.6"
+  V8 = "4.4.2",
+  gdtools = "0.5.1",
+  fs = "1.6.6",
+  systemfonts = "1.3.1",
+  ggplot = "3.5.0",
+  gtable = "0.3.6",
+  scales = "1.4.0"
 )
 
 normalize_versions <- function(package_names, package_versions) {
@@ -37,7 +45,10 @@ normalize_versions <- function(package_names, package_versions) {
   package_versions <- trimws(package_versions)
 
   matched_overrides <- intersect(package_names, names(version_overrides))
-  package_versions[match(matched_overrides, package_names)] <- version_overrides[matched_overrides]
+  package_versions[match(
+    matched_overrides,
+    package_names
+  )] <- version_overrides[matched_overrides]
 
   package_versions
 }
