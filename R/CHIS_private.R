@@ -336,13 +336,18 @@ for (nn in table_demographics) {
   )
 
   if (vartype == "continuous") {
-    temp_stat$se <- survey::svyby(
-      formula = as.formula(paste0("~", nn)),
-      by = ~ year + tf45,
-      design = chis_design,
-      FUN = svyvar
-    )$V1 %>%
-      sqrt()
+    temp_stat$se <- purrr::map2_dbl(temp_stat$year, temp_stat$tf45, function(y, anx) {
+      keep <- chis_design$variables$year == y &
+        chis_design$variables$tf45 == anx &
+        !is.na(chis_design$variables[[nn]])
+
+      survey::svyvar(
+        as.formula(paste0("~", nn)),
+        design = chis_design[keep, ]
+      ) %>%
+        as.numeric() %>%
+        sqrt()
+    })
     temp_stat <- temp_stat %>%
       rename(sd = se) %>%
       rename(mean := !!sym(nn)) %>%
@@ -642,9 +647,11 @@ covar_means <- sapply(colnames(mod.df), function(nm) {
   )
 })
 covar_sds <- sapply(colnames(mod.df), function(nm) {
+  keep <- !is.na(svymod$variables[[nm]])
+
   survey::svyvar(
     as.formula(paste0("~ `", nm, "`")),
-    design = svymod
+    design = svymod[keep, ]
   ) %>%
     as.numeric() %>%
     sqrt()
