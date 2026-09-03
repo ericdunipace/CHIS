@@ -340,8 +340,7 @@ for (nn in table_demographics) {
       formula = as.formula(paste0("~", nn)),
       by = ~ year + tf45,
       design = chis_design,
-      FUN = svyvar,
-      na.rm = TRUE
+      FUN = svyvar
     )$V1 %>%
       sqrt()
     temp_stat <- temp_stat %>%
@@ -645,8 +644,7 @@ covar_means <- sapply(colnames(mod.df), function(nm) {
 covar_sds <- sapply(colnames(mod.df), function(nm) {
   survey::svyvar(
     as.formula(paste0("~ `", nm, "`")),
-    design = svymod,
-    na.rm = TRUE
+    design = svymod
   ) %>%
     as.numeric() %>%
     sqrt()
