@@ -37,7 +37,8 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew install --cask xquartz
-        brew install gcc udunits gettext jq
+        brew install gcc udunits gettext jq v8
+        echo "DISABLE_STATIC_LIBV8=1" >> "$GITHUB_ENV"
         found_gdal=""
         for v in 3.11 3.10 3.9; do
           if brew info "gdal@$v" >/dev/null 2>&1; then
