@@ -125,10 +125,10 @@ jobs:
       run: |
         remotes::install_version("units", version = "0.8-1", type = 'source', configure.args = c(units = '--with-udunits2-lib=/opt/homebrew/lib --with-udunits2-include=/opt/homebrew/include'))
 
-    - name: Ignore terra during renv restore (macOS only)
+    - name: Ignore sf and terra during renv restore (macOS only)
       if: runner.os == 'macOS'
       shell: bash
-      run: echo "RENV_CONFIG_IGNORED_PACKAGES=terra" >> "$GITHUB_ENV"
+      run: echo "RENV_CONFIG_IGNORED_PACKAGES=sf,terra" >> "$GITHUB_ENV"
         
     - name: Install renv and restore environment
       shell: Rscript {0}
@@ -138,6 +138,7 @@ jobs:
         tryCatch({
           if (Sys.info()[["sysname"]] == "Darwin") {
             lock <- renv::lockfile_read()
+            lock$Packages$sf <- NULL
             lock$Packages$terra <- NULL
             tmp_lock <- tempfile(fileext = ".lock")
             renv::lockfile_write(lock, tmp_lock)
@@ -150,6 +151,12 @@ jobs:
           renv::status()
           quit(status = 1)
         })
+
+    - name: Install sf after restore (macOS only)
+      if: runner.os == 'macOS'
+      shell: Rscript {0}
+      run: |
+        install.packages("sf", repos = "https://packagemanager.posit.co/cran/latest")
 
     - name: Install terra after restore (macOS only)
       if: runner.os == 'macOS'
