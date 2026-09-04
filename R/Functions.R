@@ -1136,7 +1136,7 @@ chis_clean_puf <- function(data) {
         "Hispanic" = "Hispanic",
         "White, Non-Hispanic" = "White, Non-hispanic (nh)",
         "Asian, Non-Hispanic" = "Asian Only, Nh",
-        "Two Or More Races, Non-Hispanic" = "Two Or More Races, Nh"
+        "Two or More Races, Non-Hispanic" = "Two Or More Races, Nh"
       ),
       povll_binary = forcats::fct_recode(
         povll,
@@ -1281,8 +1281,8 @@ chis_clean <- function(data) {
       cont_age = as.numeric(as.character(srage)),
       sch_typ = forcats::fct_recode(
         as.factor(sch_typ),
-        "Inapplicable/Other" = "Other",
-        "Inapplicable/Other" = "Inapplicable"
+        "Other" = "Other",
+        "Other" = "Inapplicable"
         # c(`NOT ASCERTAINED` = -9, `DON'T KNOW` = -8, REFUSED = -7,
         #   INAPPLICABLE = -1, `PUBLIC SCHOOL` = 1, `PRIVATE SCHOOL` = 2,
         #   OTHER = 3)
@@ -1291,11 +1291,11 @@ chis_clean <- function(data) {
         ombsrreo,
         "Hispanic" = "Hispanic",
         "White" = "White, Non-hispanic (nh)",
-        "Asian/American Indian/Pacific Islander" = "Asian Only, Nh",
+        "Asian/Pacific Islander" = "Asian Only, Nh",
         "African American" = "African American Only, Not Hispanic",
-        "Asian/American Indian/Pacific Islander" = "American Indian/alaska Native Only, Nh",
-        "Asian/American Indian/Pacific Islander" = "Native Hawaiian/pacific Islander, Nh",
-        "Two Or More Races" = "Two Or More Races, Nh"
+        "Multiracial and Other" = "American Indian/alaska Native Only, Nh",
+        "Asian/Pacific Islander" = "Native Hawaiian/pacific Islander, Nh",
+        "Multiracial and Other" = "Two Or More Races, Nh"
       ),
       povll_binary = forcats::fct_recode(
         povll,
@@ -2036,6 +2036,930 @@ term_to_design_value <- function(term_name, data_row) {
   }
 
   NA_real_
+}
+
+pooled_mean <- function(n, mean, ...) {
+  weighted.mean(x = mean, w = n, ...)
+}
+
+pooled_sd <- function(n, mean, sd) {
+  keep <- !is.na(n) & !is.na(mean) & !is.na(sd) & n > 0
+
+  n <- n[keep]
+  mean <- mean[keep]
+  sd <- sd[keep]
+
+  N <- sum(n)
+  M <- sum(n * mean) / N
+
+  sqrt(
+    sum((n - 1) * sd^2 + n * (mean - M)^2) /
+      (N - 1)
+  )
+}
+
+apply_column_suppression <- function(
+  dat,
+  threshold = 500
+) {
+  dat <- dat |>
+    dplyr::group_by(variable, year, status) |>
+    dplyr::mutate(
+      # Number of already bounded cells in this
+      # variable × year × status column
+      n_bounded_col = sum(
+        bound != "",
+        na.rm = TRUE
+      ),
+
+      # Add a complementary bound only if there is
+      # exactly one bounded cell, and that cell is
+      # a primary "<" bound.
+      trigger_secondary = n_bounded_col == 1 &
+        any(bound == "<"),
+
+      eligible_secondary = trigger_secondary &
+        bound == "" &
+        N > 0 &
+        variable != "Age*" &
+        variable != "Total (%)",
+
+      # Choose smallest positive exact cell
+      candidate_rank = dplyr::if_else(
+        eligible_secondary,
+        rank(
+          dplyr::if_else(
+            eligible_secondary,
+            N,
+            Inf
+          ),
+          ties.method = "first"
+        ),
+        Inf
+      ),
+
+      add_secondary = eligible_secondary &
+        candidate_rank == 1,
+
+      # Simple complementary rule:
+      #
+      # exact N -> report > N - 500
+      N_display = dplyr::if_else(
+        add_secondary,
+        pmax(N - threshold, 0),
+        N_display
+      ),
+
+      bound = dplyr::if_else(
+        add_secondary,
+        ">",
+        bound
+      ),
+
+      suppress_secondary = suppress_secondary |
+        add_secondary
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(
+      -n_bounded_col,
+      -trigger_secondary,
+      -eligible_secondary,
+      -candidate_rank,
+      -add_secondary
+    )
+
+  # Propagate the complementary bound to the opposite
+  # Yes/No member of the SAME row.
+  dat |>
+    dplyr::group_by(variable, label, year) |>
+    dplyr::mutate(
+      n_secondary_yn = sum(
+        suppress_secondary &
+          status %in% c("Yes", "No"),
+        na.rm = TRUE
+      ),
+
+      secondary_status = dplyr::if_else(
+        n_secondary_yn == 1,
+        as.character(
+          status[
+            suppress_secondary &
+              status %in% c("Yes", "No")
+          ][1]
+        ),
+        NA_character_
+      ),
+
+      secondary_value = dplyr::if_else(
+        n_secondary_yn == 1,
+        N_display[
+          suppress_secondary &
+            status %in% c("Yes", "No")
+        ][1],
+        NA_real_
+      ),
+
+      secondary_bound = dplyr::if_else(
+        n_secondary_yn == 1,
+        bound[
+          suppress_secondary &
+            status %in% c("Yes", "No")
+        ][1],
+        NA_character_
+      ),
+
+      propagate_to_partner = n_secondary_yn == 1 &
+        status %in% c("Yes", "No") &
+        as.character(status) != secondary_status &
+        bound == "" &
+        N > 0,
+
+      N_display = dplyr::if_else(
+        propagate_to_partner,
+        dplyr::case_when(
+          # If one side is > N - 500,
+          # its partner is < N_partner + 500
+          secondary_bound == ">" ~ N + threshold,
+
+          # Conversely, if one side is < N + 500,
+          # partner is > N_partner - 500
+          secondary_bound == "<" ~ pmax(N - threshold, 0),
+
+          TRUE ~ N_display
+        ),
+        N_display
+      ),
+
+      bound = dplyr::if_else(
+        propagate_to_partner,
+        dplyr::case_when(
+          secondary_bound == ">" ~ "<",
+          secondary_bound == "<" ~ ">",
+          TRUE ~ bound
+        ),
+        bound
+      ),
+
+      suppress_secondary = suppress_secondary |
+        propagate_to_partner,
+
+      suppress_final = bound != ""
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(
+      -n_secondary_yn,
+      -secondary_status,
+      -secondary_value,
+      -secondary_bound,
+      -propagate_to_partner
+    )
+}
+
+apply_yes_no_bounds <- function(dat) {
+  dat |>
+    dplyr::mutate(
+      suppress_secondary = FALSE,
+      N_display = N,
+      bound = ""
+    ) |>
+    dplyr::group_by(variable, label, year) |>
+    dplyr::mutate(
+      n_suppressed_row = sum(
+        suppress_primary &
+          status %in% c("Yes", "No"),
+        na.rm = TRUE
+      ),
+
+      # Upper bound associated with the single primary
+      # suppressed Yes/No cell
+      primary_upper = dplyr::if_else(
+        n_suppressed_row == 1,
+        N_upper[
+          suppress_primary &
+            status %in% c("Yes", "No")
+        ][1],
+        NA_real_
+      ),
+
+      # --------------------------------------------------
+      # Primary Yes/No suppression:
+      #     hidden cell < x
+      # --------------------------------------------------
+      N_display = dplyr::if_else(
+        suppress_primary &
+          status %in% c("Yes", "No"),
+        N_upper,
+        N_display
+      ),
+
+      bound = dplyr::if_else(
+        suppress_primary &
+          status %in% c("Yes", "No"),
+        "<",
+        bound
+      ),
+
+      # --------------------------------------------------
+      # Row complement:
+      #
+      #     hidden < x
+      #     other > T - x
+      #
+      # BUT:
+      # leave a known zero alone.
+      # Also don't create useless negative bounds.
+      # --------------------------------------------------
+      row_lower = row_total_N - primary_upper,
+
+      make_row_complement = n_suppressed_row == 1 &
+        status %in% c("Yes", "No") &
+        !suppress_primary &
+        N > 0,
+
+      N_display = dplyr::if_else(
+        make_row_complement,
+        pmax(row_lower, 0),
+        N_display
+      ),
+
+      bound = dplyr::if_else(
+        make_row_complement,
+        ">",
+        bound
+      ),
+
+      # --------------------------------------------------
+      # Derived Total:
+      #
+      # if Yes or No contains suppressed information,
+      # don't reveal the exact derived row total.
+      # --------------------------------------------------
+      N_display = dplyr::if_else(
+        status == "Total" &
+          suppress_primary,
+        N_upper,
+        N_display
+      ),
+
+      bound = dplyr::if_else(
+        status == "Total" &
+          suppress_primary,
+        "<",
+        bound
+      ),
+
+      suppress_final = bound != ""
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(
+      -n_suppressed_row,
+      -primary_upper,
+      -row_lower,
+      -make_row_complement
+    )
+}
+
+build_table1 <- function(
+  tabl_1_long,
+  suppression_cutoff = 500
+) {
+  tab1_raw <- tabl_1_long |>
+    dplyr::mutate(
+      N = dplyr::if_else(
+        variable != "Age" & is.na(N),
+        0,
+        N
+      ),
+      perc = dplyr::if_else(
+        variable != "Age" & is.na(perc),
+        0,
+        perc
+      )
+    ) |>
+    tidyr::pivot_wider(
+      id_cols = c("label", "variable"),
+      names_from = c(year, tf45),
+      values_from = c(
+        "N",
+        "perc",
+        "mean",
+        "sd",
+        "suppress"
+      )
+    ) |>
+    dplyr::select(variable, label, dplyr::everything()) |>
+    dplyr::filter(
+      !(variable == "Age" & !is.na(label))
+    ) |>
+    dplyr::mutate(
+      variable = forcats::fct_recode(
+        factor(variable),
+        "Rural/Urban" = "Rural/Urban (Claritas ZIP, 2-level)"
+      ),
+      label = forcats::fct_recode(
+        factor(label),
+        "Grade 12/H.S. Diploma" = "Grade 12/h.s. Diploma",
+        "AA or AS Degree" = "Aa Or As Degree",
+        "BA or BS Degree" = "Ba Or Bs Degree",
+        "MA or MS Degree" = "Ma Or Ms Degree",
+        "Ph.D. or Equivalent" = "Ph.d. Or Equivalent"
+      )
+    ) |>
+    dplyr::mutate(
+      label_order = dplyr::if_else(
+        as.character(variable) == "Parents' Educational Attainment",
+        match(
+          as.character(label),
+          c(
+            "No Formal Education",
+            "Grade 1-8",
+            "Grade 9-11",
+            "Grade 12/H.S. Diploma",
+            "Some College",
+            "Vocational School",
+            "AA or AS Degree",
+            "BA or BS Degree",
+            "Some Grad. School",
+            "MA or MS Degree",
+            "Ph.D. or Equivalent"
+          )
+        ),
+        NA_integer_
+      )
+    ) |>
+    dplyr::arrange(
+      variable,
+      dplyr::coalesce(label_order, 9999L),
+      as.character(label)
+    ) |>
+    dplyr::select(-label_order) |>
+    dplyr::mutate(
+      label = dplyr::if_else(
+        variable == "Age",
+        "",
+        as.character(label)
+      ),
+      variable = dplyr::if_else(
+        variable == "Age",
+        "Age*",
+        as.character(variable)
+      )
+    ) |>
+    dplyr::mutate(
+      label = dplyr::case_when(
+        variable == "Ethnicity" &
+          label %in%
+            c(
+              "Asian",
+              "Pacific Islander"
+            ) ~
+          "Asian/Pacific Islander",
+
+        variable == "Ethnicity" &
+          label %in%
+            c(
+              "American Indian",
+              "Two or More Races",
+              "Two Or More Races"
+            ) ~
+          "Multiracial and Other",
+
+        variable == "Language Spoken at Home" &
+          label %in%
+            c(
+              "English",
+              "English & Another Asian Language",
+              "English & Chinese",
+              "English & European Language",
+              "English & One Other Language",
+              "English & Spanish"
+            ) ~
+          "English",
+
+        variable == "Language Spoken at Home" &
+          label %in%
+            c(
+              "Chinese",
+              "Korean",
+              "Other Asian Language (1 Only)",
+              "Other Languages (2+)",
+              "Other Non-asian Language (1 Only)",
+              "Spanish",
+              "Vietnamese"
+            ) ~
+          "Other",
+
+        variable == "Type of School Attended" &
+          label %in%
+            c(
+              "Inapplicable",
+              "Other"
+            ) ~
+          "Other",
+
+        variable == "Parents' Educational Attainment" &
+          label %in%
+            c(
+              "No Formal Education",
+              "Grade 1-8",
+              "Grade 9-11",
+              "Grade 12/H.S. Diploma"
+            ) ~
+          "Less than college degree",
+
+        variable == "Parents' Educational Attainment" &
+          label %in%
+            c(
+              "Some College",
+              "Vocational School",
+              "AA or AS Degree",
+              "BA or BS Degree",
+              "Some Grad. School",
+              "MA or MS Degree",
+              "Ph.D. or Equivalent"
+            ) ~
+          "Attended college",
+
+        TRUE ~ label
+      )
+    ) |>
+    tidyr::pivot_longer(
+      cols = tidyselect::matches(
+        "^(N|perc|mean|sd|suppress)_"
+      ),
+      names_to = c(".value", "year", "status"),
+      names_pattern = "(N|perc|mean|sd|suppress)_(\\d{4})_(Yes|No)"
+    ) |>
+    dplyr::mutate(
+      suppress = dplyr::coalesce(
+        suppress,
+        FALSE
+      ),
+      N_upper = dplyr::if_else(
+        suppress,
+        suppression_cutoff,
+        N
+      )
+    ) |>
+
+    # collapse recoded labels
+    dplyr::group_by(
+      variable,
+      label,
+      year,
+      status
+    ) |>
+    dplyr::summarise(
+      sd = if (dplyr::first(variable) == "Age*") {
+        dplyr::first(sd)
+      } else {
+        pooled_sd(N, mean, sd)
+      },
+      mean = if (dplyr::first(variable) == "Age*") {
+        dplyr::first(mean)
+      } else {
+        pooled_mean(N, mean)
+      },
+      N = sum(N, na.rm = TRUE),
+      N_upper = sum(N_upper, na.rm = TRUE),
+      suppress_primary = all(suppress),
+      .groups = "drop"
+    ) |>
+
+    # year/status denominators
+    dplyr::group_by(year, status) |>
+    dplyr::mutate(
+      total_N = sum(
+        N[variable == "Ethnicity"],
+        na.rm = TRUE
+      ),
+      N = dplyr::if_else(
+        variable == "Age*",
+        total_N,
+        N
+      ),
+      N_upper = dplyr::if_else(
+        variable == "Age*",
+        total_N,
+        N_upper
+      )
+    ) |>
+    dplyr::ungroup() %>%
+
+    # add Total status
+    {
+      dplyr::bind_rows(
+        . |>
+          dplyr::group_by(
+            variable,
+            label,
+            year
+          ) |>
+          dplyr::mutate(
+            perc = 100 * N / sum(N, na.rm = TRUE)
+          ) |>
+          dplyr::ungroup(),
+
+        . |>
+          dplyr::group_by(
+            variable,
+            label,
+            year
+          ) |>
+          dplyr::summarise(
+            status = "Total",
+            sd = pooled_sd(
+              N,
+              mean,
+              sd
+            ),
+            mean = pooled_mean(
+              N,
+              mean
+            ),
+            N = sum(
+              N,
+              na.rm = TRUE
+            ),
+            N_upper = sum(
+              N_upper,
+              na.rm = TRUE
+            ),
+            total_N = sum(
+              total_N,
+              na.rm = TRUE
+            ),
+            suppress_primary = any(suppress_primary),
+            .groups = "drop"
+          ) |>
+          dplyr::mutate(
+            perc = 100 * N / total_N
+          )
+      )
+    } |>
+    dplyr::group_by(
+      variable,
+      label,
+      year
+    ) |>
+    dplyr::mutate(
+      row_total_N = N[status == "Total"][1]
+    ) |>
+    dplyr::ungroup() |>
+    apply_yes_no_bounds() |>
+    apply_column_suppression(
+      threshold = suppression_cutoff
+    ) %>%
+
+    {
+      dplyr::bind_rows(
+        .,
+        . |>
+          dplyr::filter(
+            variable == "Age*"
+          ) |>
+          dplyr::mutate(
+            variable = "Total (%)",
+            mean = NA_real_,
+            sd = NA_real_
+          )
+      )
+    } |>
+    # denominator for Yes/No row percentages
+    dplyr::group_by(variable, label, year) |>
+    dplyr::mutate(
+      row_total_display = sum(
+        N_display[status %in% c("Yes", "No")],
+        na.rm = TRUE
+      )
+    ) |>
+    dplyr::ungroup() |>
+
+    # denominator for Total column percentages
+    dplyr::group_by(year, status) |>
+    dplyr::mutate(
+      total_N_display = sum(
+        N_display[variable == "Ethnicity"],
+        na.rm = TRUE
+      )
+    ) |>
+    dplyr::ungroup() |>
+
+    dplyr::mutate(
+      perc_display = dplyr::case_when(
+        variable == "Age*" ~ NA_real_,
+
+        status %in% c("Yes", "No") ~
+          100 * N_display / row_total_display,
+
+        status == "Total" ~
+          100 * N_display / total_N_display,
+
+        TRUE ~ NA_real_
+      )
+    ) |>
+    dplyr::mutate(
+      status = forcats::fct_relevel(
+        factor(status),
+        "Yes",
+        "No",
+        "Total"
+      ),
+      year = forcats::fct_relevel(
+        factor(year),
+        "2021",
+        "2022",
+        "2023"
+      ),
+      variable = forcats::fct_relevel(
+        factor(variable),
+        "Age*",
+        "Ethnicity",
+        "Language Spoken at Home",
+        "Parents' Educational Attainment",
+        "Poverty Level",
+        "Rural/Urban",
+        "Sex",
+        "Type of School Attended",
+        "Total (%)"
+      )
+    ) |>
+    dplyr::arrange(
+      variable,
+      label,
+      year,
+      status
+    )
+
+  tab1_display <- tab1_raw |>
+    dplyr::mutate(
+      value = dplyr::case_when(
+        variable == "Age*" ~
+          sprintf(
+            "%.1f (%.1f)",
+            mean,
+            sd
+          ),
+
+        suppress_final ~
+          sprintf(
+            "%s%s (%s%.1f%%)",
+            bound,
+            scales::comma(
+              round(
+                N_display,
+                1
+              )
+            ),
+            bound,
+            perc_display
+          ),
+
+        TRUE ~
+          sprintf(
+            "%s (%.1f%%)",
+            scales::comma(
+              round(N, 1)
+            ),
+            perc_display
+          )
+      )
+    ) |>
+    dplyr::select(
+      variable,
+      label,
+      year,
+      status,
+      value
+    ) |>
+    tidyr::pivot_wider(
+      names_from = c(year, status),
+      values_from = value,
+      names_glue = "stat_{year}_{status}",
+      names_sort = FALSE
+    )
+
+  list(
+    raw = tab1_raw,
+    display = tab1_display
+  )
+}
+
+render_table1 <- function(
+  tab1_display,
+  doc_dir,
+  prefix = "table1_",
+  suffix = ""
+) {
+  tab1 <- tab1_display |>
+    gt::gt(
+      rowname_col = "label",
+      groupname_col = "variable"
+    ) |>
+    gt::tab_stubhead(label = "") |>
+    gt::tab_spanner(
+      label = "2021",
+      columns = c(
+        stat_2021_Yes,
+        stat_2021_No,
+        stat_2021_Total
+      )
+    ) |>
+    gt::tab_spanner(
+      label = "2022",
+      columns = c(
+        stat_2022_Yes,
+        stat_2022_No,
+        stat_2022_Total
+      )
+    ) |>
+    gt::tab_spanner(
+      label = "2023",
+      columns = c(
+        stat_2023_Yes,
+        stat_2023_No,
+        stat_2023_Total
+      )
+    ) |>
+    gt::cols_label(
+      stat_2021_Yes = "Yes",
+      stat_2021_No = "No",
+      stat_2021_Total = "Total",
+      stat_2022_Yes = "Yes",
+      stat_2022_No = "No",
+      stat_2022_Total = "Total",
+      stat_2023_Yes = "Yes",
+      stat_2023_No = "No",
+      stat_2023_Total = "Total"
+    ) |>
+    gt::fmt_number(sep_mark = ",")
+
+  # Save gt versions
+  saveRDS(
+    tab1,
+    file = here::here(doc_dir, glue::glue("{prefix}_gt{suffix}.rds"))
+  )
+
+  gt::gtsave(
+    tab1,
+    filename = here::here(doc_dir, glue::glue("{prefix}_gt{suffix}.html"))
+  )
+
+  # Extract table body
+  tab1df <- tab1 |>
+    gt::extract_body() |>
+    dplyr::mutate(
+      `::rowname::` = dplyr::if_else(
+        grepl("&amp;", `::rowname::`),
+        gsub("&amp;", "&", `::rowname::`),
+        `::rowname::`
+      )
+    )
+
+  group_index <- tab1df |>
+    dplyr::mutate(row = dplyr::row_number()) |>
+    dplyr::summarise(
+      start = min(row),
+      end = max(row),
+      .by = `::group_id::`
+    )
+
+  # Explicit names are safer than using tab1$`_boxhead`
+  col_names <- c(
+    " ",
+    " ",
+    "Yes",
+    "No",
+    "Total",
+    "Yes",
+    "No",
+    "Total",
+    "Yes",
+    "No",
+    "Total"
+  )
+
+  latex_tab <- tab1df |>
+    stats::setNames(col_names) |>
+    subset(select = -1) |>
+    kableExtra::kbl(
+      format = "latex",
+      booktabs = TRUE,
+      escape = TRUE,
+      align = c("l", rep("r", 9))
+    ) |>
+    purrr::reduce(
+      seq_len(nrow(group_index)),
+      .init = _,
+      .f = function(tbl, i) {
+        kableExtra::group_rows(
+          tbl,
+          group_label = group_index$`::group_id::`[i],
+          start_row = group_index$start[i],
+          end_row = group_index$end[i]
+        )
+      }
+    ) |>
+    kableExtra::kable_styling(
+      latex_options = c(
+        "hold_position",
+        "scale_down"
+      )
+    ) |>
+    kableExtra::add_header_above(
+      c(
+        " " = 1,
+        "2021" = 3,
+        "2022" = 3,
+        "2023" = 3
+      )
+    ) |>
+    kableExtra::row_spec(
+      0,
+      align = "c"
+    ) |>
+    kableExtra::row_spec(
+      seq(1, nrow(tab1df), 2),
+      background = "#f5f5f5"
+    )
+
+  cat(
+    latex_tab,
+    file = here::here(doc_dir, glue::glue("{prefix}{suffix}.tex"))
+  )
+
+  # Word/flextable version
+  tab1ft <- tab1df |>
+    flextable::as_grouped_data(
+      groups = "::group_id::"
+    ) |>
+    flextable::flextable() |>
+    flextable::set_header_labels(
+      "::group_id::" = "",
+      "::rowname::" = "",
+      stat_2021_Yes = "Yes",
+      stat_2021_No = "No",
+      stat_2021_Total = "Total",
+      stat_2022_Yes = "Yes",
+      stat_2022_No = "No",
+      stat_2022_Total = "Total",
+      stat_2023_Yes = "Yes",
+      stat_2023_No = "No",
+      stat_2023_Total = "Total"
+    ) |>
+    flextable::add_header_row(
+      values = c(
+        "",
+        "2021",
+        "2022",
+        "2023"
+      ),
+      colwidths = c(
+        2,
+        3,
+        3,
+        3
+      )
+    ) |>
+    flextable::vline(
+      j = c(2, 5, 8),
+      border = officer::fp_border(
+        color = "gray50",
+        width = 1
+      ),
+      part = "all"
+    ) |>
+    flextable::fit_to_width(
+      max_width = 6.5
+    ) |>
+    flextable::fontsize(
+      size = 8,
+      part = "all"
+    )
+
+  flextable::save_as_docx(
+    tab1ft,
+    path = here::here(
+      doc_dir,
+      glue::glue("{prefix}{suffix}.docx")
+    )
+  )
+
+  saveRDS(
+    tab1ft,
+    file = here::here(
+      doc_dir,
+      glue::glue("{prefix}{suffix}_ft.rds")
+    )
+  )
+
+  invisible(
+    list(
+      gt = tab1,
+      data = tab1df,
+      flextable = tab1ft
+    )
+  )
 }
 
 ###### Below is the lists used for SAS factor variable labeling #######
