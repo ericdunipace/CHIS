@@ -149,7 +149,7 @@ demo_table <- gtsummary::tbl_custom_summary(
   missing = c("ifany"),
   missing_text = "Unknown",
   missing_stat = "{N_miss}",
-  include = table_demographics
+  include = all_of(table_demographics)
 ) %>% 
   bold_labels() %>% 
   modify_header(
@@ -198,7 +198,6 @@ results_table <- tidy_model %>%
 
 print(results_table)
 write.csv(results_table, here::here("Outputs","vulnerable_subgroups_model_table.csv"), row.names = FALSE)
-
 
 
 

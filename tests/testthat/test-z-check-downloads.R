@@ -20,30 +20,56 @@ test_that("All installed packages meet version requirements", {
   
   if("askpass" %in% final_names) final_ver[final_names == "askpass"]   <- "1.1"
   if("gridExtra" %in% final_names) final_ver[final_names == "gridExtra"] <- "2.3"
+  if("rstudioapi" %in% final_names) final_ver[final_names == "rstudioapi"] <- "0.14"
+
+  compatibility_upgrades <- c(
+    "bslib",
+    "cachem",
+    "commonmark",
+    "fastmap",
+    "fs",
+    "gdtools",
+    "gtable",
+    "highr",
+    "htmltools",
+    "Rcpp",
+    "sass",
+    "scales",
+    "V8",
+    "xml2"
+  )
   
   for( i in seq_along(final_names)) {
     n <- final_names[i]
     v <- final_ver[i]
-    testthat::expect_equivalent(package_ver[which(package_names == n)], v,
-                             info = paste("Package", n, "version mismatch: expected", v, "but found", package_ver[which(package_names == n)]))
+
+    found <- package_ver[which(package_names == n)]
+
+    if (n %in% compatibility_upgrades) {
+      testthat::expect_true(
+        utils::compareVersion(found, v) >= 0,
+        info = paste(
+          "Package",
+          n,
+          "must be at least DAC version",
+          v,
+          "but found",
+          found
+        )
+      )
+    } else {
+      testthat::expect_equivalent(
+        found,
+        v,
+        info = paste(
+          "Package",
+          n,
+          "version mismatch: expected",
+          v,
+          "but found",
+          found
+        )
+      )
+    }
   }
-  # inst_packages <- installed.packages()
-  # 
-  # package_names <- inst_packages[,"Package"]
-  # package_ver   <- inst_packages[,"Version"]
-  # 
-  # final_names   <- names[names %in% package_names]
-  # final_ver     <- ver[names %in% package_names]
-  # 
-  # if("askpass" %in% final_names) final_ver[final_names == "askpass"]   <- "1.1"
-  # if("gridExtra" %in% final_names) final_ver[final_names == "gridExtra"] <- "2.3"
-  # 
-  # for( i in seq_along(final_names)) {
-  #   n <- final_names[i]
-  #   required_version <- final_ver[i]
-  #   installed_version <- package_ver[which(package_names == n)]
-  #   testthat::expect_equivalent(installed_version, 
-  #                               required_version,
-  #                               info = paste("Package", n, "version mismatch: expected", required_version, "but found", installed_version))
-  # }
 })

@@ -31,6 +31,7 @@ jobs:
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
       run: |
+        brew install --cask xquartz
         brew install gcc udunits gettext jq gdal
     
     - name: Extract package names from renv.lock and install
