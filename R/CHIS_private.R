@@ -646,8 +646,7 @@ svymod <- mod.df %>%
 covar_means <- sapply(colnames(mod.df), function(nm) {
   survey::svymean(
     as.formula(paste0("~ `", nm, "`")),
-    design = svymod,
-    na.rm = TRUE
+    design = svymod
   )
 })
 covar_sds <- sapply(colnames(mod.df), function(nm) {
