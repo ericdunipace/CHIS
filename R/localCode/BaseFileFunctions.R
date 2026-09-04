@@ -1209,10 +1209,24 @@ chis_clean_puf <- function(data) {
         "Not primary care office" = "Some Other Place",
         "Not primary care office" = "No One Place"
       ),
-      school_last_week = forcats::fct_recode(
-        ta4,
-        "No" = "On Vacation",
-        "Yes" = "Home Schooled"
+      school_last_week = case_when(
+        ta4 == "Yes" ~ "Yes",
+        ta4 == "Home Schooled" ~ "Yes",
+        ta4 == "No" ~ "No",
+        ta4 == "On Vacation" ~ "No",
+        ta4 %in% c("Refused", "Don't know") ~ NA_character_
+      ),
+      health_missed_days = case_when(
+        ta4 %in% c("Yes", "Home Schooled") & tb4 >= 0 ~ as.numeric(tb4),
+        ta4 %in% c("Yes", "Home Schooled") & tb4 %in% c(-7, -8) ~ NA_real_,
+
+        # structurally skipped by CHIS flow
+        ta4 %in% c("No", "On Vacation") ~ 0,
+
+        # unknown school attendance status
+        ta4 %in% c("Refused", "Don't know") ~ NA_real_,
+
+        TRUE ~ NA_real_
       ),
       tl53 = forcats::fct_rev(tl53),
       tl25_pos = case_when(
