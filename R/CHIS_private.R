@@ -336,18 +336,22 @@ for (nn in table_demographics) {
   )
 
   if (vartype == "continuous") {
-    temp_stat$se <- purrr::map2_dbl(temp_stat$year, temp_stat$tf45, function(y, anx) {
-      keep <- chis_design$variables$year == y &
-        chis_design$variables$tf45 == anx &
-        !is.na(chis_design$variables[[nn]])
+    temp_stat$se <- purrr::map2_dbl(
+      temp_stat$year,
+      temp_stat$tf45,
+      function(y, anx) {
+        keep <- chis_design$variables$year == y &
+          chis_design$variables$tf45 == anx &
+          !is.na(chis_design$variables[[nn]])
 
-      survey::svyvar(
-        as.formula(paste0("~", nn)),
-        design = chis_design[keep, ]
-      ) %>%
-        as.numeric() %>%
-        sqrt()
-    })
+        survey::svyvar(
+          as.formula(paste0("~", nn)),
+          design = chis_design[keep, ]
+        ) %>%
+          as.numeric() %>%
+          sqrt()
+      }
+    )
     temp_stat <- temp_stat %>%
       rename(sd = se) %>%
       rename(mean := !!sym(nn)) %>%
@@ -662,8 +666,7 @@ covar_sds <- sapply(colnames(mod.df), function(nm) {
 modes <- sapply(colnames(mod.df), function(nm) {
   weighted_counts <- survey::svytable(
     as.formula(paste0("~ `", nm, "`")),
-    design = svymod,
-    na.rm = TRUE
+    design = svymod
   )
   mode_value <- names(weighted_counts)[which.max(weighted_counts)] %>%
     as.numeric()
