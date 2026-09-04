@@ -1216,16 +1216,10 @@ chis_clean_puf <- function(data) {
         ta4 == "On Vacation" ~ "No",
         ta4 %in% c("Refused", "Don't know") ~ NA_character_
       ),
-      health_missed_days = case_when(
-        ta4 %in% c("Yes", "Home Schooled") & tb4 >= 0 ~ as.numeric(tb4),
-        ta4 %in% c("Yes", "Home Schooled") & tb4 %in% c(-7, -8) ~ NA_real_,
-
-        # structurally skipped by CHIS flow
-        ta4 %in% c("No", "On Vacation") ~ 0,
-
-        # unknown school attendance status
-        ta4 %in% c("Refused", "Don't know") ~ NA_real_,
-
+      health_missed_days = dplyr::case_when(
+        school_last_week == "Yes" & tb4 >= 0 ~ as.numeric(tb4),
+        school_last_week == "Yes" & tb4 %in% c(-7, -8) ~ NA_real_,
+        school_last_week == "No" ~ 0,
         TRUE ~ NA_real_
       ),
       tl53 = forcats::fct_rev(tl53),
@@ -1383,6 +1377,12 @@ chis_clean <- function(data) {
         "No" = "Refused",
         "No" = "Inapplicable",
         "Yes" = "Home Schooled"
+      ),
+      health_missed_days = dplyr::case_when(
+        school_last_week == "Yes" & tb4 >= 0 ~ as.numeric(tb4),
+        school_last_week == "Yes" & tb4 %in% c(-7, -8) ~ NA_real_,
+        school_last_week == "No" ~ 0,
+        TRUE ~ NA_real_
       ),
       tl53 = forcats::fct_rev(tl53),
       tl25_pos = case_when(
