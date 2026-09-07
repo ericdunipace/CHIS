@@ -100,7 +100,8 @@ jobs:
           libpng-dev libtiff5-dev libjpeg-dev \
           libudunits2-dev libgdal-dev gdal-bin \
           libgeos-dev libproj-dev libgettextpo-dev gettext \
-          gfortran libx11-dev libnode-dev
+          gfortran libx11-dev libnode-dev \
+          cmake gsfonts libcairo2-dev libmagick++-dev pandoc
           
     - name: Install gfortran (Windows)
       if: runner.os == 'Windows'
@@ -124,6 +125,13 @@ jobs:
       shell: Rscript {0}
       run: |
         remotes::install_version("units", version = "0.8-1", type = 'source', configure.args = c(units = '--with-udunits2-lib=/opt/homebrew/lib --with-udunits2-include=/opt/homebrew/include'))
+
+    - name: Preinstall fragile archive packages on Linux
+      if: runner.os == 'Linux'
+      shell: Rscript {0}
+      run: |
+        remotes::install_version("sys", version = "3.4.1", repos = "https://cloud.r-project.org", type = "source")
+        remotes::install_version("askpass", version = "1.1", repos = "https://cloud.r-project.org", type = "source")
 
     - name: Ignore sf and terra during renv restore (macOS only)
       if: runner.os == 'macOS'
