@@ -558,7 +558,11 @@ if (length(missing_outputs) > 0L) {
         mutate(label = forcats::fct_reorder(label, e_est)) |>
         ggplot(aes(x = e_est, y = (label))) +
         geom_vline(xintercept = 1, linetype = 2, color = "gray50") +
-        geom_errorbarh(aes(xmin = e_lwr, xmax = e_upr), height = 0.0) +
+        geom_errorbar(
+            aes(xmin = e_lwr, xmax = e_upr),
+            height = 0.0,
+            orientation = "y"
+        ) +
         geom_point(size = 2) +
         scale_x_log10() +
         labs(x = "Odds Ratio (95% CI)", y = NULL) +

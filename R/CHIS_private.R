@@ -25,6 +25,7 @@
 ######################################################################
 
 ### Import and read stuff in ####
+stopifnot(getRversion() == "4.2.3")
 # Load required libraries (ensure they are installed)
 library(methods)
 library(stats)
