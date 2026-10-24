@@ -26,6 +26,7 @@ Data/chis_puf_combined.RDS
 Data/teen_stata_20*/
 Data/teen_20*_stata/
 Data/chis_puf_combined.Rds
+Documents/*.*
 Documents/Manuscript/*
 !Documents/Manuscript/*.qmd
 !Documents/Manuscript/_format.yml
