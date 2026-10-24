@@ -2,40 +2,40 @@
 
 ### Import and read stuff in ######################################################################
 # Load required libraries (ensure they are installed)
-library(dplyr)       # Data manipulation
-library(haven)       # Reading .dta files
-library(purrr)       # Functional programming
-library(forcats)     # Factor manipulation
+library(dplyr) # Data manipulation
+library(haven) # Reading .dta files
+library(purrr) # Functional programming
+library(forcats) # Factor manipulation
 library(lubridate)
 
-here::i_am("R/Cleaning/CHIS_PUF_clean.R")  # adjust this to your actual file location
+here::i_am("data-raw/CHIS_PUF_clean.R") # adjust this to your actual file location
 
 
 # Import PUF datasets
-chis_2023 <- haven::read_dta(here::here('Data','teen_2023_stata/TEEN.dta')) %>%
+chis_2023 <- haven::read_dta(here::here('Data', 'teen_2023_stata/TEEN.dta')) %>%
   rename_all(tolower) %>%
-  mutate(year = 2023) %>% 
+  mutate(year = 2023) %>%
   haven::as_factor()
 
-chis_2022 <- haven::read_dta(here::here('Data','teen_stata_2022/TEEN.dta')) %>%
+chis_2022 <- haven::read_dta(here::here('Data', 'teen_stata_2022/TEEN.dta')) %>%
   rename_all(tolower) %>%
-  mutate(year = 2022) %>% 
+  mutate(year = 2022) %>%
   haven::as_factor()
 
-chis_2021 <- haven::read_dta(here::here('Data','teen_stata_2021/TEEN.dta')) %>%
+chis_2021 <- haven::read_dta(here::here('Data', 'teen_stata_2021/TEEN.dta')) %>%
   rename_all(tolower) %>%
-  mutate(year = 2021) %>% 
+  mutate(year = 2021) %>%
   haven::as_factor()
 
 
 my_chis_list <- list(chis_2021, chis_2022, chis_2023) # work with PUF data
 
 #### Load functions ####
-source(here::here("R","Functions.R"))
+source(here::here("R", "Functions.R"))
 
 #### Clean data ####
 
-chis <- chis_clean(my_chis_list) %>% 
+chis <- chis_clean_puf(my_chis_list) %>%
   mutate(
     across(
       everything(),
@@ -46,7 +46,7 @@ chis <- chis_clean(my_chis_list) %>%
         l2023 <- attr(chis_2023[[nm]], "label")
         l2022 <- attr(chis_2022[[nm]], "label")
         l2021 <- attr(chis_2021[[nm]], "label")
-        ll    <- if(!is.null(l2023)) {
+        ll <- if (!is.null(l2023)) {
           l2023
         } else if (is.null(l2023) && !is.null(l2022)) {
           l2022
@@ -66,5 +66,4 @@ chis <- chis_clean(my_chis_list) %>%
 # labelled::var_label(chis) <- labelled::var_label(chis_2023)
 
 #### Save as RDS ####
-saveRDS(chis, file = here::here("data","chis_puf_combined.Rds"))
-
+saveRDS(chis, file = here::here("data", "chis_puf_combined.Rds"))

@@ -1836,6 +1836,391 @@ recover_df <- function(q, p) {
   return(rs$minimum)
 }
 
+# Lancet style: midline decimal points (23·4, not 23.4). Only replaces a
+# period between two digits, so labels and thousands separators are untouched.
+midline_decimal <- function(x) {
+  gsub("(?<=\\d)\\.(?=\\d)", "·", x, perl = TRUE)
+}
+
+# ggplot2 `labels =` function using midline decimals
+label_midline <- function(x) {
+  midline_decimal(format(x, trim = TRUE, drop0trailing = TRUE))
+}
+
+#### Lancet-style tables ####
+# Lancet submission rules: one stub column with indented categories, all
+# gridlines visible, no merged body cells, empty top-left cell, and
+# footnotes below the table. The helpers below share one row layout so the
+# Word, HTML, and LaTeX versions match.
+
+# Flatten grouped data into display rows. A group with a single unlabeled row
+# (e.g. Age, Total, Intercept) is shown on one row; other groups get a header
+# row followed by indented category rows.
+lancet_rows <- function(df, group_col, label_col, value_cols) {
+  groups <- as.character(df[[group_col]])
+  labels <- as.character(df[[label_col]])
+  labels[is.na(labels)] <- ""
+  values <- lapply(df[value_cols], as.character)
+  values <- as.data.frame(values, check.names = FALSE)
+
+  out <- lapply(unique(groups), function(g) {
+    idx <- which(groups == g)
+    if (length(idx) == 1L && trimws(labels[idx]) == "") {
+      return(data.frame(
+        label = g,
+        indent = FALSE,
+        values[idx, , drop = FALSE],
+        check.names = FALSE
+      ))
+    }
+    header <- values[1, , drop = FALSE]
+    header[] <- ""
+    rbind(
+      data.frame(label = g, indent = FALSE, header, check.names = FALSE),
+      data.frame(
+        label = trimws(labels[idx]),
+        indent = TRUE,
+        values[idx, , drop = FALSE],
+        check.names = FALSE
+      )
+    )
+  })
+  out <- do.call(rbind, out)
+  rownames(out) <- NULL
+  out
+}
+
+# Rows to shade: group headings from lancet_rows() (not indented and no
+# values, e.g. "Sex" above "Female"/"Male"), the "Total" summary row, and
+# any row flagged TRUE in an optional `shade` column.
+# Other single rows such as Age or Intercept are left unshaded.
+lancet_group_rows <- function(rows, value_cols) {
+  empty <- rowSums(rows[value_cols] != "") == 0L
+  shade <- (!rows$indent & empty) | (!rows$indent & rows$label == "Total")
+  if ("shade" %in% names(rows)) {
+    shade <- shade | rows$shade
+  }
+  which(shade)
+}
+
+# Light blue fill for the column headers, group heading rows and Total row,
+# to help readers scan the tables
+lancet_group_fill <- "#DCE6F1"
+
+lancet_border <- function() {
+  officer::fp_border(color = "black", width = 0.5)
+}
+
+# `header` maps value columns to their labels; `spanners` is a named vector of
+# column counts for a heading row above them (e.g. c("2021" = 3, ...)).
+# If the table is wider than `max_width` inches, columns are narrowed so text
+# wraps within cells instead of the table running off the page.
+lancet_flextable <- function(
+  rows,
+  header,
+  spanners = NULL,
+  font_size = 8,
+  max_width = NULL,
+  group_fill = lancet_group_fill
+) {
+  value_cols <- names(header)
+  ft <- flextable::flextable(rows[c("label", value_cols)]) |>
+    flextable::set_header_labels(values = c(list(label = ""), as.list(header)))
+
+  if (!is.null(spanners)) {
+    ft <- flextable::add_header_row(
+      ft,
+      values = c("", names(spanners)),
+      colwidths = c(1L, unname(spanners))
+    )
+  }
+
+  indent <- which(rows$indent)
+  if (length(indent) > 0L) {
+    ft <- flextable::padding(
+      ft,
+      i = indent,
+      j = 1,
+      padding.left = 15,
+      part = "body"
+    )
+  }
+
+  ft <- ft |>
+    flextable::border_remove() |>
+    flextable::border_outer(border = lancet_border(), part = "all") |>
+    flextable::border_inner(border = lancet_border(), part = "all") |>
+    flextable::align(align = "left", part = "all") |>
+    flextable::fontsize(size = font_size, part = "all") |>
+    flextable::autofit()
+
+  if (!is.null(group_fill)) {
+    ft <- flextable::bg(ft, bg = group_fill, part = "header")
+    groups <- lancet_group_rows(rows, value_cols)
+    if (length(groups) > 0L) {
+      ft <- flextable::bg(ft, i = groups, bg = group_fill, part = "body")
+    }
+  }
+
+  if (!is.null(max_width) && sum(ft$body$colwidths) > max_width) {
+    label_width <- min(ft$body$colwidths[1], 1.6)
+    ft <- ft |>
+      flextable::width(j = 1, width = label_width) |>
+      flextable::width(
+        j = value_cols,
+        width = (max_width - label_width) / length(value_cols)
+      )
+  }
+  ft
+}
+
+lancet_gt <- function(
+  rows,
+  header,
+  spanners = NULL,
+  notes = character(),
+  font_size = NULL,
+  group_fill = lancet_group_fill
+) {
+  value_cols <- names(header)
+  tab <- rows[c("label", value_cols)] |>
+    gt::gt(rowname_col = "label") |>
+    gt::tab_stubhead(label = "") |>
+    gt::cols_label(.list = as.list(header)) |>
+    gt::cols_align(align = "left", columns = gt::everything())
+
+  indent <- which(rows$indent)
+  if (length(indent) > 0L) {
+    tab <- gt::tab_stub_indent(tab, rows = indent, indent = 3)
+  }
+
+  border_locations <- list(
+    gt::cells_body(),
+    gt::cells_stub(),
+    gt::cells_column_labels(),
+    gt::cells_stubhead()
+  )
+  if (!is.null(spanners)) {
+    ends <- cumsum(spanners)
+    for (k in seq_along(spanners)) {
+      tab <- gt::tab_spanner(
+        tab,
+        label = names(spanners)[k],
+        columns = value_cols[(ends[k] - spanners[k] + 1):ends[k]],
+        id = paste0("spanner_", k)
+      )
+    }
+    border_locations <- c(border_locations, list(gt::cells_column_spanners()))
+  }
+
+  tab <- gt::tab_style(
+    tab,
+    style = gt::cell_borders(
+      sides = "all",
+      color = "black",
+      weight = gt::px(1)
+    ),
+    locations = border_locations
+  )
+
+  if (!is.null(group_fill)) {
+    header_locations <- list(
+      gt::cells_column_labels(),
+      gt::cells_stubhead()
+    )
+    if (!is.null(spanners)) {
+      header_locations <- c(
+        header_locations,
+        list(gt::cells_column_spanners())
+      )
+    }
+    tab <- gt::tab_style(
+      tab,
+      style = gt::cell_fill(color = group_fill),
+      locations = header_locations
+    )
+    groups <- lancet_group_rows(rows, value_cols)
+    if (length(groups) > 0L) {
+      tab <- gt::tab_style(
+        tab,
+        style = gt::cell_fill(color = group_fill),
+        locations = list(
+          gt::cells_body(rows = groups),
+          gt::cells_stub(rows = groups)
+        )
+      )
+    }
+  }
+
+  for (note in notes) {
+    tab <- gt::tab_source_note(tab, source_note = note)
+  }
+  if (!is.null(font_size)) {
+    tab <- gt::tab_options(tab, table.font.size = paste0(font_size, "pt"))
+  }
+  tab
+}
+
+# Add outer vertical rules to the first tabular or longtable column spec.
+# The spec can contain nested braces (e.g.
+# >{\raggedright\arraybackslash}p{1in}), so find its closing brace by
+# counting rather than with a regex.
+latex_outer_vlines <- function(tab) {
+  x <- as.character(tab)
+  m <- regexpr("\\\\begin\\{(tabular|longtable)\\}(\\[t\\])?\\{", x)
+  if (m < 0) {
+    return(x)
+  }
+  open <- m + attr(m, "match.length")
+  chars <- strsplit(substring(x, open), "")[[1]]
+  depth <- cumsum((chars == "{") - (chars == "}"))
+  close <- open + which(depth == -1L)[1] - 1L
+  paste0(
+    substr(x, 1, open - 1L),
+    "|",
+    substr(x, open, close - 1L),
+    "|",
+    substring(x, close)
+  )
+}
+
+lancet_latex <- function(
+  rows,
+  header,
+  spanners = NULL,
+  notes = character(),
+  font_size = NULL,
+  max_width = NULL,
+  label_width = NULL,
+  longtable = FALSE,
+  group_fill = lancet_group_fill
+) {
+  value_cols <- names(header)
+  # `longtable` lets a long table break across pages, repeating the header
+  tab <- rows[c("label", value_cols)] |>
+    kableExtra::kbl(
+      format = "latex",
+      booktabs = FALSE,
+      longtable = longtable,
+      vline = "|",
+      linesep = "\\hline",
+      col.names = c("", unname(header)),
+      align = rep("l", length(value_cols) + 1L),
+      escape = TRUE
+    )
+
+  # Fixed-width (wrapping) columns so long headers wrap within `max_width`
+  # inches instead of the table being scaled down to fit. Each column also
+  # has 12pt (about 0.17in) of padding. With few value columns the label
+  # column gets the spare width (up to 2.5in) so labels wrap less, unless
+  # `label_width` (inches) is given.
+  if (!is.null(max_width)) {
+    if (is.null(label_width)) {
+      label_width <- min(2.5, max(1.5, max_width - 1.1 * length(value_cols)))
+    }
+    value_width <- (max_width - label_width) / length(value_cols) - 0.17
+    tab <- kableExtra::column_spec(
+      tab,
+      1,
+      width = sprintf("%.2fin", label_width - 0.17)
+    )
+    tab <- kableExtra::column_spec(
+      tab,
+      seq_along(value_cols) + 1L,
+      width = sprintf("%.2fin", value_width)
+    )
+  }
+
+  if (!is.null(group_fill)) {
+    tab <- kableExtra::row_spec(tab, 0, background = group_fill)
+  }
+
+  if (!is.null(spanners)) {
+    tab <- kableExtra::add_header_above(
+      tab,
+      c(" " = 1, spanners),
+      border_left = TRUE,
+      border_right = TRUE,
+      background = if (is.null(group_fill)) NULL else group_fill
+    )
+  }
+
+  indent <- which(rows$indent)
+  if (length(indent) > 0L) {
+    tab <- kableExtra::add_indent(tab, positions = indent)
+  }
+
+  groups <- lancet_group_rows(rows, value_cols)
+  if (!is.null(group_fill) && length(groups) > 0L) {
+    tab <- kableExtra::row_spec(tab, groups, background = group_fill)
+  }
+
+  tab <- kableExtra::kable_styling(
+    tab,
+    latex_options = if (longtable) {
+      "repeat_header"
+    } else {
+      c("hold_position", "scale_down")
+    },
+    font_size = font_size
+  )
+
+  if (length(notes) > 0L) {
+    tab <- kableExtra::footnote(
+      tab,
+      general = notes,
+      general_title = "",
+      footnote_as_chunk = FALSE,
+      escape = TRUE,
+      # wrap notes to the table width so they do not widen a fixed-width
+      # table
+      threeparttable = !is.null(max_width)
+    )
+  }
+
+  # kable only draws rules between columns; add the outer edges. Also drop
+  # the \vphantom kableExtra adds to tell duplicate rows apart, which shifts
+  # the cell text.
+  tab <- latex_outer_vlines(tab)
+  gsub("\\\\vphantom\\{[0-9]+\\} ?", "", tab)
+}
+
+# Write one or more tables to a Word document, each with an optional title
+# above and its footnotes as paragraphs below (not merged table rows).
+# Each element of `tables` is list(ft, notes, title, landscape).
+lancet_docx <- function(tables, path) {
+  section <- function(landscape) {
+    officer::prop_section(
+      page_size = officer::page_size(
+        orient = if (isTRUE(landscape)) "landscape" else "portrait"
+      ),
+      type = "nextPage"
+    )
+  }
+
+  doc <- officer::read_docx()
+  for (k in seq_along(tables)) {
+    tb <- tables[[k]]
+    if (!is.null(tb$title)) {
+      doc <- officer::body_add_par(doc, tb$title, style = "Normal")
+    }
+    doc <- flextable::body_add_flextable(doc, tb$ft, align = "left")
+    for (note in tb$notes) {
+      doc <- officer::body_add_par(doc, note, style = "Normal")
+    }
+    if (k < length(tables)) {
+      doc <- officer::body_end_block_section(
+        doc,
+        officer::block_section(section(tb$landscape))
+      )
+    } else {
+      doc <- officer::body_set_default_section(doc, section(tb$landscape))
+    }
+  }
+  print(doc, target = path)
+  invisible(path)
+}
+
 make_stat_display <- function(n, p, m, s) {
   fmt <- function(x) {
     formatC(x, big.mark = ',', digits = 1, format = "f")
@@ -2095,7 +2480,7 @@ apply_column_suppression <- function(
       eligible_secondary = trigger_secondary &
         bound == "" &
         N > 0 &
-        variable != "Age*" &
+        variable != "Age" &
         variable != "Total (%)",
 
       # Choose smallest positive exact cell
@@ -2333,6 +2718,179 @@ apply_yes_no_bounds <- function(dat) {
     )
 }
 
+check_table1_long_sums <- function(
+  tabl_1_long,
+  tolerance = 1e-6
+) {
+  required_columns <- c("variable", "label", "year", "tf45", "N", "perc")
+  missing_columns <- setdiff(required_columns, names(tabl_1_long))
+
+  if (length(missing_columns) > 0) {
+    stop(
+      "Cannot check long Table 1 sums; missing columns: ",
+      paste(missing_columns, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  categorical <- tabl_1_long |>
+    dplyr::filter(!is.na(label))
+
+  within_tolerance <- function(actual, expected) {
+    abs(actual - expected) <= tolerance * pmax(1, abs(expected))
+  }
+
+  variable_totals <- categorical |>
+    dplyr::group_by(variable) |>
+    dplyr::summarise(
+      variable_perc = sum(perc, na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  variable_checks <- variable_totals |>
+    dplyr::filter(!within_tolerance(variable_perc, 100))
+
+  table_N <- categorical |>
+    dplyr::filter(!is.na(N), !is.na(perc), perc > 0) |>
+    dplyr::summarise(table_N = stats::median(100 * N / perc)) |>
+    dplyr::pull(table_N)
+
+  percentage_checks <- categorical |>
+    dplyr::filter(!is.na(N), !is.na(perc)) |>
+    dplyr::mutate(expected_perc = 100 * N / table_N) |>
+    dplyr::filter(!within_tolerance(perc, expected_perc))
+
+  if (
+    nrow(variable_checks) > 0 ||
+      nrow(percentage_checks) > 0
+  ) {
+    variable_groups <- utils::head(as.character(variable_checks$variable), 5)
+    percentage_groups <- utils::head(
+      paste(
+        percentage_checks$variable,
+        percentage_checks$year,
+        percentage_checks$tf45,
+        percentage_checks$label,
+        sep = "/"
+      ),
+      5
+    )
+    details <- c(
+      if (length(variable_groups) > 0) {
+        paste0("variable totals: ", paste(variable_groups, collapse = ", "))
+      },
+      if (length(percentage_groups) > 0) {
+        paste0("percentages: ", paste(percentage_groups, collapse = ", "))
+      }
+    )
+
+    stop(
+      "Long Table 1 values do not add up within the allowed tolerance (",
+      format(tolerance),
+      "). Problem groups: ",
+      paste(details, collapse = "; "),
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
+check_table1_sums <- function(
+  tab1_raw,
+  tolerance = 1e-6
+) {
+  required_columns <- c(
+    "variable",
+    "label",
+    "year",
+    "status",
+    "N",
+    "total_N",
+    "perc"
+  )
+  missing_columns <- setdiff(required_columns, names(tab1_raw))
+
+  if (length(missing_columns) > 0) {
+    stop(
+      "Cannot check Table 1 sums; missing columns: ",
+      paste(missing_columns, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  categorical <- tab1_raw |>
+    dplyr::filter(
+      !as.character(variable) %in% c("Age", "Age*", "Total (%)"),
+      !is.na(label)
+    ) |>
+    dplyr::mutate(status = as.character(status))
+
+  within_tolerance <- function(actual, expected) {
+    abs(actual - expected) <= tolerance * pmax(1, abs(expected))
+  }
+
+  row_checks <- categorical |>
+    dplyr::group_by(variable, label, year) |>
+    dplyr::summarise(
+      yes_no_N = sum(N[status %in% c("Yes", "No")], na.rm = TRUE),
+      total_N_row = sum(N[status == "Total"], na.rm = TRUE),
+      yes_no_perc = sum(perc[status %in% c("Yes", "No")], na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    dplyr::filter(
+      !within_tolerance(yes_no_N, total_N_row) |
+        !within_tolerance(yes_no_perc, 100)
+    )
+
+  column_checks <- categorical |>
+    dplyr::group_by(variable, year, status) |>
+    dplyr::summarise(
+      category_N = sum(N, na.rm = TRUE),
+      expected_N = dplyr::first(total_N),
+      category_perc = sum(perc, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    dplyr::filter(
+      !within_tolerance(category_N, expected_N) |
+        (status == "Total" & !within_tolerance(category_perc, 100))
+    )
+
+  if (nrow(row_checks) > 0 || nrow(column_checks) > 0) {
+    row_groups <- utils::head(
+      paste(row_checks$variable, row_checks$label, row_checks$year, sep = "/"),
+      5
+    )
+    column_groups <- utils::head(
+      paste(
+        column_checks$variable,
+        column_checks$year,
+        column_checks$status,
+        sep = "/"
+      ),
+      5
+    )
+    details <- c(
+      if (length(row_groups) > 0) {
+        paste0("row totals: ", paste(row_groups, collapse = ", "))
+      },
+      if (length(column_groups) > 0) {
+        paste0("column totals: ", paste(column_groups, collapse = ", "))
+      }
+    )
+
+    stop(
+      "Table 1 values do not add up within the allowed tolerance (",
+      format(tolerance),
+      "). Problem groups: ",
+      paste(details, collapse = "; "),
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
 build_table1 <- function(
   tabl_1_long,
   suppression_cutoff = 500
@@ -2412,12 +2970,12 @@ build_table1 <- function(
         variable == "Age",
         "",
         as.character(label)
-      ),
-      variable = dplyr::if_else(
-        variable == "Age",
-        "Age*",
-        as.character(variable)
       )
+      # , variable = dplyr::if_else(
+      #   variable == "Age",
+      #   "Age*",
+      #   as.character(variable)
+      # )
     ) |>
     dplyr::mutate(
       label = dplyr::case_when(
@@ -2524,12 +3082,12 @@ build_table1 <- function(
       status
     ) |>
     dplyr::summarise(
-      sd = if (dplyr::first(variable) == "Age*") {
+      sd = if (dplyr::first(variable) == "Age") {
         dplyr::first(sd)
       } else {
         pooled_sd(N, mean, sd)
       },
-      mean = if (dplyr::first(variable) == "Age*") {
+      mean = if (dplyr::first(variable) == "Age") {
         dplyr::first(mean)
       } else {
         pooled_mean(N, mean)
@@ -2548,12 +3106,12 @@ build_table1 <- function(
         na.rm = TRUE
       ),
       N = dplyr::if_else(
-        variable == "Age*",
+        variable == "Age",
         total_N,
         N
       ),
       N_upper = dplyr::if_else(
-        variable == "Age*",
+        variable == "Age",
         total_N,
         N_upper
       )
@@ -2630,7 +3188,7 @@ build_table1 <- function(
         .,
         . |>
           dplyr::filter(
-            variable == "Age*"
+            variable == "Age"
           ) |>
           dplyr::mutate(
             variable = "Total (%)",
@@ -2661,7 +3219,7 @@ build_table1 <- function(
 
     dplyr::mutate(
       perc_display = dplyr::case_when(
-        variable == "Age*" ~ NA_real_,
+        variable == "Age" ~ NA_real_,
 
         status %in% c("Yes", "No") ~
           100 * N_display / row_total_display,
@@ -2687,13 +3245,13 @@ build_table1 <- function(
       ),
       variable = forcats::fct_relevel(
         factor(variable),
-        "Age*",
+        "Age",
         "Ethnicity",
         "Language Spoken at Home",
         "Parents' Educational Attainment",
         "Poverty Level",
         "Rural/Urban",
-        "Sex",
+        "Gender",
         "Type of School Attended",
         "Total (%)"
       )
@@ -2705,10 +3263,12 @@ build_table1 <- function(
       status
     )
 
+  check_table1_sums(tab1_raw)
+
   tab1_display <- tab1_raw |>
     dplyr::mutate(
       value = dplyr::case_when(
-        variable == "Age*" ~
+        variable == "Age" ~
           sprintf(
             "%.1f (%.1f)",
             mean,
@@ -2759,56 +3319,106 @@ build_table1 <- function(
   )
 }
 
+# Weighted percentages for Table 1 without counts, in the wide layout
+# render_table1() expects. "column" gives the make-up of each climate anxiety
+# group (Yes, No columns); "row" gives the prevalence of climate anxiety in
+# each category (one column per year). Age is mean (SD): per group in the
+# column layout, and for all adolescents in the row layout (the Total rows,
+# which pool Yes and No by the law of total variance). Suppressed cells keep
+# their bound (e.g. "<").
+table1_percent_display <- function(tab1_long, type = c("column", "row")) {
+  type <- match.arg(type)
+  is_age <- grepl("^Age", tab1_long$variable)
+  keep <- if (type == "column") {
+    tab1_long$status %in% c("Yes", "No") & tab1_long$variable != "Total (%)"
+  } else {
+    tab1_long$status == ifelse(is_age, "Total", "Yes")
+  }
+
+  tab1_long[keep, ] |>
+    dplyr::mutate(
+      # the row layout has one column per year
+      status = if (type == "row") "Yes" else status,
+      bound = dplyr::if_else(
+        suppress_final & !is.na(bound),
+        as.character(bound),
+        ""
+      ),
+      pct = if (type == "column") {
+        100 * N_display / total_N_display
+      } else {
+        perc_display
+      },
+      value = dplyr::if_else(
+        grepl("^Age", variable),
+        sprintf("%.1f (%.1f)", mean, sd),
+        sprintf("%s%.1f%%", bound, pct)
+      )
+    ) |>
+    dplyr::select(variable, label, year, status, value) |>
+    tidyr::pivot_wider(
+      names_from = c(year, status),
+      values_from = value,
+      names_glue = "stat_{year}_{status}"
+    )
+}
+
 render_table1 <- function(
   tab1_display,
   doc_dir,
   prefix = "table1_",
-  suffix = ""
+  suffix = "",
+  notes = c(
+    "Data are weighted n (%) or mean (SD). SD=standard deviation.",
+    paste0(
+      "*Rural/urban classification is based on Claritas ZIP code ",
+      "classification, which classifies ZIP codes as either rural or ",
+      "urban based on population density and other factors."
+    )
+  ),
+  font_size = 10,
+  header = NULL,
+  spanners = NULL,
+  landscape = TRUE,
+  max_width = 9
 ) {
-  tab1 <- tab1_display |>
-    gt::gt(
-      rowname_col = "label",
-      groupname_col = "variable"
-    ) |>
-    gt::tab_stubhead(label = "") |>
-    gt::tab_spanner(
-      label = "2021",
-      columns = c(
-        stat_2021_Yes,
-        stat_2021_No,
-        stat_2021_Total
-      )
-    ) |>
-    gt::tab_spanner(
-      label = "2022",
-      columns = c(
-        stat_2022_Yes,
-        stat_2022_No,
-        stat_2022_Total
-      )
-    ) |>
-    gt::tab_spanner(
-      label = "2023",
-      columns = c(
-        stat_2023_Yes,
-        stat_2023_No,
-        stat_2023_Total
-      )
-    ) |>
-    gt::cols_label(
-      stat_2021_Yes = "Yes",
-      stat_2021_No = "No",
-      stat_2021_Total = "Total",
-      stat_2022_Yes = "Yes",
-      stat_2022_No = "No",
-      stat_2022_Total = "Total",
-      stat_2023_Yes = "Yes",
-      stat_2023_No = "No",
-      stat_2023_Total = "Total"
-    ) |>
-    gt::fmt_number(sep_mark = ",")
+  # `header` maps value columns to their labels; by default each year has
+  # Yes and No columns under a year spanner (Total columns left out so the
+  # table fits the page)
+  if (is.null(header)) {
+    years <- c("2021", "2022", "2023")
+    status <- c("Yes", "No")
+    status_labels <- c(
+      Yes = "Climate anxiety: yes",
+      No = "Climate anxiety: no"
+    )
+    header <- stats::setNames(
+      rep(unname(status_labels[status]), length(years)),
+      paste0("stat_", rep(years, each = length(status)), "_", status)
+    )
+    spanners <- stats::setNames(rep(length(status), length(years)), years)
+  }
+  value_cols <- names(header)
 
-  # Save gt versions
+  rows <- tab1_display |>
+    dplyr::mutate(
+      dplyr::across(dplyr::all_of(value_cols), midline_decimal)
+    ) |>
+    lancet_rows(
+      group_col = "variable",
+      label_col = "label",
+      value_cols = value_cols
+    )
+
+  # HTML (gt) version
+  tab1 <- lancet_gt(
+    rows,
+    header,
+    spanners = spanners,
+    notes = notes,
+    font_size = font_size
+  )
+
   saveRDS(
     tab1,
     file = here::here(doc_dir, glue::glue("{prefix}_gt{suffix}.rds"))
@@ -2819,146 +3429,37 @@ render_table1 <- function(
     filename = here::here(doc_dir, glue::glue("{prefix}_gt{suffix}.html"))
   )
 
-  # Extract table body
-  tab1df <- tab1 |>
-    gt::extract_body() |>
-    dplyr::mutate(
-      `::rowname::` = dplyr::if_else(
-        grepl("&amp;", `::rowname::`),
-        gsub("&amp;", "&", `::rowname::`),
-        `::rowname::`
-      )
-    )
-
-  group_index <- tab1df |>
-    dplyr::mutate(row = dplyr::row_number()) |>
-    dplyr::summarise(
-      start = min(row),
-      end = max(row),
-      .by = `::group_id::`
-    )
-
-  # Explicit names are safer than using tab1$`_boxhead`
-  col_names <- c(
-    " ",
-    " ",
-    "Yes",
-    "No",
-    "Total",
-    "Yes",
-    "No",
-    "Total",
-    "Yes",
-    "No",
-    "Total"
+  # LaTeX version
+  latex_tab <- lancet_latex(
+    rows,
+    header,
+    spanners = spanners,
+    notes = notes,
+    font_size = font_size,
+    max_width = if (landscape) NULL else max_width
   )
-
-  latex_tab <- tab1df |>
-    stats::setNames(col_names) |>
-    subset(select = -1) |>
-    kableExtra::kbl(
-      format = "latex",
-      booktabs = TRUE,
-      escape = TRUE,
-      align = c("l", rep("r", 9))
-    ) |>
-    purrr::reduce(
-      seq_len(nrow(group_index)),
-      .init = _,
-      .f = function(tbl, i) {
-        kableExtra::group_rows(
-          tbl,
-          group_label = group_index$`::group_id::`[i],
-          start_row = group_index$start[i],
-          end_row = group_index$end[i]
-        )
-      }
-    ) |>
-    kableExtra::kable_styling(
-      latex_options = c(
-        "hold_position",
-        "scale_down"
-      )
-    ) |>
-    kableExtra::add_header_above(
-      c(
-        " " = 1,
-        "2021" = 3,
-        "2022" = 3,
-        "2023" = 3
-      )
-    ) |>
-    kableExtra::row_spec(
-      0,
-      align = "c"
-    ) |>
-    kableExtra::row_spec(
-      seq(1, nrow(tab1df), 2),
-      background = "#f5f5f5"
-    )
 
   cat(
     latex_tab,
     file = here::here(doc_dir, glue::glue("{prefix}{suffix}.tex"))
   )
 
-  # Word/flextable version
-  tab1ft <- tab1df |>
-    flextable::as_grouped_data(
-      groups = "::group_id::"
-    ) |>
-    flextable::flextable() |>
-    flextable::set_header_labels(
-      "::group_id::" = "",
-      "::rowname::" = "",
-      stat_2021_Yes = "Yes",
-      stat_2021_No = "No",
-      stat_2021_Total = "Total",
-      stat_2022_Yes = "Yes",
-      stat_2022_No = "No",
-      stat_2022_Total = "Total",
-      stat_2023_Yes = "Yes",
-      stat_2023_No = "No",
-      stat_2023_Total = "Total"
-    ) |>
-    flextable::add_header_row(
-      values = c(
-        "",
-        "2021",
-        "2022",
-        "2023"
-      ),
-      colwidths = c(
-        2,
-        3,
-        3,
-        3
-      )
-    ) |>
-    flextable::vline(
-      j = c(2, 5, 8),
-      border = officer::fp_border(
-        color = "gray50",
-        width = 1
-      ),
-      part = "all"
-    ) |>
-    flextable::fit_to_width(
-      max_width = 6.5
-    ) |>
-    flextable::fontsize(
-      size = 8,
-      part = "all"
-    )
-
-  flextable::save_as_docx(
-    tab1ft,
-    path = here::here(
-      doc_dir,
-      glue::glue("{prefix}{suffix}.docx")
-    )
+  # Word version: footnotes go below the table, not in merged rows
+  tab1ft <- lancet_flextable(
+    rows,
+    header,
+    spanners = spanners,
+    font_size = font_size,
+    max_width = max_width
   )
 
+  lancet_docx(
+    list(list(ft = tab1ft, notes = notes, landscape = landscape)),
+    path = here::here(doc_dir, glue::glue("{prefix}{suffix}.docx"))
+  )
+
+  # The manuscript embeds the table and writes the notes as paragraphs
+  # below it, matching the submission .docx
   saveRDS(
     tab1ft,
     file = here::here(
@@ -2966,14 +3467,330 @@ render_table1 <- function(
       glue::glue("{prefix}{suffix}_ft.rds")
     )
   )
+  saveRDS(
+    notes,
+    file = here::here(
+      doc_dir,
+      glue::glue("{prefix}{suffix}_notes.rds")
+    )
+  )
 
   invisible(
     list(
       gt = tab1,
-      data = tab1df,
-      flextable = tab1ft
+      data = rows,
+      flextable = tab1ft,
+      notes = notes,
+      landscape = landscape
     )
   )
 }
+
+# Display labels, footnote symbols and row order shared by Table 1
+# and its unweighted appendix version
+relabel_table1 <- function(tab) {
+  tab |>
+    dplyr::mutate(
+      variable = dplyr::case_when(
+        variable == "Poverty Level" ~ "Federal poverty level (FPL)",
+        variable == "Rural/Urban" ~ "Rural/urban residence†",
+        variable %in% c("Age", "Age*") ~ "Age, years",
+        variable == "Ethnicity" ~ "Race/ethnicity",
+        variable == "Language Spoken at Home" ~ "Language spoken at home",
+        variable == "Parents' Educational Attainment" ~
+          "Parents' educational attainment",
+        variable == "Type of School Attended" ~ "Type of school attended",
+        variable == "Total (%)" ~ "Total",
+        variable == "Sex" ~ "Gender",
+        TRUE ~ variable
+      )
+    ) |>
+    dplyr::mutate(
+      variable = forcats::fct_relevel(
+        variable,
+        # only levels present: the column % table has no Total row
+        intersect(
+          c(
+            "Age, years",
+            "Gender",
+            "Race/ethnicity",
+            "Language spoken at home",
+            "Parents' educational attainment",
+            "Federal poverty level (FPL)",
+            "Rural/urban residence†",
+            "Type of school attended",
+            "Total"
+          ),
+          variable
+        )
+      ),
+      label = as.factor(label),
+      label = forcats::fct_recode(
+        label,
+        "0–99% FPL" = "0-99% FPL",
+        "100–199% FPL" = "100-199% FPL",
+        "200–299% FPL" = "200-299% FPL",
+        "≥300% FPL" = "300% FPL And Above"
+      ),
+      label = forcats::fct_recode(
+        label,
+        "Less than a college degree" = "Less than college degree",
+        "Multiracial and other" = "Multiracial and Other",
+        "Public school" = "Public School",
+        "Private school" = "Private School"
+      ),
+      label = forcats::fct_relevel(
+        label,
+        "Other",
+        "Less than a college degree",
+        "Attended college",
+        after = match("English", levels(label))
+      ),
+      label = forcats::fct_relevel(
+        label,
+        "Public school",
+        "Private school",
+        "Other",
+        "",
+        after = match("Urban", levels(label))
+      )
+    ) |>
+    dplyr::arrange(variable, label)
+}
+
+# Pairs the unweighted n from the raw table with the weighted % from
+# table1_percent_display(). Age rows keep the weighted mean (SD), and
+# suppressed counts keep their bound (e.g. "<")
+table1_n_pct_display <- function(
+  tab1_long,
+  tab1_long_raw,
+  type = c("row", "column")
+) {
+  type <- match.arg(type)
+  pct_wide <- table1_percent_display(tab1_long, type = type)
+  n_wide <- tab1_long_raw |>
+    dplyr::filter(
+      status %in% c("Yes", "No"),
+      !grepl("^Age", variable)
+    ) |>
+    dplyr::mutate(
+      bound = dplyr::if_else(
+        suppress_final & !is.na(bound),
+        as.character(bound),
+        ""
+      ),
+      n = paste0(bound, scales::comma(round(N_display)))
+    ) |>
+    dplyr::select(variable, label, year, status, n) |>
+    tidyr::pivot_wider(
+      names_from = c(year, status),
+      values_from = n,
+      names_glue = "stat_{year}_{status}.n"
+    )
+
+  stat_cols <- setdiff(names(pct_wide), c("variable", "label"))
+  out <- dplyr::left_join(
+    pct_wide,
+    n_wide,
+    by = c("variable", "label")
+  )
+  for (col in stat_cols) {
+    n_col <- out[[paste0(col, ".n")]]
+    out[[col]] <- dplyr::if_else(
+      is.na(n_col),
+      out[[col]],
+      paste0(n_col, " (", out[[col]], ")")
+    )
+  }
+  dplyr::select(out, variable, label, dplyr::all_of(stat_cols))
+}
+
+# Lancet p values: two significant figures capped at 4 decimals, or <0·0001;
+# midline decimals
+fmt_p <- function(p, prefix = FALSE) {
+  p2 <- signif(p, 2)
+  d <- pmin(4, pmax(2, 1 - floor(log10(p2))))
+  d[is.na(d)] <- 2
+  out <- ifelse(
+    p < 0.0001,
+    "<0.0001",
+    sprintf("%.*f", d, round(p2, d))
+  )
+  out <- gsub(".", "\u00b7", out, fixed = TRUE)
+  if (prefix) {
+    out <- ifelse(startsWith(out, "<"), paste0("p", out), paste0("p=", out))
+  }
+  out
+}
+
+# Supplementary table numbers ("Table S1", ...) keyed by label, so the
+# manuscript can cite supplement tables without hard-coding numbers. Quarto
+# only numbers the supplement's custom `stbl` crossref kind on fenced divs
+# (`::: {#stbl-x}`), not on chunk labels, so labels are read from div ids in
+# document order to match Quarto's numbering.
+supp_tbl_refs <- function(
+  path = here::here("Documents", "Manuscript", "chis_supplement.qmd"),
+  key = "stbl"
+) {
+  src <- readLines(path, warn = FALSE)
+  pattern <- paste0("^:{3,}\\s*\\{[^}]*#(", key, "-[A-Za-z0-9_-]+)")
+  hits <- regmatches(src, regexec(pattern, src))
+  labs <- vapply(hits[lengths(hits) > 0], `[`, character(1), 2)
+  if (anyDuplicated(labs)) {
+    stop("Duplicate supplement labels: ", toString(labs[duplicated(labs)]))
+  }
+  stats::setNames(sprintf("Table S%d", seq_along(labs)), labs)
+}
+
+# Model matrix for data missing some covariates (`replace`). Columns for those
+# covariates are filled with a constant: the year-specific proportion from
+# Table 1 when `tab1` is given and the covariate is in `tab1_vars` (model
+# variable name = Table 1 `variable`; factor levels must equal Table 1
+# `label`), otherwise the pooled mean from `suf_stat`. `tab1` needs one row per
+# variable, label and year with `perc` on the 0-100 scale, e.g. the
+# Yes/No-pooled `tab1_long` in testing_change.R.
+reconstruct_mm <- function(
+  formula,
+  data,
+  replace,
+  suf_stat,
+  tab1 = NULL,
+  year = NULL,
+  tab1_vars = c(
+    ombsrreo = "Ethnicity",
+    sch_typ = "Type of School Attended"
+  )
+) {
+  cols <- suf_stat$names[
+    vapply(
+      suf_stat$names,
+      \(x) {
+        any(startsWith(x, replace))
+      },
+      logical(1)
+    )
+  ]
+
+  if (!is.null(tab1) && is.null(year)) {
+    year <- unique(data$year)
+  }
+  if (!is.null(tab1) && length(year) != 1) {
+    stop("`data` spans several years; supply a single `year`.")
+  }
+
+  vals <- vapply(
+    cols,
+    \(x) {
+      hits <- replace[startsWith(x, replace)]
+      var <- hits[which.max(nchar(hits))]
+      if (is.null(tab1) || !(var %in% names(tab1_vars))) {
+        return(suf_stat$mean[match(x, suf_stat$names)])
+      }
+      lvl <- substring(x, nchar(var) + 1)
+      row <- tab1$variable == tab1_vars[[var]] &
+        tab1$label == lvl &
+        as.character(tab1$year) == as.character(year)
+      if (sum(row) != 1) {
+        stop(sprintf(
+          "Expected one Table 1 row for %s = '%s' in %s, found %d.",
+          tab1_vars[[var]],
+          lvl,
+          year,
+          sum(row)
+        ))
+      }
+      tab1$perc[row] / 100
+    },
+    numeric(1)
+  )
+
+  mf <- model.frame(
+    formula = formula,
+    data = data
+  )
+  mm <- mf %>% model.matrix(terms(.), data = .)
+
+  # drop the placeholder columns for the replaced covariates, then add the
+  # constant-valued columns
+  mm <- mm[, setdiff(colnames(mm), c(replace, cols)), drop = FALSE]
+  fill <- matrix(
+    rep(vals, each = nrow(mm)),
+    nrow = nrow(mm),
+    dimnames = list(NULL, cols)
+  )
+
+  return(cbind(mm, fill))
+}
+
+midline <- function(s) gsub("(?<=\\d)\\.(?=\\d)", "·", s, perl = TRUE)
+# Lancet table spec for Word: Times New Roman 8 pt, bold column
+# headings, all grid lines visible
+lancet_ft <- function(ft) {
+  rule <- officer::fp_border(color = "black", width = 0.5)
+  ft |>
+    flextable::font(fontname = "Times New Roman", part = "all") |>
+    flextable::fontsize(size = 8, part = "all") |>
+    flextable::bold(part = "header") |>
+    flextable::border_outer(border = rule, part = "all") |>
+    flextable::border_inner(border = rule, part = "all")
+}
+
+# Word table notes in the reference doc's "Table Note" style
+cat_table_notes <- function(notes) {
+  # escape a leading * so Markdown keeps it as a footnote symbol
+  cat('::: {custom-style="Table Note"}\n')
+  cat(paste(sub("^\\*", "\\\\*", notes), collapse = "\n\n"), "\n")
+  cat(":::\n")
+}
+
+# Word tables in Times New Roman, matching the reference doc, with bold
+# column headers
+supp_ft <- function(ft) {
+  ft |>
+    flextable::font(fontname = "Times New Roman", part = "all") |>
+    flextable::bold(part = "header")
+}
+
+# Bold column headers in HTML tables
+bold_gt_header <- function(tab) {
+  gt::tab_style(
+    tab,
+    style = gt::cell_text(weight = "bold"),
+    locations = gt::cells_column_labels()
+  )
+}
+
+# Bold column headers in LaTeX tables: the first row of the tabular or
+# longtable, plus the copy a longtable repeats above \endhead
+bold_latex_header <- function(x) {
+  x <- unlist(strsplit(paste(x, collapse = "\n"), "\n"))
+  start <- grep("\\\\begin\\{(tabular|longtable)\\}", x)[1]
+  rows <- grep("\\\\\\\\$", x)
+  header <- c(rows[rows > start][1], grep("^\\\\endhead", x) - 2L)
+  x[header] <- gsub(
+    "(\\\\cellcolor\\[HTML\\]\\{[0-9A-Fa-f]+\\}\\{)([^{}]+)\\}",
+    "\\1\\\\textbf{\\2}}",
+    x[header]
+  )
+  paste(x, collapse = "\n")
+}
+
+# kableExtra wraps LaTeX tables in a table float, which cannot sit inside
+# the stbl float Quarto adds for the caption ("Not in outer par mode")
+strip_table_float <- function(x) {
+  gsub("\\\\(begin|end)\\{table\\}(\\[[^]]*\\])?", "", x)
+}
+
+lancet_signs <- function(x) {
+  x <- gsub("(?<=[( ])\\+(?=\\d)", "", x, perl = TRUE)
+  x <- gsub("(?<![\\w.])-(?=\\d)", "\u2013", x, perl = TRUE)
+  # pad non-negative estimates with a figure space (U+2007), which is as
+  # wide as a digit or en dash in Times New Roman, so decimal points line up
+  sub("^(?=\\d)", "\u2007", x, perl = TRUE)
+}
+
+# drop the sign from values that round to zero (-0.00 -> 0.00), with a
+# regular or midline decimal point; run before lancet_signs()
+fix_zero <- function(x) gsub("[+-](0[.\u00b7]0+)\\b", "\\1", x)
 
 ###### Below is the lists used for SAS factor variable labeling #######

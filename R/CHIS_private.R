@@ -749,3 +749,8 @@ cat("p-value for test if fixed effects do better: ", test$p %>% print())
 #   rep_beta_me,
 #   file = here::here("Outputs", "mixef_replicate_coef.csv")
 # )
+
+writeLines(
+  capture.output(sessionInfo()),
+  file.path(output_dir, "session_info.txt")
+)

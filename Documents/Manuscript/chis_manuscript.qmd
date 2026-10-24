@@ -1,0 +1,528 @@
+---
+title: "Exposure to temperature and mental health in adolescents: a repeated cross-sectional analysis of the California Health Interview Survey"
+author:
+  - name: Daniel Zhao
+    affiliations:
+      - ref: mmc
+    equal-contributor: true
+
+  - name: Eric Dunipace
+    affiliations:
+      - ref: ucla
+    equal-contributor: true
+
+  - name: Vivian Nguyen
+    affiliations:
+      - ref: rutgers
+
+  - name: Hei Yue Ng
+    affiliations:
+      - ref: hku
+
+  - name: Thoasin Bari
+    affiliations:
+      - ref: mmc
+
+  - name: Mahnoor Raheel
+    affiliations:
+      - ref: mmc
+
+  - name: Elissa Epel
+    affiliations:
+      - ref: ucsf-psych
+
+  - name: Elaine Allen
+    affiliations:
+      - ref: ucsf-epi
+
+  - name: Alison R. Hwong
+    affiliations:
+      - ref: ucsf-psych
+      - ref: stanford
+      - ref: va
+    email: arhwong@stanford.edu
+    corresponding: true
+
+affiliations:
+  - id: mmc
+    name: Department of Psychiatry, Maimonides Medical Center, Brooklyn, New York, United States of America
+
+  - id: ucla
+    name: Department of Psychiatry and Biobehavioral Sciences, David Geffen School of Medicine, University of California Los Angeles, Los Angeles, California, United States of America
+
+  - id: rutgers
+    name: Department of Psychiatry, Rutgers Robert Wood Johnson Medical School, New Brunswick, New Jersey, United States of America
+
+  - id: hku
+    name: Li Ka Shing Faculty of Medicine, University of Hong Kong, Hong Kong SAR, China
+
+  - id: ucsf-psych
+    name: Department of Psychiatry and Behavioral Sciences, University of California San Francisco, San Francisco, California, United States of America
+
+  - id: ucsf-epi
+    name: Department of Epidemiology and Biostatistics, University of California San Francisco, San Francisco, California, United States of America
+
+  - id: stanford
+    name: Department of Psychiatry and Behavioral Sciences, Stanford School of Medicine, Palo Alto, California, United States of America
+
+  - id: va
+    name: Psychiatry Service, Veterans Affairs Palo Alto Health Care System, Palo Alto, California, United States of America
+project:
+  type: default
+  execute-dir: project
+  resources:
+    - ../../Figures/
+# docx and pdf settings are shared with the supplement and tables documents
+metadata-files:
+  - _format.yml
+format:
+  docx: default
+  html: default
+  pdf: default
+filters:
+  - authors-block
+bibliography: CHIS.bib
+csl: https://www.zotero.org/styles/the-lancet
+---
+<!-- cspell:language en-GB -->
+
+{{< include _setup.qmd >}}
+
+```{r load-tabs, echo = FALSE, message = FALSE, warning = FALSE}
+N_obs <- c("2021" = 1169, "2022" = 985 , "2023" = 968)
+
+tab1_long <- utils::read.csv(here::here("Outputs", "table1.csv"))
+
+```
+``` {r load-glm, echo = FALSE, message = FALSE, warning = FALSE}
+glm_results <- readRDS(here::here("Documents", "glm_lor_table.rds"))
+
+```
+```{r prevalence-data}
+#| echo: false
+#| message: false
+#| warning: false
+overal_prev <- readRDS(
+    here::here("Documents", "prevalence_overall.rds")
+)
+
+prev <- readRDS(
+    here::here("Documents",
+    "prevalence.rds")
+)
+
+clim_anx_change <-  (prev$anx_2021_2022[1] - prev$anx[prev$year == "2023"])*100
+
+prev_sigs <- readRDS(here::here("Documents", "prev_sig_tests.rds"))
+
+
+clim_pval <- here::here("Documents", "climate_vars_pvalue.rds") |> readRDS()
+
+```
+# Summary
+
+## Background
+Population-level evidence on climate anxiety among adolescents remains limited, particularly regarding associations with objective climate exposure and demographic and psychosocial factors.
+
+## Methods
+We analysed the California Health Interview Survey's repeated cross-sectional data from `r as.integer(sum(N_obs))` adolescents aged 12--17 (2021--2023), linked to census tract- and county-level temperature data. Multivariable logistic regression assessed demographic, psychosocial, civic, healthcare access, and climate correlates of anxiety. Non-intercept p values were adjusted using the Benjamini-Hochberg procedure.
+
+## Findings
+Overall, `r sprintf("%.1f%%", sum(tab1_long |> filter(variable == "Total (%)", status == "Yes") |> pull(total_N))/sum(tab1_long |> filter(variable == "Total (%)", status == "Total" ) |> pull(total_N)) * 100)` of adolescents reported climate change anxiety. Prevalence was stable in 2021 (`r sprintf("%.1f%%", tab1_long |> filter(variable == "Total (%)", year == 2021, status == "Yes") |> pull(perc))`) and 2022 (`r sprintf("%.1f%%", tab1_long |> filter(variable == "Total (%)", year == 2022, status == "Yes") |> pull(perc))`) before declining significantly to `r sprintf("%.1f%%", tab1_long |> filter(variable == "Total (%)", year == 2023, status == "Yes") |> pull(perc))` in 2023 (p=`r fmt_p(prev_sigs$p.value[prev_sigs$contrast == "year2022 - year2023"])`). Self-reported female gender (OR `r glm_results |> filter(term == "Female") |> pull(e_est) |> sprintf(fmt = "%.2f")`, 95% CI `r glm_results |> filter(term == "Female") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "Female") |> pull(e_upr) |> sprintf(fmt = "%.2f")`), older age (OR `r glm_results |> filter(term == "15–17") |> pull(e_est) |> sprintf(fmt = "%.2f")`, 95% CI `r glm_results |> filter(term == "15–17") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "15–17") |> pull(e_upr) |> sprintf(fmt = "%.2f")`), 
+parental college education (OR `r glm_results |> filter(term == "Attended college") |> pull(e_est) |> sprintf(fmt = "%.2f")`, 95% CI `r glm_results |> filter(term == "Attended college") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "Attended college") |> pull(e_upr) |> sprintf(fmt = "%.2f")`), and caring deeply about community issues (OR `r glm_results |> filter(term == "Cares deeply about community issues") |> pull(e_est) |> sprintf(fmt = "%.2f")`, 95% CI `r glm_results |> filter(term == "Cares deeply about community issues") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "Cares deeply about community issues") |> pull(e_upr) |> sprintf(fmt = "%.2f")`) were each associated with higher odds of climate anxiety. Rural residence (OR `r glm_results |> filter(term == "Rural") |> pull(e_est) |> sprintf(fmt = "%.2f")`, 95% CI `r glm_results |> filter(term == "Rural") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "Rural") |> pull(e_upr) |> sprintf(fmt = "%.2f")`), family support (OR `r glm_results |> filter(term == "Felt supported by family") |> pull(e_est) |> sprintf(fmt = "%.2f")`, 95% CI `r glm_results |> filter(term == "Felt supported by family") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "Felt supported by family") |> pull(e_upr) |> sprintf(fmt = "%.2f")`), and not delaying medical care (OR `r glm_results |> filter(term == "Did not delay medical care") |> pull(e_est) |> sprintf(fmt = "%.2f")`, 95% CI `r glm_results |> filter(term == "Did not delay medical care") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "Did not delay medical care") |> pull(e_upr) |> sprintf(fmt = "%.2f")`) were associated with lower odds. Point estimates suggested associations between temperature changes and climate anxiety, although wide confidence intervals indicated substantial uncertainty; a joint test of all temperature variables found they were associated with climate anxiety (`r fmt_p(clim_pval$p.value, TRUE)`).
+
+## Interpretation
+Climate anxiety declined among California adolescents in 2023. Health, social, and civic factors were more consistently associated with anxiety than individual temperature measures, although the temperature measures were jointly associated with the outcome.
+
+## Funding
+None
+
+<!-- # KEYWORDS
+Climate anxiety; eco-anxiety; adolescent mental health; climate change; California Health Interview Survey; CHIS; population-based survey; civic engagement -->
+
+# Research in context
+## Evidence before this study
+**[AUTHORS TO COMPLETE: name the databases searched, the exact search terms, and the start and end dates of the search. Lancet requires these specifics and the search must not be restricted to English-language publications.]**
+Existing evidence on climate change anxiety in young people comes largely from convenience and non-representative samples. Large international surveys have documented widespread climate-related distress among children and young people, and smaller studies in the USA and Australia have linked climate concern to psychological distress. Few studies have used population-representative samples, and fewer still have linked self-reported climate anxiety to objective, geographically resolved measures of climate exposure such as ambient temperature or heatwave frequency. Prior work has also tended to treat climate anxiety as a single construct rather than examining how it varies with demographic, civic, and health-care access factors.
+
+## Added value of this study
+To our knowledge, this is the first population-representative analysis of climate change anxiety among adolescents to link individual survey responses to objective climate exposure data at the census tract and county level. Using three consecutive years of the California Health Interview Survey, we show that climate anxiety was common but declined significantly in 2023, and that variation in climate anxiety was more precisely explained by health, civic engagement, and demographic factors than by local heatwave frequency or temperature deviation from historical norms. 
+However, temperature exposures are jointly associated with climate anxiety.
+
+## Implications of all the available evidence
+Interventions to address climate-related distress in adolescents should focus on the social and civic contexts in which climate change is understood, rather than targeting young people solely on the basis of geographic exposure. The association between civic engagement and higher climate anxiety indicates that engagement is not uniformly protective, and that programmes encouraging youth participation should be attentive to the emotional burden they may place on those taking part. Temperature deviations and heatwave deviations appear to be associated with climate anxiety though more work should be done to ascertain the precise mechanisms by which the experience of the climate leads to anxiety.
+
+# Introduction
+Climate change is a defining global crisis of the 21st century, posing not only physical health threats but also significant risks to psychological well-being. Research on the mental health impacts of climate change has expanded in recent years, with emerging studies suggesting that younger populations are disproportionately affected and may face distinct vulnerabilities compared with adults.[@helld2021a;@hickmanClimateAnxietyChildren2021;@lewandowski2024a;@teoClimateChangeConcerns2024;@wu2020a;@zhao2024a]
+
+Evidence to date shows a high proportion of adolescents experience mental health distress associated with climate change.[@hickmanClimateAnxietyChildren2021;@lewandowski2024a] This distress, also referred to as climate anxiety or eco-anxiety, has been defined by the American Psychological Association as "any anxiety or worry about climate change and its effects."[@association2020a] While anxiety has been among the more frequently examined aspects of climate-related distress, individuals also report a wide range of emotional responses to climate change.[@ojalaRegulatingWorryPromoting2012;@pihkala2022a] 
+<!-- Empirical studies, such as Hickman and colleagues,[@hickmanClimateAnxietyChildren2021] have documented these experiences in adolescents and young adults, noting emotions such as sadness, fear, guilt, shame, and grief, along with pessimistic views of the future. -->
+
+The same study’s large-scale global survey across ten countries found that nearly 60% of respondents aged 16--25 were very or extremely worried about climate change, with almost half reporting that these concerns interfered with daily functioning.[@hickmanClimateAnxietyChildren2021] A subsequent nationwide survey in 2023 in the United States found similar patterns, with 58% of respondents expressing extreme worry, and substantial proportions reporting adverse effects on mental health and daily life.[@lewandowski2024a] 
+<!-- These findings underscore the urgency of examining climate-related mental health outcomes in younger populations. -->
+
+Adolescents are at elevated risk of climate-related mental health challenges.[@hickmanClimateAnxietyChildren2021;@zhao2024a] Adolescence is a developmental stage marked by biological and social transitions, during which the brain undergoes structural and functional changes that heighten susceptibility to mental health problems.[@blakemore2014a;@patton2007a] At the same time, adolescents will experience the impacts of climate change across a longer lifespan. These factors, combined with comparatively limited resilience and fewer resources to cope with stressors, are thought to increase the risk of depression and anxiety associated with climate change for young people.
+
+Importantly, mental health outcomes are not distributed equally across populations.[@zhao2024a;@shi2016a;@walinski2023a] Disparities emerge along both geographic and socio-demographic lines. Geographic exposure—such as increasing frequency or duration of climate-related events—intensifies mental health consequences.[@auchincloss2024a;@mitchellMentalHealthImpacts2024] Meanwhile, protective and risk factors such as race/ethnicity, education, age, gender, and socioeconomic status influence awareness, vulnerability, and adaptive capacity.[@helld2021a;@zhao2024a;@walinski2023a] These intersecting factors contribute to uneven burdens of climate change on mental health.
+
+<!-- Despite growing recognition of these disparities, significant knowledge gaps remain. While previous studies have demonstrated climate change can adversely affect adolescents’ psychological well-being,  -->
+Few studies have examined the variability in experiences of severe weather events or incorporated contextual factors that shape vulnerability and adaptive capacity. Further research is needed using longitudinal data to examine how climate change-associated mental health responses are changing over time. In addition, studies linking the location of extreme weather events to local psychological responses are needed to clarify the relationship between place and mental health in the setting of climate change. 
+
+This study aims to address these gaps by examining how climate change affects mental health among adolescents in California.
+<!-- , with particular attention to the demographic, social, and climate variables that shape mental health outcomes.  -->
+Utilising data from the California Health Interview Survey (CHIS) from 2021, 2022, and 2023, we analyse responses from 3,122 adolescents aged 12--17.[@CHIS2021to2023Adolescent] California is a state experiencing frequent extreme weather events, including heatwaves, wildfires, drought, and flooding, thus exposing young people to the realities of a rapidly changing climate. 
+<!-- To our knowledge, this is among the first studies to integrate multiple dimensions---demographic, social, and climate exposures---in modelling adolescent mental health impacts of climate change in a large, diverse population experiencing extreme weather events. -->
+
+# Methods
+## Study design
+We conducted a repeated cross-sectional study using secondary data from the 2021, 2022, and 2023 California Health Interview Survey (CHIS). Data were collected from March 18, 2021 to November 30, 2021; February 10, 2022 to November 1, 2022; and January 30, 2023 to December 18, 2023, respectively.
+We linked this data to geocoded environmental data on ambient temperature and heatwave exposure in California. Ethical approval was received from the Stanford Institutional Review Board [NEED IRB NUMBER].
+
+## Data sources and study population
+The CHIS is conducted in a variety of languages (including Chinese, English, Korean, Spanish, Tagalog, and Vietnamese) and includes adolescents aged 12--17. The survey is conducted by the UCLA Center for Health Policy Research and is the largest state health survey in the United States. The survey is conducted using a complex sampling design and includes weights to account for the sampling design and non-response to estimate the population response for California's household population of adolescents aged 12–17. Our study analysed the restricted-use CHIS survey data, which includes census-tract and county level information for respondents.[@CHIS2021to2023Adolescent] Remaining missing data were handled by CHIS using its established imputation procedures in the CHIS methodology reports.[@CHIS2023Methodology] Thus, there are no missing data in the survey data.
+
+Weather and heat data come from the Parameter-elevation Regressions on Independent Slopes Model (PRISM) group at Oregon State University.[@group2004a] Daily maximum temperatures were downloaded for the years from 2005--2023 and then processed as described below.
+
+Shape files to construct maps of California were obtained from the US Census Bureau. County boundaries come from the 2024 shape files and the census tract shape files come from the 2010 census.[@USCensusBureauTIGERLine] Shape files were restricted to the State of California.
+
+## Outcomes
+The primary outcome for our data analysis is a question asking whether climate change makes the respondent nervous, depressed, or stressed ("yes" or "no"). We refer to the "yes" response as the presence of "climate change anxiety" in the rest of the paper.
+
+## Covariates
+To compare baseline characteristics of the population, we included demographic variables such as age group, self-reported gender (a composite variable constructed by CHIS), self-reported race/ethnicity (a composite variable constructed by CHIS), language spoken at home, parents’ educational level, Federal Poverty Level (FPL), type of school attended, and rural/urban classification. 
+
+In the logistic regression, the study included variables in demographic, civic engagement, access to care, school attendance/engagement, and climate domains. See `r supp_tbl[["stbl-covars"]]` in the appendix for a full list.
+<!-- following domains: (1) demographic (age, self-reported gender, self-reported race/ethnicity, language spoken at home, parents’ educational level, Federal Poverty Level (FPL), type of school attended, and rural/urban classification); (2) civic engagement (respondent cares about community issues, believes they can make a difference in the community, ever volunteered to solve a community problem, feels they can contact the government to solve an issue, is able to talk to their family about their feelings, feels supported by family, feels supported by friends, enjoys community traditions, participated in clubs or organisations outside of school in the past year, and feels a sense of belonging at school); (3) access to care (has insurance, able to see primary care, did not delay medical care); (4) school attendance/engagement (attended school in the last week, missed school for a health problem in the past month) and (5) climate (exposure to heatwave days and mean maximum temperature).  -->
+<!--  -->
+<!-- As a part of our analysis, we modified several variables to help stabilise logistic regression estimates for sparse categories and for ease of interpretation. For instance, we combined several sparse race and ethnicity categories ("Asian" and "Pacific Islander" combined into "Asian/Pacific Islander"; "American Indian/Alaska Native" and "Two or more races" combined into "Multiracial and other") and also dichotomised Likert variables like "Cares deeply about community issues" and "Believes can make a difference in the community" by turning "Strongly agree" or "Somewhat agree" into "Yes" and "Somewhat disagree" and "Strongly disagree" into "No". Other dichotomised variables from the original Likert response include "Feels able to contact government to solve a problem" (yes = {definitely, probably, or maybe could}, no otherwise); and "Felt supported by family", "Felt supported by friends", "Enjoyed community traditions", and "Sense of belonging at school" (yes = {all, most, or some of the time}, no otherwise). -->
+
+The climate variables were examined at both the census tract and county levels and were compared via differences from the normal temperatures constructed from the 2004--2021 years using a 15-year window covering the same calendar period in each of the second to 16th years before survey administration---eg, 2007–2021 for 2023 respondents. The 15-year rolling window was chosen as likely more salient to a group of adolescents and matches their lived experience with the climate. 
+
+This study looked at temperature data over the 90 days prior to survey administration and over the year prior to survey administration. Within these time windows, we looked at the mean maximum temperature difference from normal and difference in the number of heatwave days---defined as days above 32°C---from the normal value.[@awasthiRetrospectionHeatwaveHeat2022] Thus, there are two climate variables over two time windows and at two administrative levels giving eight total climate variables. For the rest of this text, we will call these difference from the climate normals "anomalies." 
+
+Temperature exposures were expressed as county-level values and tract-level deviations from the county value; this is an exact reparameterisation of a model including both tract and county measures, and estimates for the county-average terms were obtained as linear combinations of the fitted coefficients with variances computed from the replicate-weight covariance matrix.
+
+## Statistical analyses
+First, the analysis compared the prevalence of the outcome variable by baseline characteristics of the population and then heat maps of the mean maximum temperature and count of heatwave days for the year prior to survey administration at the county level were created. Finally, the study used multivariable logistic regression models to examine the association between climate change anxiety and demographic, civic engagement, access to care, school attendance/engagement, and climate variables. Non-intercept p values were adjusted using the Benjamini-Hochberg procedure to account for multiple comparisons.[@benjaminiControllingFalseDiscovery1995] Given the number of climate variables, we also conducted a design-based Wald test (F statistic) that all eight temperature coefficients were zero; as a single test it was not included in the Benjamini-Hochberg adjustment.
+
+Every estimate utilised the survey weights and replicate weights for uncertainty estimation. Statistical analyses were conducted in R using the survey package.[@rcoreteamLanguageEnvironmentStatistical2026;@lumley2026] Analyses of the restricted-use data were run on the CHIS data access centre server (R version 4.2.3, survey version 4.1-1); the public-use file sensitivity analysis and post-processing of the exported results were run locally (R version 4.6.1, survey version 4.5). Adjusted p values less than 0·05 were considered statistically significant. 
+
+In a post-hoc analysis of the 2022–23 decline, we changed each covariate one at a time from its 2022 to its 2023 mean, holding the others at 2022 values, and estimated the change in predicted prevalence; 95% CIs were obtained by simulation from the asymptotic distribution of the coefficients. Because individual data were no longer available, tract and county climate means were approximated using adolescent population counts. We also report the sum of the individual contributions and the change when all covariates were changed jointly.
+
+We also ran two sensitivity analyses. The first is a sensitivity analysis in the CHIS public-use file, which has no geographic identifiers, refitting the non-climate model with and without survey year. The second uses the individual data and included fixed-effect terms for county of residence to account for stable differences between counties.
+
+## Role of the funding source
+There was no funding source for this study.
+
+# Results
+
+The study included `r N_obs |> sum() |> format(big.mark = ",")` adolescents from the state of California in the years 2021--2023. The weighted sample was estimated to be representative of an average of `r sum(tab1_long |> filter(variable == "Total (%)", status == "Total" ) |> pull(total_N)) |> format(big.mark = ",")` adolescents in California per year. Overall, `r sprintf("%.1f%%", sum(tab1_long |> filter(variable == "Total (%)", status == "Yes") |> pull(total_N))/sum(tab1_long |> filter(variable == "Total (%)", status == "Total" ) |> pull(total_N)) * 100)` of adolescents reported that climate change makes them nervous, depressed, or stressed. Full results are presented in @tbl-baseline. For overall characteristics by year in the study, please see `r supp_tbl[["stbl-baseline"]]` in the appendix.
+
+{{< include _tbl-baseline.qmd >}}
+
+Among California adolescents aged 12--17, the pooled prevalence of climate change anxiety across the three survey years was `r overal_prev$mean[1] * 100`% (95% CI `r overal_prev$lwr[1] * 100`--`r overal_prev$upr[1] * 100`). Prevalence was stable between 2021 and 2022 (`r prev$anx[prev$year == "2021"] * 100`% versus `r prev$anx[prev$year == "2022"]*100`%), but declined markedly in 2023 to `r prev$anx[prev$year == "2023"]*100`% (95% CI `r prev$lwr[prev$year == "2023"]*100`--`r prev$upr[prev$year == "2023"]*100`), representing an `r clim_anx_change` percentage-point decrease from the 2021--22 baseline (@fig-prev). The changes from 2021 to 2023 and 2022 to 2023 were both significant after Benjamini-Hochberg correction with adjusted p values of `r fmt_p(prev_sigs$p.value[prev_sigs$contrast == "year2021 - year2023"])` and `r fmt_p(prev_sigs$p.value[prev_sigs$contrast == "year2022 - year2023"])`, respectively. 
+
+```{r fig-prev}
+#| echo: false
+#| message: false
+#| warning: false
+#| output: asis
+
+img_html <- "../../Figures/prevalence.png"
+img_docx <- "../../Figures/prevalence.png"
+img_pdf  <- "prevalence.pdf"
+
+width <- "4in"
+
+fig_cap <- "Prevalence of climate change anxiety among California adolescents by survey year. Estimates are weighted proportions with 95% confidence intervals."
+
+cat('::: {.content-visible when-format="html"}\n')
+
+cat(sprintf('![%s](%s){#fig-prev width="%s"}\n', fig_cap, img_html,  width))
+
+cat(':::\n\n')
+
+cat('::: {.content-visible when-format="docx"}\n')
+
+cat(sprintf('![%s](%s){#fig-prev width="%s"}\n', fig_cap,  img_docx, width))
+
+cat(':::\n\n')
+
+cat('::: {.content-visible when-format="pdf"}\n')
+
+cat(sprintf('![%s](%s){#fig-prev width="%s"}\n', fig_cap, img_pdf, width))
+
+cat(':::\n')
+```
+
+@fig-heatmaps and @fig-tempmaps show county heatwave days and mean maximum temperature in the year before the survey, overlaid with climate anxiety prevalence; the clearest visual pattern is urban–rural rather than by heat.
+
+```{r fig-heat}
+#| echo: false
+#| output: asis
+
+img_html <- "../../Figures/heatwave_map2.png"
+img_docx <- "../../Figures/heatwave_map2.png"
+img_pdf  <- "heatwave_map2.png"
+
+width <- '"6in"'
+
+fig_cap <- "Heat maps of the count of heatwave days (number of days > 32°C) for the year prior to survey administration at the county level. The percentage of respondents who stated that climate change made them feel nervous, depressed, or stressed is overlaid on the maps."
+
+cat('::: {.content-visible when-format="html"}\n')
+
+cat(sprintf('![%s](%s){#fig-heatmaps width=%s}\n', fig_cap, img_html,  width))
+
+cat(':::\n\n')
+
+cat('::: {.content-visible when-format="docx"}\n')
+
+cat(sprintf('![%s](%s){#fig-heatmaps width=%s}\n', fig_cap, img_docx, width))
+
+cat(':::\n')
+
+cat('::: {.content-visible when-format="pdf"}\n')
+
+cat(sprintf('![%s](%s){#fig-heatmaps  width=%s}\n', fig_cap, img_pdf, width))
+
+cat(':::\n')
+
+```
+
+```{r fig-temp}
+#| echo: false
+#| output: asis
+
+img_html <- "../../Figures/tmax_map2.png"
+img_docx <- "../../Figures/tmax_map2.png"
+img_pdf  <- "tmax_map2.png"
+
+width <- '"6in"'
+
+fig_cap <- "Heat maps of the mean maximum temperature for the year prior to survey administration at the county level. The percentage of respondents who stated that climate change made them feel nervous, depressed, or stressed is overlaid on the maps."
+
+cat('::: {.content-visible when-format="html"}\n')
+
+cat(sprintf('![%s](%s){#fig-tempmaps width=%s}\n', fig_cap, img_html,  width))
+
+cat(':::\n\n')
+
+cat('::: {.content-visible when-format="docx"}\n')
+
+cat(sprintf('![%s](%s){#fig-tempmaps width=%s}\n', fig_cap,  img_docx, width))
+
+cat(':::\n')
+
+cat('::: {.content-visible when-format="pdf"}\n')
+
+cat(sprintf('![%s](%s){#fig-tempmaps width=%s}\n', fig_cap,  img_pdf, width))
+
+cat(':::\n')
+
+```
+
+The results of the multivariable logistic regression examining the association between climate change anxiety and demographic, civic engagement, access to care, school attendance/engagement, and climate variables are shown in @tbl-glm. 
+
+{{< include _tbl-glm.qmd >}}
+
+Among the temperature terms, only the county-average 90-day heatwave term had an adjusted p<0·05 (`r glm_results |> filter(orig_term == "tmax_county_prior_90_days_count32_delta") |> pull(bh_pvalue) |> fmt_p()`), with an unexpected inverse direction (OR `r glm_results |> filter(orig_term == "tmax_county_prior_90_days_count32_delta") |> pull(e_est) |> sprintf(fmt = "%.2f")`, 95% CI `r glm_results |> filter(orig_term == "tmax_county_prior_90_days_count32_delta") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |>  filter(orig_term == "tmax_county_prior_90_days_count32_delta") |> pull(e_upr) |> sprintf(fmt = "%.2f")`). Other temperature anomalies with large associations include average temperature anomalies over the previous year at the census tract level, which were associated with `r glm_results |> filter(term == "Average temp anomalies (prev year)", label == "Tract deviation from county‡") |> pull(e_est) |> sprintf(fmt = "%.2f")` (95% CI `r glm_results |> filter(term == "Average temp anomalies (prev year)", label == "Tract deviation from county‡") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "Average temp anomalies (prev year)", label == "Tract deviation from county‡") |> pull(e_upr) |> sprintf(fmt = "%.2f")`) times the odds of reporting climate change anxiety per 1°C of tract anomaly above the county anomaly. Most of the confidence intervals were quite large, reflecting substantial uncertainty possibly caused by collinearity between these climate variables. However, a joint test of all the climate variable coefficients found evidence of an association, F(`r clim_pval$df1`,`r as.integer(round(clim_pval$df2))`)=`r sprintf("%.2f", clim_pval$stat)`, `r fmt_p(clim_pval$p.value, TRUE)`. 
+
+Among predictors with an adjusted p<0·05, the largest associations were not delaying medical care, which was associated with `r glm_results |> filter(term == "Did not delay medical care") |> pull(e_est) |> sprintf(fmt = "%.2f")` (95% CI `r glm_results |> filter(term == "Did not delay medical care") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "Did not delay medical care") |> pull(e_upr) |> sprintf(fmt = "%.2f")`) times the odds of reporting climate change anxiety as compared to those who said they had to delay care. A respondent stating that they cared deeply about community issues was associated with `r glm_results |> filter(term == "Cares deeply about community issues") |> pull(e_est) |> sprintf(fmt = "%.2f")` (95% CI `r glm_results |> filter(term == "Cares deeply about community issues") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "Cares deeply about community issues") |> pull(e_upr) |> sprintf(fmt = "%.2f")`) times the odds of reporting climate anxiety as compared to those respondents who did not. A forest plot of non-temperature predictors with adjusted p<0·05 is in @fig-forestplot.
+
+Other variables had large effect sizes but a great deal of uncertainty. An adolescent responding that they were uninsured was associated with `r glm_results |> filter(term == "Uninsured") |> pull(e_est) |> sprintf(fmt = "%.2f")` (95% CI `r glm_results |> filter(term == "Uninsured") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "Uninsured") |> pull(e_upr) |> sprintf(fmt = "%.2f")`) times the odds of having climate anxiety as those who were insured. Respondents who identified as African American had `r glm_results |> filter(term == "African American") |> pull(e_est) |> sprintf(fmt = "%.2f")` (95% CI `r glm_results |> filter(term == "African American") |> pull(e_lwr) |> sprintf(fmt = "%.2f")`--`r glm_results |> filter(term == "African American") |> pull(e_upr) |> sprintf(fmt = "%.2f")`) times the odds of having climate anxiety as compared to respondents who identified as Hispanic, although this was not significant after adjustment.
+
+```{r fig-forestplot}
+#| echo: false
+#| message: false
+#| warning: false
+#| output: asis
+
+img_html <- "../../Figures/forest_plots.png"
+img_docx <- "../../Figures/forest_plots.png"
+img_pdf  <- "forest_plots.pdf"
+
+width <- "4in"
+
+fig_cap <- "Forest plot visualising logistic regression results. Results are presented as odds ratios with 95% CI for predictors with Benjamini-Hochberg-adjusted p<0·05. CIs are unadjusted. CI=confidence interval."
+
+cat('::: {.content-visible when-format="html"}\n')
+
+cat(sprintf('![%s](%s){#fig-forestplot width="%s"}\n', fig_cap, img_html,  width))
+
+cat(':::\n\n')
+
+cat('::: {.content-visible when-format="docx"}\n')
+
+cat(sprintf('![%s](%s){#fig-forestplot width="%s"}\n', fig_cap,  img_docx, width))
+
+cat(':::\n\n')
+
+cat('::: {.content-visible when-format="pdf"}\n')
+
+cat(sprintf('![%s](%s){#fig-forestplot width="%s"}\n', fig_cap, img_pdf, width))
+
+cat(':::\n')
+
+```
+
+```{r other-data}
+#| echo: false
+#| message: false
+#| warning: false
+cares <- readRDS(here::here("Documents", "cares_about_community.rds"))
+
+decline_in_care_about_community <- (cares$cares[cares$year == "2022"] - cares$cares[cares$year == "2023"]) * 100
+
+distress <- readRDS(here::here("Documents", "psych_distress.rds"))
+
+psych_dist_change <- 100 * (distress$distress[distress$year == "2023"] - distress$distress[distress$year == "2022"])
+
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+change_df <- readRDS(here::here("Documents", "post_hoc_change.rds"))
+
+fmt_pp <- function(x, plus = FALSE) {
+  out <- sprintf("%.1f", x)
+  out <- sub("^-", "\u2013", out)
+  if (plus) out <- ifelse(x > 0, paste0("+", out), out)
+  out
+}
+
+change_sign <- function(out) {
+  sign <- ifelse(out < 0, "-", "+")
+  if (out == 0) sign <- " "
+  sign
+}
+change_df_extract <- function(var) {
+  out <- change_df |> filter(group == var) |> pull(contribution) * 100
+
+  fmt_pp(out, out > 0)
+}  
+
+change_df_extract_ci <- function(var, bnd) {
+  bnd <- match.arg(bnd, choices = c("lwr","upr"))
+  out <- change_df |> filter(group == var) |> pull(.data[[bnd]]) * 100
+
+  fmt_pp(out)
+}  
+
+```
+
+Given the decline in the prevalence of climate anxiety between 2022 and 2023, we sought to perform an additional analysis to understand potential reasons why. We constructed a one-at-a-time counterfactual substitution evaluated at the mean covariates to estimate their contribution to the prevalence change in percentage points. Of note, several climate variables had the largest estimated contribution to the change in prevalence: the census tract prior year temperature anomaly (`r change_df_extract("tmax_tract10_prior_yr_mean_delta")`, 95% CI `r change_df_extract_ci("tmax_tract10_prior_yr_mean_delta", "lwr")` to `r change_df_extract_ci("tmax_tract10_prior_yr_mean_delta", "upr")`), county level prior year temperature anomaly (`r change_df_extract("tmax_county_prior_yr_mean_delta")`, 95% CI `r change_df_extract_ci("tmax_county_prior_yr_mean_delta", "lwr")` to `r change_df_extract_ci("tmax_county_prior_yr_mean_delta", "upr")`), and county level previous 90 day temperature anomaly (`r change_df_extract("tmax_county_prior_90_days_mean_delta")`, 95% CI `r change_df_extract_ci("tmax_county_prior_90_days_mean_delta", "lwr")` to `r change_df_extract_ci("tmax_county_prior_90_days_mean_delta", "upr")`). Note that the confidence intervals for each of these include the null. The first non-climate related variable was "cares deeply about community issues" (`r change_df_extract("tl25_pos")` percentage points, 95% CI `r change_df_extract_ci("tl25_pos", "lwr")` to `r change_df_extract_ci("tl25_pos", "upr")`), which had the sixth largest absolute contribution followed by "number of school days missed" (`r change_df_extract("health_missed_days")` percentage points, 95% CI `r change_df_extract_ci("health_missed_days", "lwr")` to `r change_df_extract_ci("health_missed_days", "upr")`). See `r supp_tbl[["stbl-change"]]` in the appendix for estimated contributions for all variables.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+year_chg <- here::here("Documents", "year_sens_change.rds") |> readRDS()
+glm_est <- here::here("Documents", "glm_lor_table.rds") |> readRDS() |> 
+    filter(!is.na(orig_term)) |> 
+    mutate(flip = orig_term %in% c("tl50No", "tl10No", "lnghmt_binaryNon-English")) |> 
+    mutate(estimate = ifelse(flip, -estimate, estimate),
+       lwr_new = ifelse(flip, -upr, lwr),
+       upr = ifelse(flip, -lwr, upr),   # still the original lwr here
+       lwr = lwr_new) |>
+select(-lwr_new)
+
+fe_est <- readRDS(here::here("Documents","fe_tab.rds"))
+
+fe_temp <- glm_est |> 
+    select(label, term, estimate, lwr, upr, orig_term) |> 
+    mutate(GLM = lancet_signs(midline_decimal(fix_zero(sprintf("%.2f (%.2f to %.2f)", estimate, lwr, upr))))) |>
+    left_join(
+        fe_est |> select(estimate, FE, orig_term), by = "orig_term"
+    ) 
+
+largest_non_temp_change <- fe_temp  |> 
+  mutate(diff = abs(estimate.x - estimate.y)) |>
+  arrange(-diff) |> 
+  filter(label != "Intercept") |> 
+  filter(!grepl("tmax", orig_term)) |> 
+  pull(diff) |> 
+  _[1]
+
+t_temp <- fe_temp |> filter(grepl("tmax", orig_term)) |> 
+mutate(diff = abs(estimate.x - estimate.y)) |> 
+filter(abs(diff) == max(abs(diff))) |> 
+select(estimate.x, estimate.y) |> 
+mutate(base = sprintf("%.2f", estimate.x),
+county = sprintf("%.2f", estimate.y))
+
+```
+
+Additional sensitivity analyses are presented in `r supp_tbl[["stbl-year"]]` and `r supp_tbl[["stbl-fe-county"]]` in the appendix. In the model accounting for survey year fixed effects, the other non-intercept coefficients in the model changed by at most `r sprintf("%.2f", year_chg[["change"]])` on the log-odds scale, while 2023 remained associated with lower odds (OR `r year_chg[["OR"]] %>% sprintf("%.2f", .)`, 95% CI `r year_chg[["conf.low"]] %>% sprintf("%.2f", .)` to `r year_chg[["conf.high"]] %>% sprintf("%.2f", .)`; Wald test for year p=`r fmt_p(year_chg[["pval"]])`). In the model accounting for county fixed effects, the non-climate coefficients changed by at most `r sprintf("%.2f", largest_non_temp_change)` log-odds, and the tract temperature anomaly attenuated from `r t_temp$base` to `r t_temp$county`.
+
+# Discussion
+In a large representative sample of California adolescents, `r overal_prev$mean[1] * 100`% of respondents overall reported climate anxiety from 2021--2023, which was correlated with temperature, health, demographic, and civic factors. When stratified across years, `r (prev$anx[prev$year == "2021"])*100`% in 2021, `r (prev$anx[prev$year == "2022"])*100`% in 2022, and `r (prev$anx[prev$year == "2023"])*100`% in 2023 reported climate change anxiety. 
+
+Firstly, we note that these prevalence numbers differ substantially from previously reported prevalence of climate change distress, such as 60% globally.[@hickmanClimateAnxietyChildren2021] This could reflect geographic and sample differences (California adolescents vs global adolescents), the specific phrasing of the question being asked, or different survey methodology. Ultimately, these differences in prevalence underscore the importance of standardised measures of climate distress to better characterise changes in climate change distress prevalence over time.
+
+Secondly, we sought to understand the changes in prevalence of climate change anxiety over time. We found that there was an `r clim_anx_change` percentage-point decline in climate change anxiety from the average of 2021 and 2022 to 2023. The decline noted in 2023 is not readily explained by measured demographic, civic, or access factors as those remain relatively constant, and temperature terms cannot be distinguished from other year-level changes. Of note, 2023 was the first full post-pandemic school year, which may suggest pandemic related concerns driving some of the anxiety with the possibility that 2023 was also cooler relative to the climate normal (see appendix `r supp_tbl[["stbl-change"]]`).
+
+We also find that female adolescents, adolescents whose parents attended college, and adolescents who care deeply about community issues all reported higher odds of climate change distress. This is in line with previous findings, including from our previous paper,[@zhao2024a] that female, educated, and more civically engaged individuals have higher odds of reporting climate change distress. Other findings were more novel and surprising, such as our findings that older adolescents and individuals who missed days of school reported higher odds of climate change distress.  
+
+Though some variables had large effect sizes, substantial uncertainty made them difficult to interpret with great confidence. For example, respondents identifying as African American had lower odds of having climate anxiety, which likely reflects this variable's proxy for structural and socioeconomic factors. 
+Being uninsured also was associated with lower odds of climate anxiety and likely reflects the same.
+
+Lastly, we sought to address a gap in the literature by linking objective PRISM temperature data to climate change distress to better understand whether objective changes in climate were predictive of climate change distress. Many of the individual confidence intervals for our temperature terms included the null value; however, the terms are *jointly* associated with climate anxiety. This discrepancy likely reflects collinearity in the climate related variables causing them to have wide confidence intervals.  Further, there is no year term included in the model and it's possible our climate variables are only picking up these unmeasured factors.
+
+Contrary to expectation, adolescents living in urban areas were more likely to report climate change anxiety than those in rural areas, despite lower direct exposure to climate events such as drought or wildfire. This finding is consistent with emerging literature: a large Norwegian cohort study similarly found that urban adolescents were more prone to eco-anxiety than rural peers, and rural Australian adolescents living through prolonged drought reported no higher levels of emotional distress than urban counterparts, with rural lifestyle proposed as a resilience-promoting factor.[@leonhardt2022a;@dean2007a;@dean2010a]
+
+Several of the variables most strongly associated with climate anxiety may suggest policy implications, though this model should not be interpreted causally. For example, whether an individual did not delay care was associated with lower climate anxiety, which could have several potential reasons. Plausible explanations include that timely care allows adolescents to receive treatment for anxiety, or that being unable to access care reflects being uninsured. In any case, we would recommend that adolescents should have access to proper medical care and the means to afford it.
+
+Another potentially modifiable predictor is whether the respondent cared about community issues. Interventions that channel civic concern into constructive action may be particularly relevant. Our results suggest that perceptual and cognitive pathways, including climate-related education, media exposure, and civic awareness, may be more strongly implicated in climate anxiety than direct environmental exposure among adolescents. This distinction may have practical implications: interventions targeting climate anxiety may need to address how climate change is communicated to young people.
+
+School-based climate curricula, for example, could be redesigned to emphasise collective efficacy and actionable solutions rather than threat-focused messaging, an approach consistent with recommendations from Clayton and Karazsia[@clayton2020a] and Ojala,[@ojalaRegulatingWorryPromoting2012] who have argued that meaning-focused coping and constructive hope are associated with greater well-being and sustained engagement among young people. Channelling concern into collective action is not uniformly protective, however: participation in climate activism has been linked to resilience and positive youth development but can itself become a source of stress, particularly for marginalised adolescents.[@vannieuwenhuizenEffectsClimateChange2021] Interventions should therefore aim to support engagement while remaining attentive to the burden it can place on the young people most exposed to climate risk.
+
+In addition, similar to recommendations from our previous work,[@zhao2024a] our findings highlight the urgent need to improve the collection, standardisation, and sharing of data used to assess climate change-related mental health outcomes. 
+The substantial discrepancy between our observed prevalence of `r sprintf("%.1f", sum(tab1_long |> filter(variable == "Total (%)", status == "Yes") |> pull(total_N))/sum(tab1_long |> filter(variable == "Total (%)", status == "Total" ) |> pull(total_N)) * 100)`% and the approximately 60% reported in global surveys[@hickmanClimateAnxietyChildren2021] likely reflects not only geographic and demographic differences but also inconsistencies in how climate distress is operationalised and measured. Our primary outcome, for instance, relied on a single yes/no item rather than a validated multi-item scale.
+
+A growing number of standardised instruments for climate distress have emerged in recent years, including the Climate Change Anxiety Scale[@clayton2020a] and the Hogg Eco-Anxiety Scale,[@hogg2021a] with some specifically adapted for adolescent populations. Wider adoption of such validated measures across population-level surveys like CHIS would enable more precise prevalence estimates, facilitate cross-study and cross-regional comparisons, and allow researchers to distinguish between adaptive concern and clinically significant distress.
+
+Our study is based on data from a single state and may not be generalisable to other US states or locations. Estimates represent adolescents living in households; those in group quarters or experiencing homelessness were not sampled, and weighting and imputation may not fully correct for non-response. The question used for the primary outcome ("does climate change make you nervous, depressed, or stressed") is also not a known standardised psychometric scale for climate change anxiety and answers were limited to yes/no, which may not be able to fully capture the nuance of climate change distress. 
+<!-- Additionally, individual location data were not publicly accessible, limiting analysis to county-level and census-tract-level data. -->
+Moreover, this is a repeated cross-sectional survey and thus cannot support causal claims. 
+<!-- The associations described herein can be suggestive and hypothesis generating but do not imply that actually changing these variables would lead to improved or worsened climate anxiety.  -->
+
+Other issues may come from the variables themselves. For example, the gender variable is collapsed to two categories and cannot represent gender-diverse adolescents. Additionally, race/ethnicity categories are collapsed by CHIS and further in our analysis and may not represent the underlying true variation in the population. Because the main model omits survey year, the temperature anomalies may partly absorb between-year change.
+
+Importantly, though temperature data did appear to have associations with climate anxiety, there are many other potential sources of climate distress. We did not examine wildfires, flooding, drought, or other discrete climate-related events, which may relate to climate anxiety through more direct or acute pathways. 
+
+However, these limitations should be balanced against the study's relative strengths: utilising a unique survey question about climate change distress and having a large and diverse sample size from the most populous US state. Additionally, we requested access to confidential data, which gave us access to county-level and census-tract-level data. 
+<!-- Lastly, this study is the first to our knowledge to link objective temperature data to climate change distress, allowing us to assess whether objective exposure to climate change was associated with climate change distress. -->
+
+We found certain subgroups of respondents disproportionately reported higher odds of climate change anxiety based on socio-demographic factors. 
+<!-- And although the coefficient estimates of objective exposure had a great deal of uncertainty, a joint-test found they are associated with climate change anxiety.  -->
+There remains an urgent need to reduce the inequitable harms of climate change on mental health. Our work suggests that public health interventions that focus on access to care, communication, community action, and resilience will be needed to address the mental health impacts of increasingly frequent and severe climate events. 
+
+
+# Contributors
+**[AUTHORS TO COMPLETE. Lancet requires a statement of each named author’s individual contribution, and requires that more than one author directly accessed and verified the underlying data---the statement must name those authors. Suggested skeleton, to be corrected by the authors:]**
+
+DZ and ED contributed equally to this work. DZ and ED conceived the study and drafted the manuscript. ED conducted the statistical analysis and constructed the climate exposure variables. DZ and ED directly accessed and verified the underlying public CHIS data. The individual data is not available to examine except staff associated with the survey. ARH supervised the study and revised the manuscript. VN, HYN, TB, MR, EE, and EA contributed to [SPECIFY]. All authors had full access to all the analyses in the study, reviewed and approved the final manuscript, and accept responsibility for the decision to submit for publication.
+
+# Declaration of interests
+We declare no competing interests.
+
+# Data sharing
+The California Health Interview Survey (CHIS) data analysed in this study are not owned by the authors and cannot be redistributed by them. Public use files are available from the UCLA Center for Health Policy Research.[@CHIS2021to2023Adolescent] The restricted-use files containing census tract identifiers are not directly available to researchers; analyses on them may be run by CHIS analysts following approval from the CHIS research committee. All code used to construct the climate exposure variables and to run these analyses is available at [https://github.com/ericdunipace/CHIS](https://github.com/ericdunipace/CHIS). 
+*[AUTHORS TO COMPLETE: Lancet requires three further specifics — (1) whether a data dictionary defining each field will be made available, (2) whether related documents such as the study protocol or statistical analysis plan will be available, and (3) the beginning and end dates during which the code and any shared materials will be available. “Undecided” is explicitly not an acceptable answer.]*
+
+# Acknowledgments
+*[AUTHORS TO COMPLETE if anyone outside the author list contributed. Written consent is required from any individual named here.]*
+
+# Declaration of generative AI and AI-assisted technologies in the manuscript preparation process
+[AUTHORS TO COMPLETE — this statement must be accurate to what was actually done, and only the authors know that. Lancet requires the name and version of each tool, the purpose of use, and the extent of author oversight; prompts may be requested by the editors. Basic grammar and spelling checks need no declaration. Template: ] 
+During the preparation of this work the authors used [TOOL NAME AND VERSION, eg Claude (Anthropic)] in order to [PURPOSE, eg edit drafted text for language and clarity]. After using this tool, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication. [IMPORTANT: if any AI tool was used in the research process itself rather than only in writing --- for example to generate analysis code, construct variables, or populate table values --- Lancet requires that use to be described in the Methods section as well, not only here.]
+
+# References
+
+::: {#refs}
+
+:::
