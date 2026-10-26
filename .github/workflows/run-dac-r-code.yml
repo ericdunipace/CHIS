@@ -88,7 +88,14 @@ jobs:
         echo "PKG_CONFIG_PATH=$(brew --prefix gettext)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
         echo "UDUNITS2_XML_PATH=/opt/homebrew/share/udunits/udunits2.xml" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=/opt/homebrew/lib" >> $GITHUB_ENV
-        
+
+    - name: Prefer OpenSSL 3 for R openssl (macOS only)
+      if: runner.os == 'macOS'
+      run: |
+        # locked openssl 2.0.6 does not compile against OpenSSL 4 (opaque ASN1_STRING)
+        brew install openssl@3
+        echo "PKG_CONFIG_PATH=$(brew --prefix openssl@3)/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
+
     - name: Debug udunits presence
       if: runner.os == 'macOS'
       run: |
