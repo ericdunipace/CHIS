@@ -435,7 +435,7 @@ largest_change <- fe_temp  |>
   arrange(-diff) |> 
   filter(label != "Intercept") |> 
   pull(diff) |> 
-  _[1]
+  head(1)
 
 diff_rows <- nrow(fe_est) - nrow(glm_est)
 

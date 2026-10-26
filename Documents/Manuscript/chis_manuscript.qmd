@@ -445,7 +445,7 @@ largest_non_temp_change <- fe_temp  |>
   filter(label != "Intercept") |> 
   filter(!grepl("tmax", orig_term)) |> 
   pull(diff) |> 
-  _[1]
+  head(1)
 
 t_temp <- fe_temp |> filter(grepl("tmax", orig_term)) |> 
 mutate(diff = abs(estimate.x - estimate.y)) |> 
