@@ -13,7 +13,6 @@ Quarto
 Code/test
 R/test
 docs/CHIS_2023_variable dictionary.pdf
-Documents/*.*
 Outputs_*
 Figures/
 .positai
@@ -21,11 +20,11 @@ Outputs_DAC_original/
 renv/profile
 /.luarc.json
 nhgis_tr2020_tr2010_06.zip
-Data/tmax_annual_ca_youth.rds
-Data/chis_puf_combined.RDS
-Data/teen_stata_20*/
-Data/teen_20*_stata/
-Data/chis_puf_combined.Rds
+data/tmax_annual_ca_youth.rds
+data/chis_puf_combined.RDS
+data/teen_stata_20*/
+data/teen_20*_stata/
+data/chis_puf_combined.Rds
 Documents/*.*
 Documents/Manuscript/*
 !Documents/Manuscript/*.qmd

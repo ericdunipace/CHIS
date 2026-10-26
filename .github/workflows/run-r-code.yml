@@ -53,7 +53,10 @@ jobs:
       run: |
         options(repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
         install.packages("jsonlite")
-        pkgs <- names(jsonlite::fromJSON("renv.lock")$Packages)
+        # local (R >= 4.3) lockfile; renv.lock is the R 4.2.3 DAC lockfile
+        pkgs <- names(jsonlite::fromJSON("renv/profiles/local/renv.lock")$Packages)
+        # base and recommended packages ship with R and have no P3M binaries
+        pkgs <- setdiff(pkgs, rownames(installed.packages(priority = c("base", "recommended"))))
         install.packages(pkgs)
     
     - name: Run testthat tests

@@ -36,8 +36,8 @@ required_outputs <- c(
 
 missing_outputs <- c(
     required_outputs[!file.exists(here::here("Outputs", required_outputs))],
-    if (!file.exists(here::here("Data", "auxiliary_data.rds"))) {
-        "Data/auxiliary_data.rds"
+    if (!file.exists(here::here("data", "auxiliary_data.rds"))) {
+        "data/auxiliary_data.rds"
     }
 )
 
