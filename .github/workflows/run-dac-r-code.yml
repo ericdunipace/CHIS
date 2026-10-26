@@ -43,6 +43,9 @@ jobs:
         echo "$GETTEXT_PREFIX/bin" >> "$GITHUB_PATH"
         echo "CPPFLAGS=-I$GETTEXT_PREFIX/include" >> "$GITHUB_ENV"
         echo "LDFLAGS=-L$GETTEXT_PREFIX/lib" >> "$GITHUB_ENV"
+        # R ignores env LDFLAGS when compiling packages; gdtools needs -lintl via fontconfig
+        mkdir -p ~/.R
+        echo "LDFLAGS += -L$GETTEXT_PREFIX/lib" >> ~/.R/Makevars
         echo "PKG_CONFIG_PATH=$GETTEXT_PREFIX/lib/pkgconfig:$BREW_PREFIX/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
         test -f "$GETTEXT_PREFIX/lib/libintl.dylib"
         echo "DISABLE_STATIC_LIBV8=1" >> "$GITHUB_ENV"
