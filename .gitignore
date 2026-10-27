@@ -7,13 +7,11 @@ data-raw/prism
 data-raw/tl_2024_us_county
 data-raw/california_census_2010
 data-raw/*.rds
-Outputs/*.*
 *.tif
 Quarto
 Code/test
 R/test
 docs/CHIS_2023_variable dictionary.pdf
-Outputs_*
 Figures/
 .positai
 Outputs_DAC_original/

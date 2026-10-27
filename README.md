@@ -9,10 +9,10 @@ The main goal of this README is to document how to recreate the analysis as clos
 The analysis runs in two places:
 
 1. **CHIS Data Access Center (DAC).** `R/CHIS_private.R` runs on the confidential teen files inside the DAC and writes summary outputs (tables, coefficients, variance-covariance matrices, sufficient statistics) to `Outputs/`. Only these outputs leave the DAC.
-2. **Local machine.** Scripts in `R/localCode/` read the DAC outputs in `Outputs/`, the CHIS public-use files (PUF), and auxiliary climate/population data, and write manuscript tables and figures to `Documents/` and `Figures/`. The Quarto documents in `Documents/Manuscript/` then read those files.
+2. **Local machine.** Scripts in `R/localCode/` read the released DAC outputs in `Outputs_DAC/` (tracked in git), the CHIS public-use files (PUF), and auxiliary climate/population data, and write manuscript tables and figures to `Documents/` and `Figures/`. The Quarto documents in `Documents/Manuscript/` then read those files.
 
 ```text
-CHIS teen files (DAC) ──> R/CHIS_private.R ──> Outputs/*.csv
+CHIS teen files (DAC) ──> R/CHIS_private.R ──> (DAC release) ──> Outputs_DAC/*.csv
                                                    │
 data/auxiliary_data.rds ───────────────────────────┤
                                                    v
@@ -32,7 +32,7 @@ data/tmax_annual_ca_youth.rds ──> R/localCode/testing_change.R ────�
 │   ├── Functions.R                    # GENERATED shared functions; do not edit directly (see below)
 │   └── localCode/
 │       ├── BaseFileFunctions.R        # Source of truth for shared cleaning, modeling, table, and plotting functions
-│       ├── Combine_Remote_Results.R   # Builds manuscript tables/figures from DAC outputs in Outputs/
+│       ├── Combine_Remote_Results.R   # Builds manuscript tables/figures from DAC outputs in Outputs_DAC/
 │       ├── CHIS_PUF.R                 # Public-use-file analyses (prevalence, sensitivity analyses, secondary outcomes)
 │       └── testing_change.R           # Post hoc decomposition of the 2022–2023 change in climate anxiety
 ├── data-raw/
@@ -47,7 +47,8 @@ data/tmax_annual_ca_youth.rds ──> R/localCode/testing_change.R ────�
 │   ├── create_auxiliary data.R        # Bundles climate/geography support data
 │   └── get_adolescent_pop.R           # ACS adolescent population and population-weighted annual Tmax
 ├── data/                              # Input data, dummy CHIS files, and precomputed RDS files
-├── Outputs/                           # DAC analysis CSV/PDF outputs (git-ignored)
+├── Outputs_DAC/                       # Released DAC outputs read by the local scripts (tracked)
+├── Outputs/                           # DAC script output inside the DAC; local intermediate outputs (git-ignored)
 ├── Documents/                         # Manuscript-ready tables and table objects (mostly git-ignored)
 │   └── Manuscript/                    # Quarto manuscript, supplement, tables, bibliography, styles
 ├── Figures/                           # Manuscript-ready figures (git-ignored)
@@ -212,13 +213,9 @@ glm_vcov.csv
 glm_suf_stat.csv
 fe_model_summary.csv
 fe_vcov.csv
-fixef_coef.csv
-mixef_coef.csv
-mixef_vcov.csv
-mixef_replicate_coef.csv
 ```
 
-After DAC release, copy these files into `Outputs/` on the local machine.
+After DAC release, replace the contents of `Outputs_DAC/` with the released files and commit them, so the local steps can be rerun from a fresh clone. `Outputs_DAC/` holds only the most recent release; earlier releases are recoverable from git history. Update `Outputs_DAC/RELEASE.md` with the release details and checksums.
 
 ## Step 2: Build Tables and Figures Locally
 
@@ -327,10 +324,10 @@ The local workflow then builds manuscript tables and figures, adds PUF-based pre
 ## Known Reproducibility Notes
 
 - `data-raw/create_auxiliary data.R` saves `data/auxiliary_data.rds` (lowercase folder).
-- The file `Outputs/climiate_anxiety_map_data.csv` is intentionally listed with the current repository spelling because downstream code expects that name.
+- The file `Outputs_DAC/climiate_anxiety_map_data.csv` is intentionally listed with the current repository spelling because downstream code expects that name.
 - `R/CHIS_private.R` contains path-editing lines marked with `#***`; review them before running in the DAC environment.
 - Recreating PRISM-derived auxiliary files can be slow and requires network access to PRISM data. `get_adolescent_pop.R` requires network access and a Census API key.
-- `Outputs/`, `Figures/`, most of `Documents/`, rendered manuscript files, and the CHIS PUF files are git-ignored. A fresh clone does not contain the generated outputs; they must be regenerated (or the DAC outputs copied in) before running Step 2 or Step 3.
+- `Outputs/`, `Figures/`, most of `Documents/`, rendered manuscript files, and the CHIS PUF files are git-ignored. A fresh clone does not contain the generated outputs; they must be regenerated before running Step 3. The released DAC outputs in `Outputs_DAC/` are tracked, so Step 2 does not require DAC access.
 - `R/test/` is git-ignored scratch code and is not part of the analysis.
 
 ## Recommended Reproduction Checklist
@@ -342,7 +339,7 @@ For a new analyst trying to recreate the analysis:
 3. If shared functions changed, regenerate `R/Functions.R` with `Rscript data-raw/create_Functions_file.R`.
 4. Confirm or recreate `data/auxiliary_data.rds`.
 5. In the DAC: place the approved CHIS 2021-2023 teen files, set `CHIS_DATA_TYPE`, and run `R/CHIS_private.R`.
-6. Copy the released DAC outputs into `Outputs/`.
+6. Replace `Outputs_DAC/` with the released DAC outputs (or use the tracked release to skip steps 4–5).
 7. Locally: create `data/chis_puf_combined.Rds` and `data/tmax_annual_ca_youth.rds` if needed.
 8. Run `R/localCode/Combine_Remote_Results.R`, `R/localCode/CHIS_PUF.R`, and `R/localCode/testing_change.R`.
 9. Render `chis_manuscript.qmd`, `chis_supplement.qmd`, and `chis_tables.qmd` from `Documents/Manuscript/`.

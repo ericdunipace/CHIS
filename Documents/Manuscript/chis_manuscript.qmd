@@ -91,7 +91,7 @@ csl: https://www.zotero.org/styles/the-lancet
 ```{r load-tabs, echo = FALSE, message = FALSE, warning = FALSE}
 N_obs <- c("2021" = 1169, "2022" = 985 , "2023" = 968)
 
-tab1_long <- utils::read.csv(here::here("Outputs", "table1.csv"))
+tab1_long <- utils::read.csv(here::here("Outputs_DAC", "table1.csv"))
 
 ```
 ``` {r load-glm, echo = FALSE, message = FALSE, warning = FALSE}

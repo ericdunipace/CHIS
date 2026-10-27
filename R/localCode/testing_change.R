@@ -31,7 +31,7 @@ if (!file.exists(puf_file)) {
   }
 
   # extract covariate values from baseline table
-  tab1_long <- utils::read.csv(here::here("Outputs", "table1.csv")) |>
+  tab1_long <- utils::read.csv(here::here("Outputs_DAC", "table1.csv")) |>
     mutate(variable = if_else(variable == "Age*", "Age", variable)) |>
     filter(status != "Total") |>
     group_by(variable, label, year) |>
@@ -53,17 +53,17 @@ if (!file.exists(puf_file)) {
     ) |>
     ungroup()
 
-  suf_stat <- read.csv(here::here("Outputs", "glm_suf_stat.csv"))
+  suf_stat <- read.csv(here::here("Outputs_DAC", "glm_suf_stat.csv"))
 
   #coef
   glm_est <- utils::read.csv(
-    file = here::here("Outputs", "glm_model_summary.csv")
+    file = here::here("Outputs_DAC", "glm_model_summary.csv")
   )
   beta <- glm_est$Estimate
 
   # vcov for predictions
   V <- utils::read.csv(
-    file = here::here("Outputs", "glm_vcov.csv"),
+    file = here::here("Outputs_DAC", "glm_vcov.csv"),
     row.names = 1
   )
   #### Clean and combine CHIS data ####
