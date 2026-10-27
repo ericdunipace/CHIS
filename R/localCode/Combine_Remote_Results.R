@@ -757,6 +757,115 @@ if (length(missing_outputs) > 0L) {
     ) |>
         saveRDS(here::here(doc_dir, "climate_vars_pvalue.rds"))
 
+    # check for collinearity
+    baseline_demographics <- c(
+        "age_group", # SELF-REPORTED AGE
+        "srsex", # SELF-REPORTED GENDER
+        "ombsrreo", # OMB/CURRENT DOF RACE - ETHNICITY
+        "sch_typ", # TYPE OF SCHOOL ATTENDED
+        "ahedtc_binary", # ADULT EDUCATIONAL ATTAINMENT
+        "povll_binary", # POVERTY LEVEL
+        "lnghmt_binary", # LANGUAGE SPOKEN AT HOME,
+        "ur_clrt2" # URBAN/RURAL CLASSIFICATION
+    )
+
+    modifiable_protective <- c(
+        "tl25_pos", # CARES DEEPLY ABOUT ISSUES IN COMMUNITY strong agree -> strong dis
+        "tl27_pos", # BELIEVES CAN MAKE A DIFFERENCE IN THE COMMUNITY strong agree -> strong dis
+        "tl50", # EVER VOLUNTEERED TO SOLVE PROBLEM IN THE COMMUNITY Yes, No
+        "tl53_pos", # CONFIDENCE TO CONTACT SOMEONE IN THE GOVT WHO REPRESENTS COMMUNITY Definitely Could -> Definitely Could Not
+        "tq10_pos", # HOW OFTEN FELT ABLE TO TALK TO FAMILY ABOUT FEELINGS All Of The Time -> Never
+        "tq11_pos", # HOW OFTEN FELT FAMILY STOOD BY YOU DURING DIFFICULT TIMES All Of The Time -> Never
+        "tq14_pos", # HOW OFTEN FELT SUPPORTED BY FRIENDS  All Of The Time -> Never
+        "tq16_pos" # HOW OFTEN ENJOYED PARTICIPATING IN COMMUNITY TRADITIONS  All Of The Time -> Never
+    )
+
+    access_to_care <- c(
+        "uninsured", # INSURANCE TYPE, Yes, No
+        "health_office", # KIND OF PLACE MOST OFTEN GO FOR HEALTH CARE
+        "tf9" # DELAYED/DID NOT GET MEDICAL CARE FELT NEEDED IN PAST 12 MOS, Yes, No
+    )
+
+    civic_engagement <- c(
+        "school_last_week", # ATTENDED SCHOOL LAST WEEK Yes, No
+        # "ta4c_p1",         # ATTENDED SCHOOL DURING LAST SCHOOL YR, only in 2023 data
+        "health_missed_days", # Number OF DAYS OF SCHOOL MISSED FOR HEALTH PROBLEM PAST MO;
+        # there's also the fact that for 2022 and 2021, it was not asked if TA4 is "no"
+        # so 2023 was coded the same in our analysis to make results comparable
+        "tl10", # PARTICIPATE IN CLUBS/ORGS OUTSIDE SCHOOL PAST YR, Yes, No
+        "tq15_pos" # HOW OFTEN FELT SENSE OF BELONGING AT SCHOOL All Of The Time -> Never
+    )
+
+    climate_variables <- c(
+        "tmax_tract10_prior_90_days_count32_delta", # Tmax above 32 for the 90 days prior to survey date
+        "tmax_tract10_prior_90_days_mean_delta", # Mean Tmaxfor the 90 days prior to survey date
+        "tmax_tract10_prior_yr_mean_delta", # Mean Tmax for the year prior to survey date
+        "tmax_tract10_prior_yr_count32_delta", # Count of Tmax above 32 for the year prior to survey date
+        "tmax_county_prior_90_days_count32_delta", # Tmax above 32 for the 90 days prior to survey date
+        "tmax_county_prior_90_days_mean_delta", # Mean Tmaxfor the 90 days prior to survey date
+        "tmax_county_prior_yr_mean_delta", # Mean Tmax for the year prior to survey date
+        "tmax_county_prior_yr_count32_delta" # Count of Tmax above 32 for the year prior to survey date
+    )
+
+    # Aggregate all the variables
+    characteristics <- c(
+        baseline_demographics,
+        modifiable_protective,
+        access_to_care,
+        civic_engagement,
+        climate_variables
+    )
+    V <- as.matrix(glm_vcov)
+    R <- cov2cor(V[-1, -1]) # drop intercept
+
+    # VIF for single-column terms
+    vif <- diag(solve(R))
+
+    # generalized VIF for multi-column terms (e.g. a factor's dummies), as in car::vif
+    gvif <- function(R, idx) {
+        det(R[idx, idx, drop = FALSE]) *
+            det(R[-idx, -idx, drop = FALSE]) /
+            det(R)
+    }
+    term_of <- vapply(
+        colnames(R),
+        function(cn) {
+            hits <- characteristics[startsWith(cn, characteristics)]
+            if (length(hits) == 0) {
+                NA_character_
+            } else {
+                hits[which.max(nchar(hits))]
+            }
+        },
+        character(1)
+    )
+    stopifnot(!anyNA(term_of))
+
+    gvif_tab <- tibble::tibble(term = unique(term_of)) |>
+        dplyr::mutate(
+            df = vapply(term, function(t) sum(term_of == t), integer(1)),
+            gvif = vapply(
+                term,
+                function(t) gvif(R, which(term_of == t)),
+                numeric(1)
+            ),
+            gvif_adj = gvif^(1 / (2 * df))
+        ) |>
+        dplyr::arrange(dplyr::desc(gvif_adj))
+    print(gvif_tab, n = 100)
+    # e.g. gvif(R, grep("^ombsrreo", colnames(R)))
+    # compare GVIF^(1 / (2 * length(idx))) to sqrt of the usual VIF cutoffs
+
+    # condition number / indices
+    ev <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+    message("Checking condition number:")
+    sqrt(max(ev) / ev)
+    message("ratio of max eigen value over other eigen values")
+    message("> 30 may suggest problem")
+    if (any((sqrt(max(ev) / ev)) > 30)) {
+        warning("condition number > 30 found; may have a problem")
+    }
+
     # Lancet style: one OR (95% CI) column, "1 (ref)" for reference
     # categories, two mid-dots for cells with no data, and no stars
     glm_header <- c(
@@ -935,6 +1044,53 @@ if (length(missing_outputs) > 0L) {
 
     fe_est |>
         saveRDS(here::here(doc_dir, "fe_tab.rds"))
+
+    # uses the untransformed fe_V and the gvif()/characteristics from the glm check.
+    # drop the intercept and county dummies: this block of the vcov reflects
+    # collinearity among covariates net of county, and avoids small counties
+    # with separation (huge SEs) making the full matrix near singular
+    fe_keep <- !grepl(
+        "^\\(Intercept\\)$|^as\\.factor\\(county\\)",
+        rownames(fe_V)
+    )
+    fe_R <- cov2cor(fe_V[fe_keep, fe_keep])
+
+    fe_term_of <- vapply(
+        colnames(fe_R),
+        function(cn) {
+            hits <- characteristics[startsWith(cn, characteristics)]
+            if (length(hits) == 0) {
+                NA_character_
+            } else {
+                hits[which.max(nchar(hits))]
+            }
+        },
+        character(1)
+    )
+    stopifnot(!anyNA(fe_term_of))
+
+    fe_gvif_tab <- tibble::tibble(term = unique(fe_term_of)) |>
+        dplyr::mutate(
+            df = vapply(term, function(t) sum(fe_term_of == t), integer(1)),
+            gvif = vapply(
+                term,
+                function(t) gvif(fe_R, which(fe_term_of == t)),
+                numeric(1)
+            ),
+            gvif_adj = gvif^(1 / (2 * df))
+        ) |>
+        dplyr::arrange(dplyr::desc(gvif_adj))
+    print(fe_gvif_tab, n = 100)
+
+    # condition number / indices
+    fe_ev <- eigen(fe_R, symmetric = TRUE, only.values = TRUE)$values
+    message("Checking condition number (fe model):")
+    sqrt(max(fe_ev) / fe_ev)
+    message("ratio of max eigen value over other eigen values")
+    message("> 30 may suggest problem")
+    if (any((sqrt(max(fe_ev) / fe_ev)) > 30)) {
+        warning("condition number > 30 found in fe model; may have a problem")
+    }
 
     #### Combined tables document for submission ####
     # Lancet asks for tables in a Word document separate from the main text

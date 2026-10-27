@@ -179,10 +179,10 @@ if (length(missing_obs) > 0) {
   cn_c <- gsub("tract10_", "county_", cn)
 
   for (j in seq_along(cn)) {
-    if (is.null(chis[missing_obs, cn[j]])) {
+    if (!cn[j] %in% names(chis)) {
       next
     }
-    chis[missing_obs, cn[j]] <- chis[missing_obs, cn_c[j]]
+    chis[missing_obs, cn[j]] <- 0 #chis[missing_obs, cn_c[j]]
   }
 }
 
@@ -750,7 +750,12 @@ cat("p-value for test if fixed effects do better: ", test$p %>% print())
 #   file = here::here("Outputs", "mixef_replicate_coef.csv")
 # )
 
+si <- sessionInfo()
+pkgs <- c(si$otherPkgs, si$loadedOnly)
 writeLines(
-  capture.output(sessionInfo()),
+  c(
+    R.version.string,
+    sprintf("%s %s", names(pkgs), vapply(pkgs, `[[`, "", "Version"))
+  ),
   file.path(output_dir, "session_info.txt")
 )

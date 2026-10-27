@@ -10,187 +10,193 @@ library(stringr)
 # 1. Download California ACS data, 2021–2023
 # ============================================================
 
-vars <- c(
-  total_pop = "B01001_001",
-  age12_14 = "B09001_008",
-  age15_17 = "B09001_009"
-)
+if (!file.exists(here::here("data-raw", "ca_youth_2010.rds"))) {
+  vars <- c(
+    total_pop = "B01001_001",
+    age12_14 = "B09001_008",
+    age15_17 = "B09001_009"
+  )
 
-ca_youth_2020 <- map_dfr(2021:2023, function(yr) {
-  get_acs(
-    geography = "tract",
-    state = "CA",
-    year = yr,
-    survey = "acs5",
-    variables = vars,
-    geometry = FALSE,
-    cache_table = TRUE
-  ) |>
-    select(GEOID, variable, estimate) |>
-    pivot_wider(
-      names_from = variable,
-      values_from = estimate
-    ) |>
-    transmute(
-      tract20 = GEOID,
+  ca_youth_2020 <- map_dfr(2021:2023, function(yr) {
+    get_acs(
+      geography = "tract",
+      state = "CA",
       year = yr,
-      total_pop = total_pop,
-      pop12_17 = age12_14 + age15_17
-    )
-})
+      survey = "acs5",
+      variables = vars,
+      geometry = FALSE,
+      cache_table = TRUE
+    ) |>
+      select(GEOID, variable, estimate) |>
+      pivot_wider(
+        names_from = variable,
+        values_from = estimate
+      ) |>
+      transmute(
+        tract20 = GEOID,
+        year = yr,
+        total_pop = total_pop,
+        pop12_17 = age12_14 + age15_17
+      )
+  })
 
-# ============================================================
-# 2. Download Census Bureau 2020 -> 2010 tract crosswalk
-# ============================================================
+  # ============================================================
+  # 2. Download Census Bureau 2020 -> 2010 tract crosswalk
+  # ============================================================
 
-crosswalk_url <- paste0(
-  "https://www2.census.gov/geo/docs/maps-data/",
-  "data/rel2020/tract/",
-  "tab20_tract20_tract10_st06.txt"
-)
-
-rel <- read_delim(
-  crosswalk_url,
-  delim = "|",
-  col_types = cols(.default = col_character()),
-  show_col_types = FALSE
-)
-
-# ============================================================
-# 3. Calculate land-area allocation weights
-# ============================================================
-
-# Each 2020 tract may overlap multiple 2010 tracts.
-# Allocate using share of overlapping land area.
-
-xwalk <- rel |>
-  transmute(
-    tract20 = GEOID_TRACT_20,
-    tract10 = GEOID_TRACT_10,
-    overlap_area = as.numeric(AREALAND_PART)
-  ) |>
-  filter(
-    !is.na(tract20),
-    !is.na(tract10),
-    !is.na(overlap_area),
-    overlap_area >= 0
-  ) |>
-  group_by(tract20, tract10) |>
-  summarise(
-    overlap_area = sum(overlap_area),
-    .groups = "drop"
-  ) |>
-  group_by(tract20) |>
-  filter(sum(overlap_area) > 0) |>
-  mutate(
-    wt_pop = overlap_area / sum(overlap_area)
-  ) |>
-  ungroup()
-
-xwalk |>
-  group_by(tract20) |>
-  summarise(
-    weight_sum = sum(wt_pop),
-    .groups = "drop"
-  ) |>
-  summarise(
-    n_tracts = n(),
-    min_weight_sum = min(weight_sum, na.rm = TRUE),
-    max_weight_sum = max(weight_sum, na.rm = TRUE)
+  crosswalk_url <- paste0(
+    "https://www2.census.gov/geo/docs/maps-data/",
+    "data/rel2020/tract/",
+    "tab20_tract20_tract10_st06.txt"
   )
 
-# Validate allocation weights
-weight_check <- xwalk |>
-  group_by(tract20) |>
-  summarise(
-    weight_sum = sum(wt_pop),
-    .groups = "drop"
+  rel <- read_delim(
+    crosswalk_url,
+    delim = "|",
+    col_types = cols(.default = col_character()),
+    show_col_types = FALSE
   )
 
-stopifnot(
-  all(abs(weight_check$weight_sum - 1) < 1e-6, na.rm = TRUE)
-)
+  # ============================================================
+  # 3. Calculate land-area allocation weights
+  # ============================================================
 
-# Report any zero-land-area source tracts
-print(
-  weight_check |>
+  # Each 2020 tract may overlap multiple 2010 tracts.
+  # Allocate using share of overlapping land area.
+
+  xwalk <- rel |>
+    transmute(
+      tract20 = GEOID_TRACT_20,
+      tract10 = GEOID_TRACT_10,
+      overlap_area = as.numeric(AREALAND_PART)
+    ) |>
     filter(
-      is.na(weight_sum) |
-        abs(weight_sum - 1) >= 1e-6
-    ),
-  n = 1000
-)
+      !is.na(tract20),
+      !is.na(tract10),
+      !is.na(overlap_area),
+      overlap_area >= 0
+    ) |>
+    group_by(tract20, tract10) |>
+    summarise(
+      overlap_area = sum(overlap_area),
+      .groups = "drop"
+    ) |>
+    group_by(tract20) |>
+    filter(sum(overlap_area) > 0) |>
+    mutate(
+      wt_pop = overlap_area / sum(overlap_area)
+    ) |>
+    ungroup()
 
-# ============================================================
-# 4. Convert ACS counts to 2010 census tract geography
-# ============================================================
-
-unmatched <- ca_youth_2020 |>
-  anti_join(xwalk, by = "tract20")
-
-message("Unmatched ACS tract-year records: ", nrow(unmatched))
-
-ca_youth_2010 <- ca_youth_2020 |>
-  left_join(
-    xwalk,
-    by = "tract20",
-    relationship = "many-to-many"
-  ) |>
-  mutate(
-    total_alloc = total_pop * wt_pop,
-    youth_alloc = pop12_17 * wt_pop
-  ) |>
-  filter(!is.na(tract10)) |>
-  group_by(tract10, year) |>
-  summarise(
-    total_pop = if (all(is.na(total_alloc))) {
-      NA_real_
-    } else {
-      sum(total_alloc, na.rm = TRUE)
-    },
-    pop12_17 = if (all(is.na(youth_alloc))) {
-      NA_real_
-    } else {
-      sum(youth_alloc, na.rm = TRUE)
-    },
-    .groups = "drop"
-  ) |>
-  mutate(
-    pct12_17 = if_else(
-      total_pop > 0,
-      100 * pop12_17 / total_pop,
-      NA_real_
+  xwalk |>
+    group_by(tract20) |>
+    summarise(
+      weight_sum = sum(wt_pop),
+      .groups = "drop"
+    ) |>
+    summarise(
+      n_tracts = n(),
+      min_weight_sum = min(weight_sum, na.rm = TRUE),
+      max_weight_sum = max(weight_sum, na.rm = TRUE)
     )
-  ) |>
-  arrange(tract10, year)
 
-# ============================================================
-# 5. Validate resulting data
-# ============================================================
+  # Validate allocation weights
+  weight_check <- xwalk |>
+    group_by(tract20) |>
+    summarise(
+      weight_sum = sum(wt_pop),
+      .groups = "drop"
+    )
 
-stopifnot(
-  !anyDuplicated(ca_youth_2010[c("tract10", "year")])
-)
-
-stopifnot(
-  all(
-    is.na(ca_youth_2010$pct12_17) |
-      between(ca_youth_2010$pct12_17, 0, 100)
+  stopifnot(
+    all(abs(weight_check$weight_sum - 1) < 1e-6, na.rm = TRUE)
   )
-)
 
-ca_youth_2010 |>
-  group_by(year) |>
-  summarise(
-    n_tracts = n(),
-    n_missing = sum(is.na(pct12_17)),
-    mean_pct = mean(pct12_17, na.rm = TRUE),
-    weighted_pct = 100 *
-      sum(pop12_17, na.rm = TRUE) /
-      sum(total_pop, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
-  print()
+  # Report any zero-land-area source tracts
+  print(
+    weight_check |>
+      filter(
+        is.na(weight_sum) |
+          abs(weight_sum - 1) >= 1e-6
+      ),
+    n = 1000
+  )
+
+  # ============================================================
+  # 4. Convert ACS counts to 2010 census tract geography
+  # ============================================================
+
+  unmatched <- ca_youth_2020 |>
+    anti_join(xwalk, by = "tract20")
+
+  message("Unmatched ACS tract-year records: ", nrow(unmatched))
+
+  ca_youth_2010 <- ca_youth_2020 |>
+    left_join(
+      xwalk,
+      by = "tract20",
+      relationship = "many-to-many"
+    ) |>
+    mutate(
+      total_alloc = total_pop * wt_pop,
+      youth_alloc = pop12_17 * wt_pop
+    ) |>
+    filter(!is.na(tract10)) |>
+    group_by(tract10, year) |>
+    summarise(
+      total_pop = if (all(is.na(total_alloc))) {
+        NA_real_
+      } else {
+        sum(total_alloc, na.rm = TRUE)
+      },
+      pop12_17 = if (all(is.na(youth_alloc))) {
+        NA_real_
+      } else {
+        sum(youth_alloc, na.rm = TRUE)
+      },
+      .groups = "drop"
+    ) |>
+    mutate(
+      pct12_17 = if_else(
+        total_pop > 0,
+        100 * pop12_17 / total_pop,
+        NA_real_
+      )
+    ) |>
+    arrange(tract10, year)
+
+  # ============================================================
+  # 5. Validate resulting data
+  # ============================================================
+
+  stopifnot(
+    !anyDuplicated(ca_youth_2010[c("tract10", "year")])
+  )
+
+  stopifnot(
+    all(
+      is.na(ca_youth_2010$pct12_17) |
+        between(ca_youth_2010$pct12_17, 0, 100)
+    )
+  )
+
+  ca_youth_2010 |>
+    group_by(year) |>
+    summarise(
+      n_tracts = n(),
+      n_missing = sum(is.na(pct12_17)),
+      mean_pct = mean(pct12_17, na.rm = TRUE),
+      weighted_pct = 100 *
+        sum(pop12_17, na.rm = TRUE) /
+        sum(total_pop, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    print()
+
+  saveRDS(ca_youth_2010, file = here::here("data-raw", "ca_youth_2010.rds"))
+} else {
+  ca_youth_2010 <- readRDS(file = here::here("data-raw", "ca_youth_2010.rds"))
+}
 
 # ============================================================
 # 6. Aggregate to county level

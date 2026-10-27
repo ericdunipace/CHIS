@@ -740,6 +740,7 @@ data_var_from_prism <- function(
     ann_stack_ca <- terra::mask(terra::crop(ann_stack_t, cal_admin), cal_admin)
     # Compute mean raster over 20-year period
     clim_rasters[[i]] <- terra::app(ann_stack_ca, mean, na.rm = TRUE)
+    if (var == "ppt") clim_rasters[[i]] <- clim_rasters[[i]] / 365.25
     # y <- unique_years[i]
     # years_vec <- 2004:2019
     # # Download (or locate) annual files for those years
