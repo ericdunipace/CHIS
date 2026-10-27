@@ -9,6 +9,7 @@ library(scales)
 library(emmeans)
 
 source(here::here("R", "Functions.R"))
+dir.create(here::here("Outputs", "tables"), showWarnings = FALSE, recursive = TRUE)
 puf_file <- here::here("data", "chis_puf_combined.Rds")
 
 if (!file.exists(puf_file)) {
@@ -27,7 +28,7 @@ if (!file.exists(puf_file)) {
   ) {
     tmax_annual_ca <- readRDS(tmax_file)
   } else {
-    stop("You must run `get_adolescent_pop.R` in the 'data-raw/' folder first")
+    stop("You must run data-raw/05_adolescent_tmax.R first")
   }
 
   # extract covariate values from baseline table
@@ -365,8 +366,8 @@ if (!file.exists(puf_file)) {
     )
 
   change_df_raw |>
-    saveRDS(here::here("Documents", "post_hoc_change.rds"))
+    saveRDS(here::here("Outputs", "tables", "post_hoc_change.rds"))
 
   change_df |>
-    saveRDS(here::here("Documents", "post_hoc_change_table.rds"))
+    saveRDS(here::here("Outputs", "tables", "post_hoc_change_table.rds"))
 }

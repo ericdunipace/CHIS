@@ -1,7 +1,7 @@
 library(dplyr)
 
-source(here::here("data-raw", "chis_stata_labels_for_sas.R"))
-source(here::here("data-raw", "approved_var_select.R"))
+source(here::here("tools", "chis_stata_labels_for_sas.R"))
+source(here::here("tools", "approved_var_select.R"))
 
 to_file <- here::here("R", "Functions.R")
 

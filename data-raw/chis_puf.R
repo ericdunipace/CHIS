@@ -8,21 +8,21 @@ library(purrr) # Functional programming
 library(forcats) # Factor manipulation
 library(lubridate)
 
-here::i_am("data-raw/CHIS_PUF_clean.R") # adjust this to your actual file location
+here::i_am("data-raw/chis_puf.R")
 
 
 # Import PUF datasets
-chis_2023 <- haven::read_dta(here::here('Data', 'teen_2023_stata/TEEN.dta')) %>%
+chis_2023 <- haven::read_dta(here::here('data', 'teen_2023_stata/TEEN.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2023) %>%
   haven::as_factor()
 
-chis_2022 <- haven::read_dta(here::here('Data', 'teen_stata_2022/TEEN.dta')) %>%
+chis_2022 <- haven::read_dta(here::here('data', 'teen_stata_2022/TEEN.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2022) %>%
   haven::as_factor()
 
-chis_2021 <- haven::read_dta(here::here('Data', 'teen_stata_2021/TEEN.dta')) %>%
+chis_2021 <- haven::read_dta(here::here('data', 'teen_stata_2021/TEEN.dta')) %>%
   rename_all(tolower) %>%
   mutate(year = 2021) %>%
   haven::as_factor()

@@ -15,12 +15,11 @@ library(glue)
 source(here::here("R", "Functions.R"))
 
 #### output dir ####
-doc_dir <- here::here("Documents")
-dir.create(doc_dir, showWarnings = FALSE)
-dir.create(here::here("Outputs"), showWarnings = FALSE)
+doc_dir <- here::here("Outputs", "tables")
+dir.create(doc_dir, showWarnings = FALSE, recursive = TRUE)
 
-fig_dir <- here::here("Figures")
-dir.create(fig_dir, showWarnings = FALSE)
+fig_dir <- here::here("Outputs", "figures")
+dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 
 required_outputs <- c(
     "table1_basic.csv",
@@ -1149,6 +1148,9 @@ if (length(missing_outputs) > 0L) {
         facet_wrap(~year, ncol = 2) +
         theme(legend.box = "horizontal")
 
+    # building the grobs needs an open device; a null one keeps Rplots.pdf
+    # from being written
+    pdf(NULL)
     final_tmax_plot <- fix_reposition_legend(
         county_plot_year_tmax,
         position = "center",
@@ -1162,17 +1164,18 @@ if (length(missing_outputs) > 0L) {
         panel = "panel-2-2",
         plot = FALSE
     )
+    dev.off()
 
-    pdf(here::here("Figures", "heatwave_map2.pdf"), width = 6, height = 6)
+    pdf(here::here(fig_dir, "heatwave_map2.pdf"), width = 6, height = 6)
     grid::grid.draw(final_heatwave_plot)
     dev.off()
 
-    pdf(here::here("Figures", "tmax_map2.pdf"), width = 6, height = 6)
+    pdf(here::here(fig_dir, "tmax_map2.pdf"), width = 6, height = 6)
     grid::grid.draw(final_tmax_plot)
     dev.off()
 
     png(
-        here::here("Figures", "heatwave_map2.png"),
+        here::here(fig_dir, "heatwave_map2.png"),
         width = 6 * 600,
         height = 6 * 600,
         res = 600
@@ -1181,7 +1184,7 @@ if (length(missing_outputs) > 0L) {
     dev.off()
 
     png(
-        here::here("Figures", "tmax_map2.png"),
+        here::here(fig_dir, "tmax_map2.png"),
         width = 6 * 600,
         height = 6 * 600,
         res = 600

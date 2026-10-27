@@ -4,14 +4,15 @@ library(dplyr)
 
 census_shp_file_name <- here::here(
   "data-raw",
+  "downloads",
   "california_census_2010",
   "tabblock2010_06_pophu.shp"
 )
 
 if (!file.exists(census_shp_file_name)) {
   dl_census_url <- "https://www2.census.gov/geo/tiger/TIGER2010BLKPOPHU/tabblock2010_06_pophu.zip"
-  dest_dir <- here::here("data-raw", "california_census_2010")
-  dir.create(dest_dir)
+  dest_dir <- here::here("data-raw", "downloads", "california_census_2010")
+  dir.create(dest_dir, recursive = TRUE)
   fn <- curl::curl_download(
     dl_census_url,
     here::here(dest_dir, "census.zip"),
@@ -36,4 +37,6 @@ ca_census <- census_shp_file_name %>%
 
 # write as gpkg if want
 # ca_census %>% sf::st_write(dsn = "data/ca_tract_2010.gpkg", delete_layer = TRUE)
-ca_census %>% saveRDS(file = here::here("data-raw", "ca_tract_2010.rds"))
+dir.create(here::here("data-raw", "intermediate"), showWarnings = FALSE)
+ca_census %>%
+  saveRDS(file = here::here("data-raw", "intermediate", "ca_tract_2010.rds"))

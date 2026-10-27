@@ -4,13 +4,13 @@
 #| results: asis
 
 if (knitr::is_latex_output()) {
-  cat(readLines(here::here("Documents","glm_tab.tex")), sep = "\n")
+  cat(readLines(here::here("Outputs", "tables", "glm_tab.tex")), sep = "\n")
 } else if (knitr::is_html_output()) {
-  cat(readLines(here::here("Documents","glm_tab.html")), sep = "\n")
+  cat(readLines(here::here("Outputs", "tables", "glm_tab.html")), sep = "\n")
 } else if (knitr::pandoc_to("docx")) {
   # Word needs a paragraph after a table that ends a cell; without one
   # the Quarto caption wrapper triggers "unreadable content" in Word
-  flextable::flextable_to_rmd(lancet_ft(readRDS(here::here("Documents", "glm_tab_ft.rds"))))
+  flextable::flextable_to_rmd(lancet_ft(readRDS(here::here("Outputs", "tables", "glm_tab_ft.rds"))))
   cat("\n\n```{=openxml}\n<w:p/>\n```\n\n")
 }
 ```
@@ -23,6 +23,6 @@ if (knitr::is_latex_output()) {
 # tables carry their own notes). Kept out of the table chunk so Quarto
 # does not mistake a note for the caption.
 if (knitr::pandoc_to("docx")) {
-  cat_table_notes(readRDS(here::here("Documents", "glm_tab_notes.rds")))
+  cat_table_notes(readRDS(here::here("Outputs", "tables", "glm_tab_notes.rds")))
 }
 ```

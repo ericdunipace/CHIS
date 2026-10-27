@@ -9,7 +9,7 @@ library(dplyr)
 
 source(here::here("R", "Functions.R"))
 
-prism::prism_set_dl_dir(path = here::here("data-raw", "prism"), create = TRUE)
+prism::prism_set_dl_dir(path = here::here("data-raw", "downloads", "prism"), create = TRUE)
 
 
 sapply(c("tmean", "tmax", "ppt", "vpdmax"), function(x) {
@@ -44,22 +44,22 @@ sapply(c("tmax", "ppt", "vpdmax"), function(var) {
 # [X] also do for heatwaves
 
 #### Prism data for census ####
-# note must have already downloaded the census shapefile and cleaned
-# source(here::here("R","Census_2010_clean.R"))
+# needs data-raw/intermediate/ca_tract_2010.rds from 01_census_tracts.R
 stopifnot(
   "census file does not exist" = file.exists(here::here(
     "data-raw",
+    "intermediate",
     "ca_tract_2010.rds"
   ))
 )
 
-prism_vars.fn <- here::here("data-raw", "prism_vars_census.rds")
+prism_vars.fn <- here::here("data-raw", "intermediate", "prism_vars_census.rds")
 
 if (!file.exists(prism_vars.fn)) {
   message("prism_vars being created...")
 
   # read in census shapefile
-  census_shapefile <- readRDS(here::here("data-raw", "ca_tract_2010.rds"))
+  census_shapefile <- readRDS(here::here("data-raw", "intermediate", "ca_tract_2010.rds"))
 
   tracts <- census_shapefile$tract10
   ntracts <- length(census_shapefile$tract10)
@@ -96,22 +96,22 @@ if (!file.exists(prism_vars.fn)) {
 
 
 #### Prism data for county ####
-# note must have already downloaded the census shapefile and cleaned
-# source(here::here("R","Census_2010_clean.R"))
+# needs data-raw/intermediate/ca_county.rds from 02_county_shapes.R
 stopifnot(
   "county file does not exist" = file.exists(here::here(
-    "data",
+    "data-raw",
+    "intermediate",
     "ca_county.rds"
   ))
 )
 
-prism_vars_county.fn <- here::here("data-raw", "prism_vars_county.rds")
+prism_vars_county.fn <- here::here("data-raw", "intermediate", "prism_vars_county.rds")
 
 if (!file.exists(prism_vars_county.fn)) {
   message("prism_vars being created...")
 
   # read in census shapefile
-  county_shapefile <- readRDS(here::here("data", "ca_county.rds"))
+  county_shapefile <- readRDS(here::here("data-raw", "intermediate", "ca_county.rds"))
 
   county <- county_shapefile$county
   ncounty <- length(county)
@@ -148,12 +148,12 @@ if (!file.exists(prism_vars_county.fn)) {
 
 
 ##### create 2023,2022,2021 tmax avg and heatwave avg for maps ####
-census_temp.fn <- here::here("data-raw", "map_census_temp.rds")
-census_heat.fn <- here::here("data-raw", "map_census_heat.rds")
+census_temp.fn <- here::here("data-raw", "intermediate", "map_census_temp.rds")
+census_heat.fn <- here::here("data-raw", "intermediate", "map_census_heat.rds")
 
 if (!file.exists(census_temp.fn) || !file.exists(census_heat.fn)) {
   # read in census shapefile
-  census_shapefile <- readRDS(here::here("data", "ca_tract_2010.rds"))
+  census_shapefile <- readRDS(here::here("data-raw", "intermediate", "ca_tract_2010.rds"))
 
   # create avg of vars by years for tmax
   census_temp <- prism_to_map(
@@ -181,8 +181,8 @@ if (!file.exists(census_temp.fn) || !file.exists(census_heat.fn)) {
     select(tract10, year, map_tmax)
   cens_heat_save <- census_heatwave %>%
     as.data.frame() %>%
-    mutate(map_days_above32 = days_above32)
-  select(tract10, year, map_days_above32)
+    mutate(map_days_above32 = days_above32) %>%
+    select(tract10, year, map_days_above32)
 
   # save the variables as RDS files
   saveRDS(cens_temp_save, file = census_temp.fn)

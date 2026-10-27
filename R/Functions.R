@@ -1659,21 +1659,21 @@ verify_file_names_and_data_type <- function(
   if (stata_or_sas == "stata") {
     if (is.null(file_name_2021)) {
       file_name_2021 <- here::here(
-        'Data',
+        'data',
         'dummyfile_2023_teen_stata',
         'TEEN_with_format.dta'
       )
     }
     if (is.null(file_name_2022)) {
       file_name_2022 <- here::here(
-        'Data',
+        'data',
         'teen 2022 dummy STATA',
         'TEEN_with_format.dta'
       )
     }
     if (is.null(file_name_2023)) {
       file_name_2023 <- here::here(
-        'Data',
+        'data',
         'dummyfile_2021_teen_stata',
         'TEEN_with_format.dta'
       )
@@ -1683,21 +1683,21 @@ verify_file_names_and_data_type <- function(
   } else if (stata_or_sas == "sas") {
     if (is.null(file_name_2021)) {
       file_name_2021 <- here::here(
-        'Data',
+        'data',
         'dummyfiles_2021_teen_sas',
         'dummy_teen.sas7bdat'
       )
     }
     if (is.null(file_name_2022)) {
       file_name_2022 <- here::here(
-        'Data',
+        'data',
         'dummyfiles_2022_teen_sas',
         'dummy_teen.sas7bdat'
       )
     }
     if (is.null(file_name_2023)) {
       file_name_2023 <- here::here(
-        'Data',
+        'data',
         'dummyfiles_2023_teen_sas',
         'dummy_teen.sas7bdat'
       )
@@ -1711,21 +1711,21 @@ verify_file_names_and_data_type <- function(
 
     if (is.null(file_name_2021)) {
       file_name_2021 <- here::here(
-        'Data',
+        'data',
         'dummyfile_2023_teen_stata',
         'TEEN_with_format.dta'
       )
     }
     if (is.null(file_name_2022)) {
       file_name_2022 <- here::here(
-        'Data',
+        'data',
         'teen 2022 dummy STATA',
         'TEEN_with_format.dta'
       )
     }
     if (is.null(file_name_2023)) {
       file_name_2023 <- here::here(
-        'Data',
+        'data',
         'dummyfile_2021_teen_stata',
         'TEEN_with_format.dta'
       )
@@ -3629,7 +3629,7 @@ fmt_p <- function(p, prefix = FALSE) {
 # (`::: {#stbl-x}`), not on chunk labels, so labels are read from div ids in
 # document order to match Quarto's numbering.
 supp_tbl_refs <- function(
-  path = here::here("Documents", "Manuscript", "chis_supplement.qmd"),
+  path = here::here("manuscript", "chis_supplement.qmd"),
   key = "stbl"
 ) {
   src <- readLines(path, warn = FALSE)

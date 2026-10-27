@@ -18,6 +18,8 @@ here::i_am(file.path("R", "localCode", "CHIS_PUF.R")) # adjust this to your actu
 if (!dir.exists(output_dir <- here::here("Outputs"))) {
   dir.create(output_dir)
 }
+dir.create(here::here("Outputs", "tables"), showWarnings = FALSE)
+dir.create(here::here("Outputs", "figures"), showWarnings = FALSE)
 
 #### load Functions ####
 source(here::here("R", "Functions.R"))
@@ -195,7 +197,7 @@ if (!file.exists(puf_file)) {
 
   overall.prev |>
     saveRDS(
-      here::here("Documents", "prevalence_overall.rds")
+      here::here("Outputs", "tables", "prevalence_overall.rds")
     )
 
   prev <- survey::svyby(
@@ -223,7 +225,7 @@ if (!file.exists(puf_file)) {
   prev |>
     mutate(anx_2021_2022 = subset_mean[1]) |>
     saveRDS(
-      here::here("Documents", "prevalence.rds")
+      here::here("Outputs", "tables", "prevalence.rds")
     )
 
   prev_fig <- prev |>
@@ -252,7 +254,7 @@ if (!file.exists(puf_file)) {
     )
 
   cairo_pdf(
-    here::here("Figures", "prevalence.pdf"),
+    here::here("Outputs", "figures", "prevalence.pdf"),
     height = 4,
     width = 4
   )
@@ -260,7 +262,7 @@ if (!file.exists(puf_file)) {
   dev.off()
 
   png(
-    here::here("Figures", "prevalence.png"),
+    here::here("Outputs", "figures", "prevalence.png"),
     res = 300,
     width = 4,
     height = 4,
@@ -280,7 +282,7 @@ if (!file.exists(puf_file)) {
   # Pairwise tests
   pairs(emmeans(model, ~year), adjust = "BH") |>
     tibble::as_tibble() |>
-    saveRDS(here::here("Documents", "prev_sig_tests.rds"))
+    saveRDS(here::here("Outputs", "tables", "prev_sig_tests.rds"))
 
   svyglm(
     I(tf45 == 'Yes') ~ I(year == "2023"),
@@ -394,7 +396,7 @@ if (!file.exists(puf_file)) {
     select(Variable, `Base Model`, `Year Model`)
 
   tidy_year_model |>
-    saveRDS(file = here::here("Documents", "year_sens.rds"))
+    saveRDS(file = here::here("Outputs", "tables", "year_sens.rds"))
 
   ftest <- survey::regTermTest(year.glm, ~ as.factor(year))
   yearest <- broom::tidy(year.glm, conf.int = TRUE, exponentiate = TRUE) |>
@@ -416,7 +418,7 @@ if (!file.exists(puf_file)) {
       conf.low = yearest$conf.low,
       conf.high = yearest$conf.high
     ) |>
-    saveRDS(here::here("Documents", "year_sens_change.rds"))
+    saveRDS(here::here("Outputs", "tables", "year_sens_change.rds"))
 
   #### Analysis 4: demographic shifts ####
   survey::svyby(
@@ -432,7 +434,7 @@ if (!file.exists(puf_file)) {
     tibble::as_tibble() |>
     mutate(cares = tl25_posYes) |>
     mutate() |>
-    saveRDS(here::here("Documents", "cares_about_community.rds"))
+    saveRDS(here::here("Outputs", "tables", "cares_about_community.rds"))
 
   survey::svyby(
     ~dstrs12,
@@ -446,5 +448,5 @@ if (!file.exists(puf_file)) {
     as.data.frame() |>
     tibble::as_tibble() |>
     mutate(distress = dstrs12Yes) |>
-    saveRDS(here::here("Documents", "psych_distress.rds"))
+    saveRDS(here::here("Outputs", "tables", "psych_distress.rds"))
 }
