@@ -1020,7 +1020,7 @@ if (length(missing_outputs) > 0L) {
 
     #### Clean up maps ####
     # get prism vars for map
-    aux_data <- readRDS(here::here("Data", "auxiliary_data.rds"))
+    aux_data <- readRDS(here::here("data", "auxiliary_data.rds"))
     census_shapefile <- aux_data$census_ca
     county_shapefile <- aux_data$county_ca
 

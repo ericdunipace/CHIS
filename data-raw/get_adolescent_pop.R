@@ -227,7 +227,7 @@ ca_youth_county <- ca_youth_county |>
 # ============================================================
 # 7. Merge with existing census_heatwave data
 # ============================================================
-aux_data <- readRDS(here::here("Data", "auxiliary_data.rds"))
+aux_data <- readRDS(here::here("data", "auxiliary_data.rds"))
 
 tract_vars <- c(
   "tmax_tract10_prior_90_days_count32_delta",
@@ -283,4 +283,4 @@ tmax_annual_ca <- tract_annual |>
   full_join(county_annual, by = "year") |>
   arrange(year)
 
-saveRDS(tmax_annual_ca, here::here("Data", "tmax_annual_ca_youth.rds"))
+saveRDS(tmax_annual_ca, here::here("data", "tmax_annual_ca_youth.rds"))

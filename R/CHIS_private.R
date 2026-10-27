@@ -3,7 +3,7 @@
 #### README ####
 # The following code loads the required packages, data, and runs analyses. The assumed file structure of the code is :
 #   - Root Folder (working directory)
-#     - Data
+#     - data
 #       - auxiliary_data.rds
 #     - R
 #       - CHIS_private.R (this file)
@@ -15,7 +15,7 @@
 #   1. Please set your desired file path for the data files in the section indicated below
 #   2. Ensure that the required packages are installed in your R environment
 #   3. Make sure that the file "Functions.R" is in the "R" folder in your working directory
-#   4. Make sure that the auxiliary data file "auxiliary_data.rds" is in the "Data" folder in your working directory
+#   4. Make sure that the auxiliary data file "auxiliary_data.rds" is in the "data" folder in your working directory
 #   5. Make sure you set `stata_or_sas` to either "stata" or "sas" depending on the data files you have
 #      - If *not* set, the code will attempt to detect the file type based on the provided file names (using functions verify_file_names_and_data_types)
 #   6. Run the code and check the "Outputs" folder for the results
@@ -52,7 +52,7 @@ file_name_2021 <- file_name_2022 <- file_name_2023 <- NULL # used to pull in fil
 # rootFolder <- file.path("P:","Project Files","Clients","DAC250735508- Hwong")
 # setwd(rootFolder)
 #
-# dataFolder <- file.path(rootFolder, "Data")
+# dataFolder <- file.path(rootFolder, "data")
 # outputFolder <- file.path(rootFolder, "Output")
 # folder_location<-dataFolder
 #
@@ -136,7 +136,7 @@ chis_list <- list(
 )
 
 # load supporting data files
-aux_data <- readRDS(here::here("Data", "auxiliary_data.rds"))
+aux_data <- readRDS(here::here("data", "auxiliary_data.rds"))
 
 #### Clean and combine CHIS data ####
 # run cleanning and pooling functions

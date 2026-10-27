@@ -1,4 +1,4 @@
-library(dplyr) # Data manipulation
+library(dplyr) # data manipulation
 library(survey) # Survey data analysis
 library(gtsummary) # for summary tables
 library(stringr)
@@ -9,7 +9,7 @@ library(scales)
 library(emmeans)
 
 source(here::here("R", "Functions.R"))
-puf_file <- here::here("Data", "chis_puf_combined.Rds")
+puf_file <- here::here("data", "chis_puf_combined.Rds")
 
 if (!file.exists(puf_file)) {
   message(
@@ -18,12 +18,12 @@ if (!file.exists(puf_file)) {
     ". See README for how to obtain it."
   )
 } else {
-  chis <- readRDS(here::here("Data", "chis_puf_combined.Rds"))
+  chis <- readRDS(here::here("data", "chis_puf_combined.Rds"))
 
-  # aux_data <- readRDS(here::here("Data", "auxiliary_data.rds"))
+  # aux_data <- readRDS(here::here("data", "auxiliary_data.rds"))
 
   if (
-    file.exists(tmax_file <- here::here("Data", "tmax_annual_ca_youth.rds"))
+    file.exists(tmax_file <- here::here("data", "tmax_annual_ca_youth.rds"))
   ) {
     tmax_annual_ca <- readRDS(tmax_file)
   } else {

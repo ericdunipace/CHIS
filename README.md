@@ -14,11 +14,11 @@ The analysis runs in two places:
 ```text
 CHIS teen files (DAC) ──> R/CHIS_private.R ──> Outputs/*.csv
                                                    │
-Data/auxiliary_data.rds ───────────────────────────┤
+data/auxiliary_data.rds ───────────────────────────┤
                                                    v
                               R/localCode/Combine_Remote_Results.R ──┐
-Data/chis_puf_combined.Rds ──> R/localCode/CHIS_PUF.R ───────────────┤──> Documents/*.rds, Figures/
-Data/tmax_annual_ca_youth.rds ──> R/localCode/testing_change.R ──────┘
+data/chis_puf_combined.Rds ──> R/localCode/CHIS_PUF.R ───────────────┤──> Documents/*.rds, Figures/
+data/tmax_annual_ca_youth.rds ──> R/localCode/testing_change.R ──────┘
                                                                       v
                                           Documents/Manuscript/*.qmd ──> manuscript, supplement, tables
 ```
@@ -37,7 +37,7 @@ Data/tmax_annual_ca_youth.rds ──> R/localCode/testing_change.R ────�
 │       └── testing_change.R           # Post hoc decomposition of the 2022–2023 change in climate anxiety
 ├── data-raw/
 │   ├── CHIS_PUF_clean.R               # Creates combined PUF RDS from CHIS teen .dta files
-│   ├── approved_var_select.R          # Creates approved-variable list (Data/teen_approved_vars.rds)
+│   ├── approved_var_select.R          # Creates approved-variable list (data/teen_approved_vars.rds)
 │   ├── chis_stata_labels_for_sas.R    # Builds Stata value-label lookups used when SAS inputs are supplied
 │   ├── create_Functions_file.R        # Generates R/Functions.R from BaseFileFunctions.R plus label lookups
 │   ├── set_package_versions.R         # Pins package versions to the DAC package list
@@ -46,7 +46,7 @@ Data/tmax_annual_ca_youth.rds ──> R/localCode/testing_change.R ────�
 │   ├── prism_download.R               # Downloads/processes PRISM climate data
 │   ├── create_auxiliary data.R        # Bundles climate/geography support data
 │   └── get_adolescent_pop.R           # ACS adolescent population and population-weighted annual Tmax
-├── Data/                              # Input data, dummy CHIS files, and precomputed RDS files
+├── data/                              # Input data, dummy CHIS files, and precomputed RDS files
 ├── Outputs/                           # DAC analysis CSV/PDF outputs (git-ignored)
 ├── Documents/                         # Manuscript-ready tables and table objects (mostly git-ignored)
 │   └── Manuscript/                    # Quarto manuscript, supplement, tables, bibliography, styles
@@ -60,7 +60,7 @@ Data/tmax_annual_ca_youth.rds ──> R/localCode/testing_change.R ────�
 
 ### `R/Functions.R` is generated
 
-`R/Functions.R` is the file every script sources, but it is built by `data-raw/create_Functions_file.R`, which copies `R/localCode/BaseFileFunctions.R` over it and appends the SAS-to-Stata value-label lookups (built from the dummy Stata files in `Data/` by `data-raw/chis_stata_labels_for_sas.R`). The lookups are embedded so the DAC run needs only `R/CHIS_private.R`, `R/Functions.R`, and `Data/auxiliary_data.rds`, not the dummy files.
+`R/Functions.R` is the file every script sources, but it is built by `data-raw/create_Functions_file.R`, which copies `R/localCode/BaseFileFunctions.R` over it and appends the SAS-to-Stata value-label lookups (built from the dummy Stata files in `data/` by `data-raw/chis_stata_labels_for_sas.R`). The lookups are embedded so the DAC run needs only `R/CHIS_private.R`, `R/Functions.R`, and `data/auxiliary_data.rds`, not the dummy files.
 
 To change a shared function:
 
@@ -83,7 +83,7 @@ For the confidential/DAC workflow, provide CHIS teen data for 2021, 2022, and 20
 
 `R/CHIS_private.R` can read either Stata (`.dta`) or SAS (`.sas7bdat`) inputs through `haven`. Set the `CHIS_DATA_TYPE` environment variable to `stata` or `sas`, or edit `stata_or_sas` directly. If neither is set, the script tries to detect the type from the file names. Set the `file_name_2021`, `file_name_2022`, and `file_name_2023` variables in the path block near the top of the script; the lines to edit are marked with `#***`.
 
-The repository includes dummy Stata and SAS files under `Data/` so the script can be run end to end outside the DAC. A real DAC run should point to the approved CHIS files supplied in the secure environment.
+The repository includes dummy Stata and SAS files under `data/` so the script can be run end to end outside the DAC. A real DAC run should point to the approved CHIS files supplied in the secure environment.
 
 ### Auxiliary Climate and Geography Data
 
@@ -340,10 +340,10 @@ For a new analyst trying to recreate the analysis:
 1. Open `CHIS.Rproj` or set the repository root as the working directory.
 2. Restore packages with `renv::restore()` under the appropriate R version (4.2.3 for DAC, 4.6.1 locally).
 3. If shared functions changed, regenerate `R/Functions.R` with `Rscript data-raw/create_Functions_file.R`.
-4. Confirm or recreate `Data/auxiliary_data.rds`.
+4. Confirm or recreate `data/auxiliary_data.rds`.
 5. In the DAC: place the approved CHIS 2021-2023 teen files, set `CHIS_DATA_TYPE`, and run `R/CHIS_private.R`.
 6. Copy the released DAC outputs into `Outputs/`.
-7. Locally: create `Data/chis_puf_combined.Rds` and `Data/tmax_annual_ca_youth.rds` if needed.
+7. Locally: create `data/chis_puf_combined.Rds` and `data/tmax_annual_ca_youth.rds` if needed.
 8. Run `R/localCode/Combine_Remote_Results.R`, `R/localCode/CHIS_PUF.R`, and `R/localCode/testing_change.R`.
 9. Render `chis_manuscript.qmd`, `chis_supplement.qmd`, and `chis_tables.qmd` from `Documents/Manuscript/`.
 10. Run `Rscript tests/testthat.R` as a final check.
