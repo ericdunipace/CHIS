@@ -1,0 +1,29 @@
+---
+title: "Tables"
+subtitle: "Exposure to Temperature and Mental Health in Adolescents: A Repeated Cross-Sectional Analysis of the California Health Interview Survey"
+author:
+  - name: Daniel Zhao
+  - name: Eric Dunipace
+  - name: Vivian Nguyen
+  - name: Hei Yue Ng
+  - name: Thoasin Bari
+  - name: Mahnoor Raheel
+  - name: Elissa Epel
+  - name: Elaine Allen
+  - name: Alison R. Hwong
+# docx and pdf settings are shared with the manuscript and supplement
+metadata-files:
+  - _format.yml
+format:
+  docx: default
+project:
+  execute-dir: project
+---
+
+{{< include _setup.qmd >}}
+
+{{< include _tbl-baseline.qmd >}}
+
+{{< pagebreak >}}
+
+{{< include _tbl-glm.qmd >}}

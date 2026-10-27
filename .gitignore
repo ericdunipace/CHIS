@@ -13,9 +13,23 @@ Quarto
 Code/test
 R/test
 docs/CHIS_2023_variable dictionary.pdf
-Documents/*.*
-Documents/Manuscript
 Outputs_*
 Figures/
 .positai
 Outputs_DAC_original/
+renv/profile
+/.luarc.json
+nhgis_tr2020_tr2010_06.zip
+data/tmax_annual_ca_youth.rds
+data/chis_puf_combined.RDS
+data/teen_stata_20*/
+data/teen_20*_stata/
+data/chis_puf_combined.Rds
+Documents/*.*
+Documents/Manuscript/*
+!Documents/Manuscript/*.qmd
+!Documents/Manuscript/_format.yml
+!Documents/Manuscript/_preamble.tex
+!Documents/Manuscript/_extensions/
+!Documents/Manuscript/CHIS.bib
+!Documents/Manuscript/lancet-reference.docx

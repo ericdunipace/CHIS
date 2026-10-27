@@ -1,0 +1,23 @@
+# Word and LaTeX settings shared by chis_manuscript.qmd, chis_supplement.qmd
+# and chis_tables.qmd (pulled in with `metadata-files: [_format.yml]`).
+# Values here override the same keys in a document's own front matter, so
+# keep document-specific settings (e.g. toc) out of this file. Lists such as
+# include-in-header are combined: this file's entries come first, then the
+# document's.
+format:
+  docx:
+    reference-doc: lancet-reference.docx
+  pdf:
+    documentclass: article
+    geometry:
+      - margin=1in
+    fontsize: 10pt
+    linestretch: 1.1
+    colorlinks: true
+    number-sections: false
+    number-depth: 2
+    indent: false
+    fig-pos: "H"
+    pdf-engine: lualatex
+    include-in-header:
+      - _preamble.tex

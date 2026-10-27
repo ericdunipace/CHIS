@@ -1,0 +1,497 @@
+---
+title: "Supplementary Material"
+subtitle: "Exposure to Temperature and Mental Health in Adolescents: A Repeated Cross-Sectional Analysis of the California Health Interview Survey"
+author:
+  - name: Daniel Zhao
+  - name: Eric Dunipace
+  - name: Vivian Nguyen
+  - name: Hei Yue Ng
+  - name: Thoasin Bari
+  - name: Mahnoor Raheel
+  - name: Elissa Epel
+  - name: Elaine Allen
+  - name: Alison R. Hwong
+# docx and pdf settings are shared with the manuscript and tables documents
+metadata-files:
+  - _format.yml
+format:
+  pdf:
+    toc: true
+    include-in-header:
+      - text: |
+          % number the list of supplementary tables S1, S2, ... to match
+          % the captions
+          \DeclareCaptionListFormat{stbllist}{S#2}
+          \captionsetup[stbl]{listformat=stbllist}
+  docx: default
+crossref:
+  custom:
+    - kind: float
+      key: stbl
+      reference-prefix: "Table S"
+      caption-prefix: "Table S"
+      space-before-numbering: false
+      caption-location: top
+      latex-env: stbl
+---
+<!-- cspell:language en-GB -->
+
+```{=latex}
+% List the supplementary tables (Quarto's stbl floats) with page numbers
+% under the table of contents; lot: true would only list plain table floats
+\renewcommand*\listofstbls{\listof{stbl}{List of supplementary tables}}
+\listofstbls
+```
+{{< include _setup.qmd >}}
+
+{{< pagebreak >}}
+
+# Additional Tables {.appendix}
+
+::: {#stbl-covars}
+```{r covars-appendix}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+# One row per model covariate; domain headings are unindented rows with no
+# coding, which lancet_group_rows() shades
+covar_domains <- list(
+  "Demographic" = c(
+    "Age group" = "12–14; 15–17",
+    "Gender" = "Female; male",
+    "Race/ethnicity" = "White; African American; Hispanic (reference); Asian and Pacific Islander; Multiracial and other",
+    "Language spoken at home" = "English spoken at home; other language spoken at home",
+    "Parents' educational attainment" = "Attended college; less than college degree",
+    "Federal poverty level" = "0–299%; ≥300%",
+    "Type of school attended" = "Public; private; other",
+    "Rural/urban residence" = "Rural; urban (Claritas ZIP code classification)"
+  ),
+  "Civic engagement factors" = c(
+    "Cares deeply about community issues*" = "Yes; no",
+    "Believes can make a difference in the community*" = "Yes; no",
+    "Ever volunteered to solve a community problem" = "Yes; no",
+    "Feels able to contact government to solve a problem*" = "Yes; no",
+    "Able to talk to family about feelings*" = "Yes; no",
+    "Felt supported by family*" = "Yes; no",
+    "Felt supported by friends*" = "Yes; no",
+    "Enjoyed community traditions*" = "Yes; no",
+    "Participated in clubs or organisations outside school (past year)" = "Yes; no",
+    "Sense of belonging at school*" = "Yes; no"
+  ),
+  "Access to care" = c(
+    "Health insurance" = "Insured; uninsured",
+    "Goes to primary care for health care" = "Yes; no",
+    "Did not delay needed medical care" = "Yes; no"
+  ),
+  "School attendance/engagement" = c(
+    "Attended school in the last week" = "Yes; no",
+    "School days missed for a health problem (past month)" = "Count (days)"
+  ),
+  "Climate exposure†" = c(
+    "Mean maximum temperature difference from normal" = "Continuous; census tract and county; prior 90 days and prior year",
+    "Heatwave-day difference from normal" = "Continuous; census tract and county; prior 90 days and prior year"
+  )
+)
+
+covar_rows <- do.call(rbind, lapply(names(covar_domains), function(d) {
+  items <- covar_domains[[d]]
+  data.frame(
+    label = c(d, names(items)),
+    indent = c(FALSE, rep(TRUE, length(items))),
+    levels = c("", unname(items))
+  )
+}))
+
+covar_header <- c(levels = "Levels/coding")
+
+covar_notes <- c(
+  "* Dichotomised from the original Likert-type response: “yes” combines strongly or somewhat agree (community issues, making a difference), definitely, probably, or maybe could (contacting government), or all, most, or some of the time (family, friends, community traditions, school belonging).",
+  "† Differences from the 15-year temperature normal from the same calendar period and constructed starting 16 years before survey administration and ending two years prior to survey administration at the individual level. Each measure enters the model four times (census tract and county, prior 90 days and prior year), giving eight climate covariates. Heatwave days are days with maximum temperature above 32°C. Temperature data are from PRISM."
+)
+
+if (knitr::is_latex_output()) {
+  cat(bold_latex_header(lancet_latex(
+    covar_rows, covar_header,
+    notes = covar_notes, font_size = 8, max_width = 6.5, label_width = 3,
+    # longtable avoids a table float nested in the stbl float, and lets the
+    # table break across pages
+    longtable = TRUE
+  )))
+} else if (knitr::is_html_output()) {
+  cat("```{=html}\n",
+      gt::as_raw_html(bold_gt_header(lancet_gt(covar_rows, covar_header,
+                                notes = covar_notes, font_size = 8))),
+      "\n```\n")
+} else if (knitr::pandoc_to("docx")) {
+  flextable::flextable_to_rmd(
+    supp_ft(lancet_flextable(covar_rows, covar_header, font_size = 8, max_width = 6.5))
+  )
+  # Word needs a paragraph after a table that ends a cell; without one
+  # the Quarto caption wrapper triggers "unreadable content" in Word
+  cat("\n\n```{=openxml}\n<w:p/>\n```\n\n")
+}
+```
+
+Survey items included as covariates in the multivariable logistic regression model, grouped by domain.
+
+:::
+
+```{r covars-notes-appendix}
+#| echo: false
+#| results: asis
+
+# Word only: table notes as paragraphs below the table (HTML and LaTeX
+# tables carry their own notes)
+if (knitr::pandoc_to("docx")) {
+  # escape a leading * so Markdown keeps it as a footnote symbol
+  cat(paste(sub("^\\*", "\\\\*", covar_notes), collapse = "\n\n"), "\n")
+}
+```
+
+
+::: {#stbl-baseline}
+
+```{r baseline-appendix}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+if (knitr::is_latex_output()) {
+  cat(bold_latex_header(strip_table_float(readLines(here::here("Documents", "baseline_table_appendix.tex")))), sep = "\n")
+} else if (knitr::is_html_output()) {
+  # styled from the saved gt object rather than its rendered HTML
+  baseline_gt <- readRDS(here::here("Documents", "baseline_table_gt_appendix.rds"))
+  cat("```{=html}\n", gt::as_raw_html(bold_gt_header(baseline_gt)), "\n```\n")
+} else if (knitr::pandoc_to("docx")) {
+  # Word needs a paragraph after a table that ends a cell; without one
+  # the Quarto caption wrapper triggers "unreadable content" in Word
+  flextable::flextable_to_rmd(supp_ft(readRDS(here::here("Documents", "baseline_table_appendix_ft.rds"))))
+  cat("\n\n```{=openxml}\n<w:p/>\n```\n\n")
+}
+```
+
+Characteristics of adolescents in California, California Health Interview Survey 2021--23
+
+:::
+```{r baseline-notes-appendix}
+#| echo: false
+#| results: asis
+
+# Word only: table notes as paragraphs below the table (HTML and LaTeX
+# tables carry their own notes). Kept out of the table chunk so Quarto
+# does not mistake a note for the caption.
+if (knitr::pandoc_to("docx")) {
+  notes <- readRDS(here::here("Documents", "baseline_table_appendix_notes.rds"))
+  # escape a leading * so Markdown keeps it as a footnote symbol
+  cat(paste(sub("^\\*", "\\\\*", notes), collapse = "\n\n"), "\n")
+}
+```
+
+::: {#stbl-change}
+
+```{r change}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+change_tab <- readRDS(here::here("Documents", "post_hoc_change_table.rds"))
+
+# lancet_* helpers want a `label` column, an `indent` flag, and value
+# columns named by `header`
+change_header <- c(
+  change = "Change, 2022\u20132023*",
+  contribution = "Estimated contribution, pp (95% CI)†"
+)
+# Categorical variables arrive as "Cat A +0.001; Cat B -0.001" in one cell.
+# Split them into a group row (holding the contribution) followed by
+# indented category rows (holding the change), matching lancet_rows().
+split_change_rows <- function(tab) {
+  out <- lapply(seq_len(nrow(tab)), function(i) {
+    label <- gsub("\\s+", " ", trimws(tab[[1]][i]))
+    change <- tab[[2]][i]
+    contribution <- tab[[3]][i]
+    parts <- strsplit(change, ";\\s*")[[1]]
+    if (length(parts) <= 1L) {
+      return(data.frame(
+        label = label, indent = FALSE,
+        change = change, contribution = contribution
+      ))
+    }
+    m <- regmatches(parts, regexec("^(.*\\S)\\s+([+-]?[0-9.]+)$", parts))
+    rbind(
+      data.frame(
+        label = label, indent = FALSE,
+        change = "", contribution = contribution
+      ),
+      data.frame(
+        label = vapply(m, `[`, "", 2), indent = TRUE,
+        change = vapply(m, `[`, "", 3), contribution = ""
+      )
+    )
+  })
+  do.call(rbind, out)
+}
+
+change_rows <- split_change_rows(as.data.frame(change_tab)) |>
+  dplyr::mutate(
+    dplyr::across(
+      c(change, contribution),
+      \(x) midline_decimal(lancet_signs(fix_zero(x)))
+    )
+  )
+
+change_rows$shade <- change_rows$label %in% c(
+  "Sum of individual contributions",
+  "All covariates changed jointly"
+)
+
+
+change_notes <- c(
+    "* Change reflects change in mean value of covariates between 2022 and 2023. Rounded to the third decimal place.",
+    "† Estimated contribution reflects change in predicted prevalence from changing the listed covariate from 2022 to 2023 mean values, holding all other covariates at 2022 values. Rounded to the first decimal point.",
+    "The climate means for 2022 and 2023 were approximated using adolescent population figures because the individual data were no longer available. ",
+    "Avg=average. temp = temperature. prev=previous. pp=percentage points. CI=confidence interval."
+)
+
+if (knitr::is_latex_output()) {
+    cat(bold_latex_header(strip_table_float(lancet_latex(
+    change_rows, change_header,
+    notes = change_notes, font_size = 8, max_width = 6.5
+  ))))
+} else if (knitr::is_html_output()) {
+  cat("```{=html}\n",
+      gt::as_raw_html(bold_gt_header(lancet_gt(change_rows, change_header,
+                                notes = change_notes, font_size = 8))),
+      "\n```\n")
+} else if (knitr::pandoc_to("docx")) {
+    flextable::flextable_to_rmd(
+    supp_ft(lancet_flextable(change_rows, change_header, font_size = 8, max_width = 6.5))
+  )
+  # Word needs a paragraph after a table that ends a cell; without one
+  # the Quarto caption wrapper triggers "unreadable content" in Word
+  cat("\n\n```{=openxml}\n<w:p/>\n```\n\n")
+}
+```
+
+Predicted contribution to change in prevalence, 2022--2023
+
+:::
+
+```{r change-notes-appendix}
+#| echo: false
+#| results: asis
+
+# Word only: table notes as paragraphs below the table (HTML and LaTeX
+# tables carry their own notes). Kept out of the table chunk so Quarto
+# does not mistake a note for the caption.
+if (knitr::pandoc_to("docx")) {
+  # escape a leading * so Markdown keeps it as a footnote symbol
+  cat(paste(sub("^\\*", "\\\\*", change_notes), collapse = "\n\n"), "\n")
+}
+```
+
+::: {#stbl-year}
+```{r year}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+year_chg <- here::here("Documents", "year_sens_change.rds") |> readRDS()
+year_tab <- here::here("Documents", "year_sens.rds") |> readRDS()
+
+# lancet_* helpers want a `label` column, an `indent` flag, and value
+# columns named by `header`
+year_header <- c(
+  `Base Model`  = "Base model*",
+  `Year Model`  = "Year fixed-effect model*"
+)
+
+# Group and row labels matching the restricted-data tables, in their order.
+# Race/ethnicity and school type keep the public-use categories.
+year_labels <- tibble::tribble(
+  ~Variable,                                           ~group,                            ~term,
+  "Intercept",                                         "Intercept",                       "",
+  "Age Group: 15–17",                                  "Age group",                       "15–17",
+  "Gender: Female",                                    "Gender",                          "Female",
+  "Race/ethnicity: Asian",                             "Race/ethnicity",                  "Asian",
+  "Race/ethnicity: Other race",                        "Race/ethnicity",                  "Other race",
+  "Race/ethnicity: Two or more races",                 "Race/ethnicity",                  "Two or more races",
+  "Race/ethnicity: White",                             "Race/ethnicity",                  "White",
+  "School Type: Public",                               "School type",                     "Public",
+  "School Type: Private",                              "School type",                     "Private",
+  "Parents' Educational Attainment: Attended College", "Parents' educational attainment", "Attended college",
+  "Federal Poverty Level (FPL): ≥300% FPL",            "Federal poverty level (FPL)",     "≥300% FPL",
+  "Language Spoken at Home: English",                  "Language spoken at home",         "English",
+  "Rural",                                             "Rural/urban residence",           "Rural",
+  "Uninsured",                                         "Access to care",                  "Uninsured",
+  "Goes to Primary Care for Health Care",              "Access to care",                  "Goes to primary care for health care",
+  "Did Not Delay Medical Care",                        "Access to care",                  "Did not delay medical care",
+  "Cares Deeply About Community Issues",               "Civic engagement",                "Cares deeply about community issues",
+  "Believes Can Make a Difference",                    "Civic engagement",                "Believes can make a difference",
+  "Volunteered to Solve Community Problem",            "Civic engagement",                "Volunteered to solve community problem",
+  "Can Contact Government to Solve Problem",           "Civic engagement",                "Can contact government to solve problem",
+  "Able to Talk to Family About Feelings",             "Civic engagement",                "Able to talk to family about feelings",
+  "Felt Supported by Family",                          "Civic engagement",                "Felt supported by family",
+  "Felt Supported by Friends",                         "Civic engagement",                "Felt supported by friends",
+  "Enjoyed Community Traditions",                      "Civic engagement",                "Enjoyed community traditions",
+  "Participated in Clubs in Last Year",                "Civic engagement",                "Participated in clubs in last year",
+  "Often Felt A Sense of Belonging at School",         "Civic engagement",                "Often felt a sense of belonging at school",
+  "Attended School Last Week",                         "School attendance/engagement",    "Attended school last week",
+  "Number of School Days Missed for Health",           "School attendance/engagement",    "Number of school days missed for health",
+  "Survey Year: 2022 (vs 2021)",                       "Survey year (vs 2021)",           "2022",
+  "Survey Year: 2023 (vs 2021)",                       "Survey year (vs 2021)",           "2023"
+)
+
+# fail loudly if CHIS_PUF.R adds or renames a term
+stopifnot(setequal(year_labels$Variable, year_tab$Variable))
+
+year_rows <- year_labels |>
+  left_join(as.data.frame(year_tab), by = "Variable") |>
+  mutate(across(c(`Base Model`, `Year Model`), \(x) lancet_signs(fix_zero(x)))) |>
+  as.data.frame() |>
+  lancet_rows(
+    group_col  = "group",
+    label_col  = "term",
+    value_cols = c("Base Model", "Year Model")
+  )
+
+year_notes <- c(
+    "* Each column presents coefficients (95% CI) on the log-odds scale.",
+    paste0("Adding survey year fixed effects (Wald test p=", fmt_p(year_chg[2]), ") changed non-intercept coefficients by at most ", midline_decimal(sprintf("%.2f",year_chg[1])), " log-odds. Both models were fitted to the public-use files, which do not include the climate exposure measures, so climate covariates are omitted; race/ethnicity (Hispanic reference) and school type follow the public-use coding."),
+    "·· = not included in model. CI=confidence interval."
+)
+
+if (knitr::is_latex_output()) {
+    cat(bold_latex_header(strip_table_float(lancet_latex(
+    year_rows, year_header,
+    notes = year_notes, font_size = 8, max_width = 6.5
+  ))))
+} else if (knitr::is_html_output()) {
+  cat("```{=html}\n",
+      gt::as_raw_html(bold_gt_header(lancet_gt(year_rows, year_header,
+    notes = year_notes, font_size = 8))),
+      "\n```\n")
+} else if (knitr::pandoc_to("docx")) {
+    flextable::flextable_to_rmd(
+    supp_ft(lancet_flextable(year_rows, year_header, font_size = 8, max_width = 6.5))
+  )
+  # Word needs a paragraph after a table that ends a cell; without one
+  # the Quarto caption wrapper triggers "unreadable content" in Word
+  cat("\n\n```{=openxml}\n<w:p/>\n```\n\n")
+}
+```
+
+Sensitivity analysis using public-use files with the addition of year fixed effects
+
+:::
+
+```{r year-notes-appendix}
+#| echo: false
+#| results: asis
+
+# Word only: table notes as paragraphs below the table (HTML and LaTeX
+# tables carry their own notes). Kept out of the table chunk so Quarto
+# does not mistake a note for the caption.
+if (knitr::pandoc_to("docx")) {
+  # escape a leading * so Markdown keeps it as a footnote symbol
+  cat(paste(sub("^\\*", "\\\\*", year_notes), collapse = "\n\n"), "\n")
+}
+```
+
+
+::: {#stbl-fe-county}
+```{r county}
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+glm_est <- here::here("Documents", "glm_lor_table.rds") |> readRDS() |> 
+    filter(!is.na(orig_term)) |> 
+    mutate(flip = orig_term %in% c("tl50No", "tl10No", "lnghmt_binaryNon-English")) |> 
+    mutate(estimate = ifelse(flip, -estimate, estimate),
+       lwr_new = ifelse(flip, -upr, lwr),
+       upr = ifelse(flip, -lwr, upr),   # still the original lwr here
+       lwr = lwr_new) |>
+select(-lwr_new)
+
+fe_est <- readRDS(here::here("Documents","fe_tab.rds"))
+
+fe_temp <- glm_est |> 
+    select(label, term, estimate, lwr, upr, orig_term) |> 
+    mutate(GLM = lancet_signs(midline_decimal(fix_zero(sprintf("%.2f (%.2f to %.2f)", estimate, lwr, upr))))) |>
+    left_join(
+        fe_est |> select(estimate, FE, orig_term), by = "orig_term"
+    ) 
+    
+fe_tab <- fe_temp |> select(
+        label, term, GLM, FE
+    )
+
+largest_change <- fe_temp  |> 
+  mutate(diff = abs(estimate.x - estimate.y)) |>
+  arrange(-diff) |> 
+  filter(label != "Intercept") |> 
+  pull(diff) |> 
+  head(1)
+
+diff_rows <- nrow(fe_est) - nrow(glm_est)
+
+# lancet_* helpers want a `label` column, an `indent` flag, and value
+# columns named by `header`
+fe_header <- c(
+  GLM  = "Base model*",
+  FE   = "Fixed-effect model*"
+)
+
+fe_rows <- as.data.frame(fe_tab) |>
+  lancet_rows(
+  group_col  = "label",
+  label_col  = "term",
+  value_cols = c("GLM", "FE")
+)
+
+fe_notes <- c(
+    "* Each column presents coefficients (95% CI) on the log-odds scale.",
+    paste0("Adding county fixed effects changed non-intercept coefficients by at most ", midline_decimal(sprintf("%.2f",largest_change)), " log-odds. Model additionally included fixed effects for county (",diff_rows," indicators; not shown); several small counties had too few respondents for stable estimation, so no joint test of county effects is reported. County temperature rows are county-average effects; with county fixed effects these are identified only by within-county variation across survey years."),
+    "CI=confidence interval."
+)
+
+if (knitr::is_latex_output()) {
+    cat(bold_latex_header(strip_table_float(lancet_latex(
+    fe_rows, fe_header,
+    notes = fe_notes, font_size = 8, max_width = 6.5
+  ))))
+} else if (knitr::is_html_output()) {
+  cat("```{=html}\n",
+      gt::as_raw_html(bold_gt_header(lancet_gt(fe_rows, fe_header,
+    notes = fe_notes, font_size = 8))),
+      "\n```\n")
+} else if (knitr::pandoc_to("docx")) {
+    flextable::flextable_to_rmd(
+    supp_ft(lancet_flextable(fe_rows, fe_header, font_size = 8, max_width = 6.5))
+  )
+  # Word needs a paragraph after a table that ends a cell; without one
+  # the Quarto caption wrapper triggers "unreadable content" in Word
+  cat("\n\n```{=openxml}\n<w:p/>\n```\n\n")
+}
+```
+
+Sensitivity analysis using county-level fixed effects
+
+:::
+
+```{r fe-notes-appendix}
+#| echo: false
+#| results: asis
+
+# Word only: table notes as paragraphs below the table (HTML and LaTeX
+# tables carry their own notes). Kept out of the table chunk so Quarto
+# does not mistake a note for the caption.
+if (knitr::pandoc_to("docx")) {
+  # escape a leading * so Markdown keeps it as a footnote symbol
+  cat(paste(sub("^\\*", "\\\\*", fe_notes), collapse = "\n\n"), "\n")
+}
+```
