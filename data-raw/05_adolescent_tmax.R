@@ -6,9 +6,7 @@ library(purrr)
 library(readr)
 library(stringr)
 
-# ============================================================
-# 1. Download California ACS data, 2021–2023
-# ============================================================
+#### ACS youth population, 2021-2023 ####
 
 if (!file.exists(here::here("data-raw", "ca_youth_2010.rds"))) {
   vars <- c(
@@ -40,9 +38,7 @@ if (!file.exists(here::here("data-raw", "ca_youth_2010.rds"))) {
       )
   })
 
-  # ============================================================
-  # 2. Download Census Bureau 2020 -> 2010 tract crosswalk
-  # ============================================================
+  #### 2020 -> 2010 tract crosswalk ####
 
   crosswalk_url <- paste0(
     "https://www2.census.gov/geo/docs/maps-data/",
@@ -57,12 +53,8 @@ if (!file.exists(here::here("data-raw", "ca_youth_2010.rds"))) {
     show_col_types = FALSE
   )
 
-  # ============================================================
-  # 3. Calculate land-area allocation weights
-  # ============================================================
-
-  # Each 2020 tract may overlap multiple 2010 tracts.
-  # Allocate using share of overlapping land area.
+  #### crosswalk weights ####
+  # 2020 tracts can overlap several 2010 tracts, split by share of land area
 
   xwalk <- rel |>
     transmute(
@@ -107,12 +99,19 @@ if (!file.exists(here::here("data-raw", "ca_youth_2010.rds"))) {
       weight_sum = sum(wt_pop),
       .groups = "drop"
     )
+  # weights should sum to 1
+  weight_check <- xwalk |>
+    group_by(tract20) |>
+    summarise(
+      weight_sum = sum(wt_pop),
+      .groups = "drop"
+    )
 
   stopifnot(
     all(abs(weight_check$weight_sum - 1) < 1e-6, na.rm = TRUE)
   )
 
-  # Report any zero-land-area source tracts
+  # print any NA sums (zero land area)
   print(
     weight_check |>
       filter(
@@ -122,9 +121,7 @@ if (!file.exists(here::here("data-raw", "ca_youth_2010.rds"))) {
     n = 1000
   )
 
-  # ============================================================
-  # 4. Convert ACS counts to 2010 census tract geography
-  # ============================================================
+  #### ACS counts to 2010 tracts ####
 
   unmatched <- ca_youth_2020 |>
     anti_join(xwalk, by = "tract20")
@@ -165,9 +162,7 @@ if (!file.exists(here::here("data-raw", "ca_youth_2010.rds"))) {
     ) |>
     arrange(tract10, year)
 
-  # ============================================================
-  # 5. Validate resulting data
-  # ============================================================
+  #### checks ####
 
   stopifnot(
     !anyDuplicated(ca_youth_2010[c("tract10", "year")])
@@ -198,9 +193,7 @@ if (!file.exists(here::here("data-raw", "ca_youth_2010.rds"))) {
   ca_youth_2010 <- readRDS(file = here::here("data-raw", "ca_youth_2010.rds"))
 }
 
-# ============================================================
-# 6. Aggregate to county level
-# ============================================================
+#### county level ####
 ca_youth_county <- ca_youth_2010 |>
   mutate(
     county_fips = str_sub(tract10, 1, 5)
@@ -230,10 +223,8 @@ ca_youth_county <- ca_youth_county |>
   relocate(county, .after = county_fips)
 
 
-# ============================================================
-# 7. Merge with existing census_heatwave data
-# ============================================================
-aux_data <- readRDS(here::here("Data", "auxiliary_data.rds"))
+#### population-weighted annual tmax ####
+aux_data <- readRDS(here::here("data", "auxiliary_data.rds"))
 
 tract_vars <- c(
   "tmax_tract10_prior_90_days_count32_delta",
@@ -289,4 +280,4 @@ tmax_annual_ca <- tract_annual |>
   full_join(county_annual, by = "year") |>
   arrange(year)
 
-saveRDS(tmax_annual_ca, here::here("Data", "tmax_annual_ca_youth.rds"))
+saveRDS(tmax_annual_ca, here::here("data", "tmax_annual_ca_youth.rds"))

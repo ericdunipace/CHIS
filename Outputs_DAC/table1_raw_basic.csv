@@ -1,0 +1,272 @@
+year,tf45,mean,sd,label,variable,suppress,N,N_display,perc
+2021,Yes,14.80252101,1.666661949,NA,Age,FALSE,NA,NA,NA
+2021,No,14.40981241,1.653343641,NA,Age,FALSE,NA,NA,NA
+2022,Yes,14.6625,1.686922648,NA,Age,FALSE,NA,NA,NA
+2022,No,14.42051282,1.678099181,NA,Age,FALSE,NA,NA,NA
+2023,Yes,14.70219436,1.682978477,NA,Age,FALSE,NA,NA,NA
+2023,No,14.48998459,1.618843942,NA,Age,FALSE,NA,NA,NA
+2021,Yes,NA,NA,12,Age,FALSE,57,57,1.825752723
+2021,Yes,NA,NA,13,Age,FALSE,61,61,1.953875721
+2021,Yes,NA,NA,14,Age,FALSE,91,91,2.914798206
+2021,Yes,NA,NA,15,Age,FALSE,77,77,2.466367713
+2021,Yes,NA,NA,16,Age,FALSE,90,90,2.882767457
+2021,Yes,NA,NA,17,Age,FALSE,100,100,3.203074952
+2021,No,NA,NA,12,Age,FALSE,114,114,3.651505445
+2021,No,NA,NA,13,Age,FALSE,118,118,3.779628443
+2021,No,NA,NA,14,Age,FALSE,133,133,4.260089686
+2021,No,NA,NA,15,Age,FALSE,126,126,4.035874439
+2021,No,NA,NA,16,Age,FALSE,102,102,3.267136451
+2021,No,NA,NA,17,Age,FALSE,100,100,3.203074952
+2022,Yes,NA,NA,12,Age,FALSE,60,60,1.921844971
+2022,Yes,NA,NA,13,Age,FALSE,58,58,1.857783472
+2022,Yes,NA,NA,14,Age,FALSE,56,56,1.793721973
+2022,Yes,NA,NA,15,Age,FALSE,77,77,2.466367713
+2022,Yes,NA,NA,16,Age,FALSE,81,81,2.594490711
+2022,Yes,NA,NA,17,Age,FALSE,68,68,2.178090967
+2022,No,NA,NA,12,Age,FALSE,95,95,3.042921204
+2022,No,NA,NA,13,Age,FALSE,110,110,3.523382447
+2022,No,NA,NA,14,Age,FALSE,98,98,3.139013453
+2022,No,NA,NA,15,Age,FALSE,110,110,3.523382447
+2022,No,NA,NA,16,Age,FALSE,80,80,2.562459962
+2022,No,NA,NA,17,Age,FALSE,92,92,2.946828956
+2023,Yes,NA,NA,12,Age,FALSE,46,46,1.473414478
+2023,Yes,NA,NA,13,Age,FALSE,38,38,1.217168482
+2023,Yes,NA,NA,14,Age,FALSE,59,59,1.889814222
+2023,Yes,NA,NA,15,Age,FALSE,61,61,1.953875721
+2023,Yes,NA,NA,16,Age,FALSE,52,52,1.665598975
+2023,Yes,NA,NA,17,Age,FALSE,63,63,2.01793722
+2023,No,NA,NA,12,Age,FALSE,87,87,2.786675208
+2023,No,NA,NA,13,Age,FALSE,119,119,3.811659193
+2023,No,NA,NA,14,Age,FALSE,126,126,4.035874439
+2023,No,NA,NA,15,Age,FALSE,117,117,3.747597694
+2023,No,NA,NA,16,Age,FALSE,106,106,3.395259449
+2023,No,NA,NA,17,Age,FALSE,94,94,3.010890455
+2021,Yes,NA,NA,Male,Sex,FALSE,238,238,7.623318386
+2021,Yes,NA,NA,Female,Sex,FALSE,238,238,7.623318386
+2021,No,NA,NA,Male,Sex,FALSE,428,428,13.70916079
+2021,No,NA,NA,Female,Sex,FALSE,265,265,8.488148623
+2022,Yes,NA,NA,Male,Sex,FALSE,155,155,4.964766176
+2022,Yes,NA,NA,Female,Sex,FALSE,245,245,7.847533632
+2022,No,NA,NA,Male,Sex,FALSE,345,345,11.05060858
+2022,No,NA,NA,Female,Sex,FALSE,240,240,7.687379885
+2023,Yes,NA,NA,Male,Sex,FALSE,118,118,3.779628443
+2023,Yes,NA,NA,Female,Sex,FALSE,201,201,6.438180653
+2023,No,NA,NA,Male,Sex,FALSE,384,384,12.29980782
+2023,No,NA,NA,Female,Sex,FALSE,265,265,8.488148623
+2021,Yes,NA,NA,Hispanic,Ethnicity,FALSE,153,153,4.900704676
+2021,Yes,NA,NA,White,Ethnicity,FALSE,209,209,6.69442665
+2021,Yes,NA,NA,African American,Ethnicity,FALSE,7,7,0.224215247
+2021,Yes,NA,NA,Multiracial and Other,Ethnicity,FALSE,42,42,1.34529148
+2021,Yes,NA,NA,Asian/Pacific Islander,Ethnicity,FALSE,65,65,2.081998719
+2021,No,NA,NA,Hispanic,Ethnicity,FALSE,278,278,8.904548366
+2021,No,NA,NA,White,Ethnicity,FALSE,242,242,7.751441384
+2021,No,NA,NA,African American,Ethnicity,FALSE,16,16,0.512491992
+2021,No,NA,NA,Multiracial and Other,Ethnicity,FALSE,51,51,1.633568225
+2021,No,NA,NA,Asian/Pacific Islander,Ethnicity,FALSE,106,106,3.395259449
+2022,Yes,NA,NA,Hispanic,Ethnicity,FALSE,171,171,5.477258168
+2022,Yes,NA,NA,White,Ethnicity,FALSE,137,137,4.388212684
+2022,Yes,NA,NA,African American,Ethnicity,FALSE,10,10,0.320307495
+2022,Yes,NA,NA,Multiracial and Other,Ethnicity,FALSE,36,36,1.153106983
+2022,Yes,NA,NA,Asian/Pacific Islander,Ethnicity,FALSE,46,46,1.473414478
+2022,No,NA,NA,Hispanic,Ethnicity,FALSE,272,272,8.712363869
+2022,No,NA,NA,White,Ethnicity,FALSE,170,170,5.445227418
+2022,No,NA,NA,African American,Ethnicity,FALSE,16,16,0.512491992
+2022,No,NA,NA,Multiracial and Other,Ethnicity,FALSE,42,42,1.34529148
+2022,No,NA,NA,Asian/Pacific Islander,Ethnicity,FALSE,85,85,2.722613709
+2023,Yes,NA,NA,Hispanic,Ethnicity,FALSE,126,126,4.035874439
+2023,Yes,NA,NA,White,Ethnicity,FALSE,129,129,4.131966688
+2023,Yes,NA,NA,African American,Ethnicity,FALSE,5,5,0.160153748
+2023,Yes,NA,NA,Multiracial and Other,Ethnicity,FALSE,22,22,0.704676489
+2023,Yes,NA,NA,Asian/Pacific Islander,Ethnicity,FALSE,37,37,1.185137732
+2023,No,NA,NA,Hispanic,Ethnicity,FALSE,268,268,8.584240871
+2023,No,NA,NA,White,Ethnicity,FALSE,213,213,6.822549648
+2023,No,NA,NA,African American,Ethnicity,FALSE,26,26,0.832799488
+2023,No,NA,NA,Multiracial and Other,Ethnicity,FALSE,46,46,1.473414478
+2023,No,NA,NA,Asian/Pacific Islander,Ethnicity,FALSE,96,96,3.074951954
+2021,Yes,NA,NA,Other,Type of School Attended,FALSE,42,42,1.34529148
+2021,Yes,NA,NA,Public School,Type of School Attended,FALSE,394,394,12.62011531
+2021,Yes,NA,NA,Private School,Type of School Attended,FALSE,40,40,1.281229981
+2021,No,NA,NA,Other,Type of School Attended,FALSE,76,76,2.434336963
+2021,No,NA,NA,Public School,Type of School Attended,FALSE,558,558,17.87315823
+2021,No,NA,NA,Private School,Type of School Attended,FALSE,59,59,1.889814222
+2022,Yes,NA,NA,Other,Type of School Attended,FALSE,37,37,1.185137732
+2022,Yes,NA,NA,Public School,Type of School Attended,FALSE,323,323,10.34593209
+2022,Yes,NA,NA,Private School,Type of School Attended,FALSE,40,40,1.281229981
+2022,No,NA,NA,Other,Type of School Attended,FALSE,47,47,1.505445227
+2022,No,NA,NA,Public School,Type of School Attended,FALSE,473,473,15.15054452
+2022,No,NA,NA,Private School,Type of School Attended,FALSE,65,65,2.081998719
+2023,Yes,NA,NA,Other,Type of School Attended,FALSE,18,18,0.576553491
+2023,Yes,NA,NA,Public School,Type of School Attended,FALSE,267,267,8.552210122
+2023,Yes,NA,NA,Private School,Type of School Attended,FALSE,34,34,1.089045484
+2023,No,NA,NA,Other,Type of School Attended,FALSE,70,70,2.242152466
+2023,No,NA,NA,Public School,Type of School Attended,FALSE,524,524,16.78411275
+2023,No,NA,NA,Private School,Type of School Attended,FALSE,55,55,1.761691224
+2021,Yes,NA,NA,Grade 1-8,Parents' Educational Attainment,FALSE,16,16,0.512491992
+2021,Yes,NA,NA,Grade 9-11,Parents' Educational Attainment,FALSE,18,18,0.576553491
+2021,Yes,NA,NA,Grade 12/h.s. Diploma,Parents' Educational Attainment,FALSE,34,34,1.089045484
+2021,Yes,NA,NA,Some College,Parents' Educational Attainment,FALSE,41,41,1.31326073
+2021,Yes,NA,NA,Vocational School,Parents' Educational Attainment,FALSE,21,21,0.67264574
+2021,Yes,NA,NA,Aa Or As Degree,Parents' Educational Attainment,FALSE,27,27,0.864830237
+2021,Yes,NA,NA,Ba Or Bs Degree,Parents' Educational Attainment,FALSE,131,131,4.196028187
+2021,Yes,NA,NA,Some Grad. School,Parents' Educational Attainment,FALSE,25,25,0.800768738
+2021,Yes,NA,NA,Ma Or Ms Degree,Parents' Educational Attainment,FALSE,101,101,3.235105701
+2021,Yes,NA,NA,Ph.d. Or Equivalent,Parents' Educational Attainment,FALSE,61,61,1.953875721
+2021,Yes,NA,NA,No Formal Education,Parents' Educational Attainment,TRUE,NA,NA,0.03203075
+2021,No,NA,NA,Grade 1-8,Parents' Educational Attainment,FALSE,26,26,0.832799488
+2021,No,NA,NA,Grade 9-11,Parents' Educational Attainment,FALSE,32,32,1.024983985
+2021,No,NA,NA,Grade 12/h.s. Diploma,Parents' Educational Attainment,FALSE,96,96,3.074951954
+2021,No,NA,NA,Some College,Parents' Educational Attainment,FALSE,86,86,2.754644459
+2021,No,NA,NA,Vocational School,Parents' Educational Attainment,FALSE,47,47,1.505445227
+2021,No,NA,NA,Aa Or As Degree,Parents' Educational Attainment,FALSE,54,54,1.729660474
+2021,No,NA,NA,Ba Or Bs Degree,Parents' Educational Attainment,FALSE,180,180,5.765534914
+2021,No,NA,NA,Some Grad. School,Parents' Educational Attainment,FALSE,18,18,0.576553491
+2021,No,NA,NA,Ma Or Ms Degree,Parents' Educational Attainment,FALSE,116,116,3.715566944
+2021,No,NA,NA,Ph.d. Or Equivalent,Parents' Educational Attainment,FALSE,35,35,1.121076233
+2021,No,NA,NA,No Formal Education,Parents' Educational Attainment,FALSE,3,3,0.096092249
+2022,Yes,NA,NA,Grade 1-8,Parents' Educational Attainment,FALSE,12,12,0.384368994
+2022,Yes,NA,NA,Grade 9-11,Parents' Educational Attainment,FALSE,10,10,0.320307495
+2022,Yes,NA,NA,Grade 12/h.s. Diploma,Parents' Educational Attainment,FALSE,36,36,1.153106983
+2022,Yes,NA,NA,Some College,Parents' Educational Attainment,FALSE,40,40,1.281229981
+2022,Yes,NA,NA,Vocational School,Parents' Educational Attainment,FALSE,25,25,0.800768738
+2022,Yes,NA,NA,Aa Or As Degree,Parents' Educational Attainment,FALSE,26,26,0.832799488
+2022,Yes,NA,NA,Ba Or Bs Degree,Parents' Educational Attainment,FALSE,108,108,3.459320948
+2022,Yes,NA,NA,Some Grad. School,Parents' Educational Attainment,FALSE,10,10,0.320307495
+2022,Yes,NA,NA,Ma Or Ms Degree,Parents' Educational Attainment,FALSE,89,89,2.850736707
+2022,Yes,NA,NA,Ph.d. Or Equivalent,Parents' Educational Attainment,FALSE,43,43,1.377322229
+2022,Yes,NA,NA,No Formal Education,Parents' Educational Attainment,TRUE,NA,NA,0.03203075
+2022,No,NA,NA,Grade 1-8,Parents' Educational Attainment,FALSE,19,19,0.608584241
+2022,No,NA,NA,Grade 9-11,Parents' Educational Attainment,FALSE,26,26,0.832799488
+2022,No,NA,NA,Grade 12/h.s. Diploma,Parents' Educational Attainment,FALSE,81,81,2.594490711
+2022,No,NA,NA,Some College,Parents' Educational Attainment,FALSE,67,67,2.146060218
+2022,No,NA,NA,Vocational School,Parents' Educational Attainment,FALSE,50,50,1.601537476
+2022,No,NA,NA,Aa Or As Degree,Parents' Educational Attainment,FALSE,35,35,1.121076233
+2022,No,NA,NA,Ba Or Bs Degree,Parents' Educational Attainment,FALSE,153,153,4.900704676
+2022,No,NA,NA,Some Grad. School,Parents' Educational Attainment,FALSE,12,12,0.384368994
+2022,No,NA,NA,Ma Or Ms Degree,Parents' Educational Attainment,FALSE,95,95,3.042921204
+2022,No,NA,NA,Ph.d. Or Equivalent,Parents' Educational Attainment,FALSE,47,47,1.505445227
+2023,Yes,NA,NA,Grade 1-8,Parents' Educational Attainment,FALSE,4,4,0.128122998
+2023,Yes,NA,NA,Grade 9-11,Parents' Educational Attainment,FALSE,7,7,0.224215247
+2023,Yes,NA,NA,Grade 12/h.s. Diploma,Parents' Educational Attainment,FALSE,28,28,0.896860987
+2023,Yes,NA,NA,Some College,Parents' Educational Attainment,FALSE,31,31,0.992953235
+2023,Yes,NA,NA,Vocational School,Parents' Educational Attainment,FALSE,23,23,0.736707239
+2023,Yes,NA,NA,Aa Or As Degree,Parents' Educational Attainment,FALSE,21,21,0.67264574
+2023,Yes,NA,NA,Ba Or Bs Degree,Parents' Educational Attainment,FALSE,89,89,2.850736707
+2023,Yes,NA,NA,Some Grad. School,Parents' Educational Attainment,FALSE,9,9,0.288276746
+2023,Yes,NA,NA,Ma Or Ms Degree,Parents' Educational Attainment,FALSE,71,71,2.274183216
+2023,Yes,NA,NA,Ph.d. Or Equivalent,Parents' Educational Attainment,FALSE,35,35,1.121076233
+2023,Yes,NA,NA,No Formal Education,Parents' Educational Attainment,TRUE,NA,NA,0.03203075
+2023,No,NA,NA,Grade 1-8,Parents' Educational Attainment,FALSE,13,13,0.416399744
+2023,No,NA,NA,Grade 9-11,Parents' Educational Attainment,FALSE,27,27,0.864830237
+2023,No,NA,NA,Grade 12/h.s. Diploma,Parents' Educational Attainment,FALSE,76,76,2.434336963
+2023,No,NA,NA,Some College,Parents' Educational Attainment,FALSE,77,77,2.466367713
+2023,No,NA,NA,Vocational School,Parents' Educational Attainment,FALSE,61,61,1.953875721
+2023,No,NA,NA,Aa Or As Degree,Parents' Educational Attainment,FALSE,53,53,1.697629725
+2023,No,NA,NA,Ba Or Bs Degree,Parents' Educational Attainment,FALSE,162,162,5.188981422
+2023,No,NA,NA,Some Grad. School,Parents' Educational Attainment,FALSE,20,20,0.64061499
+2023,No,NA,NA,Ma Or Ms Degree,Parents' Educational Attainment,FALSE,119,119,3.811659193
+2023,No,NA,NA,Ph.d. Or Equivalent,Parents' Educational Attainment,FALSE,40,40,1.281229981
+2023,No,NA,NA,No Formal Education,Parents' Educational Attainment,TRUE,NA,NA,0.03203075
+2021,Yes,NA,NA,0-99% FPL,Poverty Level,FALSE,31,31,0.992953235
+2021,Yes,NA,NA,100-199% FPL,Poverty Level,FALSE,63,63,2.01793722
+2021,Yes,NA,NA,200-299% FPL,Poverty Level,FALSE,47,47,1.505445227
+2021,Yes,NA,NA,300% FPL And Above,Poverty Level,FALSE,335,335,10.73030109
+2021,No,NA,NA,0-99% FPL,Poverty Level,FALSE,69,69,2.210121717
+2021,No,NA,NA,100-199% FPL,Poverty Level,FALSE,117,117,3.747597694
+2021,No,NA,NA,200-299% FPL,Poverty Level,FALSE,73,73,2.338244715
+2021,No,NA,NA,300% FPL And Above,Poverty Level,FALSE,434,434,13.90134529
+2022,Yes,NA,NA,0-99% FPL,Poverty Level,FALSE,35,35,1.121076233
+2022,Yes,NA,NA,100-199% FPL,Poverty Level,FALSE,52,52,1.665598975
+2022,Yes,NA,NA,200-299% FPL,Poverty Level,FALSE,41,41,1.31326073
+2022,Yes,NA,NA,300% FPL And Above,Poverty Level,FALSE,272,272,8.712363869
+2022,No,NA,NA,0-99% FPL,Poverty Level,FALSE,80,80,2.562459962
+2022,No,NA,NA,100-199% FPL,Poverty Level,FALSE,95,95,3.042921204
+2022,No,NA,NA,200-299% FPL,Poverty Level,FALSE,81,81,2.594490711
+2022,No,NA,NA,300% FPL And Above,Poverty Level,FALSE,329,329,10.53811659
+2023,Yes,NA,NA,0-99% FPL,Poverty Level,FALSE,32,32,1.024983985
+2023,Yes,NA,NA,100-199% FPL,Poverty Level,FALSE,40,40,1.281229981
+2023,Yes,NA,NA,200-299% FPL,Poverty Level,FALSE,39,39,1.249199231
+2023,Yes,NA,NA,300% FPL And Above,Poverty Level,FALSE,208,208,6.6623959
+2023,No,NA,NA,0-99% FPL,Poverty Level,FALSE,79,79,2.530429212
+2023,No,NA,NA,100-199% FPL,Poverty Level,FALSE,115,115,3.683536195
+2023,No,NA,NA,200-299% FPL,Poverty Level,FALSE,82,82,2.626521461
+2023,No,NA,NA,300% FPL And Above,Poverty Level,FALSE,373,373,11.94746957
+2021,Yes,NA,NA,English,Language Spoken at Home,FALSE,314,314,10.05765535
+2021,Yes,NA,NA,Spanish,Language Spoken at Home,FALSE,8,8,0.256245996
+2021,Yes,NA,NA,Chinese,Language Spoken at Home,TRUE,NA,NA,0.064061499
+2021,Yes,NA,NA,Vietnamese,Language Spoken at Home,TRUE,NA,NA,0.03203075
+2021,Yes,NA,NA,Other Asian Language (1 Only),Language Spoken at Home,TRUE,NA,NA,0.03203075
+2021,Yes,NA,NA,Other Non-asian Language (1 Only),Language Spoken at Home,TRUE,NA,NA,0.03203075
+2021,Yes,NA,NA,English & Spanish,Language Spoken at Home,FALSE,85,85,2.722613709
+2021,Yes,NA,NA,English & Chinese,Language Spoken at Home,FALSE,13,13,0.416399744
+2021,Yes,NA,NA,English & European Language,Language Spoken at Home,FALSE,15,15,0.480461243
+2021,Yes,NA,NA,English & Another Asian Language,Language Spoken at Home,FALSE,24,24,0.768737988
+2021,Yes,NA,NA,English & One Other Language,Language Spoken at Home,TRUE,NA,NA,0.064061499
+2021,Yes,NA,NA,Other Languages (2+),Language Spoken at Home,FALSE,10,10,0.320307495
+2021,No,NA,NA,English,Language Spoken at Home,FALSE,429,429,13.74119154
+2021,No,NA,NA,Spanish,Language Spoken at Home,FALSE,13,13,0.416399744
+2021,No,NA,NA,Chinese,Language Spoken at Home,FALSE,3,3,0.096092249
+2021,No,NA,NA,Vietnamese,Language Spoken at Home,FALSE,3,3,0.096092249
+2021,No,NA,NA,Korean,Language Spoken at Home,TRUE,NA,NA,0.03203075
+2021,No,NA,NA,Other Asian Language (1 Only),Language Spoken at Home,TRUE,NA,NA,0.064061499
+2021,No,NA,NA,English & Spanish,Language Spoken at Home,FALSE,159,159,5.092889174
+2021,No,NA,NA,English & Chinese,Language Spoken at Home,FALSE,30,30,0.960922486
+2021,No,NA,NA,English & European Language,Language Spoken at Home,FALSE,7,7,0.224215247
+2021,No,NA,NA,English & Another Asian Language,Language Spoken at Home,FALSE,28,28,0.896860987
+2021,No,NA,NA,English & One Other Language,Language Spoken at Home,FALSE,6,6,0.192184497
+2021,No,NA,NA,Other Languages (2+),Language Spoken at Home,FALSE,12,12,0.384368994
+2022,Yes,NA,NA,English,Language Spoken at Home,FALSE,252,252,8.071748879
+2022,Yes,NA,NA,Spanish,Language Spoken at Home,FALSE,6,6,0.192184497
+2022,Yes,NA,NA,Chinese,Language Spoken at Home,TRUE,NA,NA,0.03203075
+2022,Yes,NA,NA,Other Asian Language (1 Only),Language Spoken at Home,TRUE,NA,NA,0.03203075
+2022,Yes,NA,NA,Other Non-asian Language (1 Only),Language Spoken at Home,TRUE,NA,NA,0.03203075
+2022,Yes,NA,NA,English & Spanish,Language Spoken at Home,FALSE,98,98,3.139013453
+2022,Yes,NA,NA,English & Chinese,Language Spoken at Home,FALSE,14,14,0.448430493
+2022,Yes,NA,NA,English & European Language,Language Spoken at Home,TRUE,NA,NA,0.03203075
+2022,Yes,NA,NA,English & Another Asian Language,Language Spoken at Home,FALSE,13,13,0.416399744
+2022,Yes,NA,NA,English & One Other Language,Language Spoken at Home,FALSE,3,3,0.096092249
+2022,Yes,NA,NA,Other Languages (2+),Language Spoken at Home,FALSE,10,10,0.320307495
+2022,No,NA,NA,English,Language Spoken at Home,FALSE,347,347,11.11467008
+2022,No,NA,NA,Spanish,Language Spoken at Home,FALSE,17,17,0.544522742
+2022,No,NA,NA,Chinese,Language Spoken at Home,FALSE,5,5,0.160153748
+2022,No,NA,NA,Korean,Language Spoken at Home,TRUE,NA,NA,0.064061499
+2022,No,NA,NA,Other Asian Language (1 Only),Language Spoken at Home,TRUE,NA,NA,0.03203075
+2022,No,NA,NA,English & Spanish,Language Spoken at Home,FALSE,147,147,4.708520179
+2022,No,NA,NA,English & Chinese,Language Spoken at Home,FALSE,15,15,0.480461243
+2022,No,NA,NA,English & European Language,Language Spoken at Home,FALSE,6,6,0.192184497
+2022,No,NA,NA,English & Another Asian Language,Language Spoken at Home,FALSE,26,26,0.832799488
+2022,No,NA,NA,English & One Other Language,Language Spoken at Home,FALSE,3,3,0.096092249
+2022,No,NA,NA,Other Languages (2+),Language Spoken at Home,FALSE,16,16,0.512491992
+2023,Yes,NA,NA,English,Language Spoken at Home,FALSE,193,193,6.181934657
+2023,Yes,NA,NA,Spanish,Language Spoken at Home,FALSE,4,4,0.128122998
+2023,Yes,NA,NA,Korean,Language Spoken at Home,TRUE,NA,NA,0.03203075
+2023,Yes,NA,NA,Other Non-asian Language (1 Only),Language Spoken at Home,TRUE,NA,NA,0.03203075
+2023,Yes,NA,NA,English & Spanish,Language Spoken at Home,FALSE,79,79,2.530429212
+2023,Yes,NA,NA,English & Chinese,Language Spoken at Home,FALSE,6,6,0.192184497
+2023,Yes,NA,NA,English & European Language,Language Spoken at Home,FALSE,11,11,0.352338245
+2023,Yes,NA,NA,English & Another Asian Language,Language Spoken at Home,FALSE,15,15,0.480461243
+2023,Yes,NA,NA,English & One Other Language,Language Spoken at Home,FALSE,5,5,0.160153748
+2023,Yes,NA,NA,Other Languages (2+),Language Spoken at Home,FALSE,4,4,0.128122998
+2023,No,NA,NA,English,Language Spoken at Home,FALSE,401,401,12.84433056
+2023,No,NA,NA,Spanish,Language Spoken at Home,FALSE,13,13,0.416399744
+2023,No,NA,NA,Chinese,Language Spoken at Home,FALSE,6,6,0.192184497
+2023,No,NA,NA,Vietnamese,Language Spoken at Home,TRUE,NA,NA,0.064061499
+2023,No,NA,NA,Korean,Language Spoken at Home,FALSE,3,3,0.096092249
+2023,No,NA,NA,Other Non-asian Language (1 Only),Language Spoken at Home,FALSE,5,5,0.160153748
+2023,No,NA,NA,English & Spanish,Language Spoken at Home,FALSE,148,148,4.740550929
+2023,No,NA,NA,English & Chinese,Language Spoken at Home,FALSE,21,21,0.67264574
+2023,No,NA,NA,English & European Language,Language Spoken at Home,FALSE,12,12,0.384368994
+2023,No,NA,NA,English & Another Asian Language,Language Spoken at Home,FALSE,24,24,0.768737988
+2023,No,NA,NA,English & One Other Language,Language Spoken at Home,FALSE,3,3,0.096092249
+2023,No,NA,NA,Other Languages (2+),Language Spoken at Home,FALSE,11,11,0.352338245
+2021,Yes,NA,NA,Urban,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,416,416,13.3247918
+2021,Yes,NA,NA,Rural,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,60,60,1.921844971
+2021,No,NA,NA,Urban,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,553,553,17.71300448
+2021,No,NA,NA,Rural,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,140,140,4.484304933
+2022,Yes,NA,NA,Urban,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,335,335,10.73030109
+2022,Yes,NA,NA,Rural,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,65,65,2.081998719
+2022,No,NA,NA,Urban,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,488,488,15.63100577
+2022,No,NA,NA,Rural,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,97,97,3.106982703
+2023,Yes,NA,NA,Urban,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,266,266,8.520179372
+2023,Yes,NA,NA,Rural,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,53,53,1.697629725
+2023,No,NA,NA,Urban,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,525,525,16.8161435
+2023,No,NA,NA,Rural,"Rural/Urban (Claritas ZIP, 2-level)",FALSE,124,124,3.97181294

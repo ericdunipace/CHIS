@@ -160,15 +160,15 @@ if (knitr::pandoc_to("docx")) {
 #| results: asis
 
 if (knitr::is_latex_output()) {
-  cat(bold_latex_header(strip_table_float(readLines(here::here("Documents", "baseline_table_appendix.tex")))), sep = "\n")
+  cat(bold_latex_header(strip_table_float(readLines(here::here("Outputs", "tables", "baseline_table_appendix.tex")))), sep = "\n")
 } else if (knitr::is_html_output()) {
   # styled from the saved gt object rather than its rendered HTML
-  baseline_gt <- readRDS(here::here("Documents", "baseline_table_gt_appendix.rds"))
+  baseline_gt <- readRDS(here::here("Outputs", "tables", "baseline_table_gt_appendix.rds"))
   cat("```{=html}\n", gt::as_raw_html(bold_gt_header(baseline_gt)), "\n```\n")
 } else if (knitr::pandoc_to("docx")) {
   # Word needs a paragraph after a table that ends a cell; without one
   # the Quarto caption wrapper triggers "unreadable content" in Word
-  flextable::flextable_to_rmd(supp_ft(readRDS(here::here("Documents", "baseline_table_appendix_ft.rds"))))
+  flextable::flextable_to_rmd(supp_ft(readRDS(here::here("Outputs", "tables", "baseline_table_appendix_ft.rds"))))
   cat("\n\n```{=openxml}\n<w:p/>\n```\n\n")
 }
 ```
@@ -184,7 +184,7 @@ Characteristics of adolescents in California, California Health Interview Survey
 # tables carry their own notes). Kept out of the table chunk so Quarto
 # does not mistake a note for the caption.
 if (knitr::pandoc_to("docx")) {
-  notes <- readRDS(here::here("Documents", "baseline_table_appendix_notes.rds"))
+  notes <- readRDS(here::here("Outputs", "tables", "baseline_table_appendix_notes.rds"))
   # escape a leading * so Markdown keeps it as a footnote symbol
   cat(paste(sub("^\\*", "\\\\*", notes), collapse = "\n\n"), "\n")
 }
@@ -197,7 +197,7 @@ if (knitr::pandoc_to("docx")) {
 #| message: false
 #| warning: false
 #| results: asis
-change_tab <- readRDS(here::here("Documents", "post_hoc_change_table.rds"))
+change_tab <- readRDS(here::here("Outputs", "tables", "post_hoc_change_table.rds"))
 
 # lancet_* helpers want a `label` column, an `indent` flag, and value
 # columns named by `header`
@@ -299,8 +299,8 @@ if (knitr::pandoc_to("docx")) {
 #| message: false
 #| warning: false
 #| results: asis
-year_chg <- here::here("Documents", "year_sens_change.rds") |> readRDS()
-year_tab <- here::here("Documents", "year_sens.rds") |> readRDS()
+year_chg <- here::here("Outputs", "tables", "year_sens_change.rds") |> readRDS()
+year_tab <- here::here("Outputs", "tables", "year_sens.rds") |> readRDS()
 
 # lancet_* helpers want a `label` column, an `indent` flag, and value
 # columns named by `header`
@@ -408,7 +408,7 @@ if (knitr::pandoc_to("docx")) {
 #| message: false
 #| warning: false
 #| results: asis
-glm_est <- here::here("Documents", "glm_lor_table.rds") |> readRDS() |> 
+glm_est <- here::here("Outputs", "tables", "glm_lor_table.rds") |> readRDS() |> 
     filter(!is.na(orig_term)) |> 
     mutate(flip = orig_term %in% c("tl50No", "tl10No", "lnghmt_binaryNon-English")) |> 
     mutate(estimate = ifelse(flip, -estimate, estimate),
@@ -417,7 +417,7 @@ glm_est <- here::here("Documents", "glm_lor_table.rds") |> readRDS() |>
        lwr = lwr_new) |>
 select(-lwr_new)
 
-fe_est <- readRDS(here::here("Documents","fe_tab.rds"))
+fe_est <- readRDS(here::here("Outputs", "tables", "fe_tab.rds"))
 
 fe_temp <- glm_est |> 
     select(label, term, estimate, lwr, upr, orig_term) |> 

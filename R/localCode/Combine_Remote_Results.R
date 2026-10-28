@@ -15,11 +15,11 @@ library(glue)
 source(here::here("R", "Functions.R"))
 
 #### output dir ####
-doc_dir <- here::here("Documents")
-dir.create(doc_dir, showWarnings = FALSE)
+doc_dir <- here::here("Outputs", "tables")
+dir.create(doc_dir, showWarnings = FALSE, recursive = TRUE)
 
-fig_dir <- here::here("Figures")
-dir.create(fig_dir, showWarnings = FALSE)
+fig_dir <- here::here("Outputs", "figures")
+dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 
 required_outputs <- c(
     "table1_basic.csv",
@@ -35,7 +35,7 @@ required_outputs <- c(
 )
 
 missing_outputs <- c(
-    required_outputs[!file.exists(here::here("Outputs", required_outputs))],
+    required_outputs[!file.exists(here::here("Outputs_DAC", required_outputs))],
     if (!file.exists(here::here("data", "auxiliary_data.rds"))) {
         "data/auxiliary_data.rds"
     }
@@ -45,30 +45,30 @@ linear.combo.flag <- TRUE
 
 if (length(missing_outputs) > 0L) {
     message(
-        "Skipping Combine_Remote_Results.R because Outputs/ is missing: ",
+        "Skipping Combine_Remote_Results.R because Outputs_DAC/ is missing: ",
         paste(missing_outputs, collapse = ", ")
     )
 } else {
     #### load table 1 information ####
-    tabl_1_long <- utils::read.csv(here::here("Outputs", "table1_basic.csv"))
-    tab1_long <- utils::read.csv(here::here("Outputs", "table1.csv")) |>
+    tabl_1_long <- utils::read.csv(here::here("Outputs_DAC", "table1_basic.csv"))
+    tab1_long <- utils::read.csv(here::here("Outputs_DAC", "table1.csv")) |>
         mutate(variable = if_else(variable == "Age*", "Age", variable))
     check_table1_long_sums(tabl_1_long)
     check_table1_sums(tab1_long)
 
     #### raw number for table 1 in the appendix ####
     tabl_1_long_raw <- utils::read.csv(here::here(
-        "Outputs",
+        "Outputs_DAC",
         "table1_raw_basic.csv"
     ))
-    tab1_long_raw <- utils::read.csv(here::here("Outputs", "table1_raw.csv"))
+    tab1_long_raw <- utils::read.csv(here::here("Outputs_DAC", "table1_raw.csv"))
     check_table1_long_sums(tabl_1_long_raw)
     check_table1_sums(tab1_long_raw)
 
     # Same layout as Table 1: the Yes column for each year (n (%) who
     # reported climate anxiety), with age for all adolescents (Total column)
     tab1_display_raw <- utils::read.csv(here::here(
-        "Outputs",
+        "Outputs_DAC",
         "table1_raw_display.csv"
     )) |>
         relabel_table1()
@@ -267,20 +267,20 @@ if (length(missing_outputs) > 0L) {
     # glm model
     # estimates from model
     glm_coef <- utils::read.csv(
-        file = here::here("Outputs", "glm_model_summary.csv")
+        file = here::here("Outputs_DAC", "glm_model_summary.csv")
     )
     # vcov for predictions
     glm_vcov <- utils::read.csv(
-        file = here::here("Outputs", "glm_vcov.csv"),
+        file = here::here("Outputs_DAC", "glm_vcov.csv"),
         row.names = 1
     )
 
     # re model
-    # fe <- read.csv(here::here("Outputs", "fixef_coef.csv"))
-    # V_fe <- read.csv(here::here("Outputs", "mixef_vcov.csv"))
-    # beta_me <- utils::read.csv(file = here::here("Outputs", "mixef_coef.csv"))
+    # fe <- read.csv(here::here("Outputs_DAC", "fixef_coef.csv"))
+    # V_fe <- read.csv(here::here("Outputs_DAC", "mixef_vcov.csv"))
+    # beta_me <- utils::read.csv(file = here::here("Outputs_DAC", "mixef_coef.csv"))
     # rep_beta_me <- utils::read.csv(
-    #     file = here::here("Outputs", "mixef_replicate_coef.csv")
+    #     file = here::here("Outputs_DAC", "mixef_replicate_coef.csv")
     # )
 
     #### generate tables for glm coeficients ####
@@ -969,7 +969,7 @@ if (length(missing_outputs) > 0L) {
 
     # adding in fixed effects as sensitivity
     fe_est <- utils::read.csv(
-        file = here::here("Outputs", "fe_model_summary.csv")
+        file = here::here("Outputs_DAC", "fe_model_summary.csv")
     ) |>
         rename(
             orig_term = X,
@@ -990,7 +990,7 @@ if (length(missing_outputs) > 0L) {
     # match the main table: county rows become county-average effects
     # (tract + county), tract rows stay as the deviation from county
     fe_V <- as.matrix(utils::read.csv(
-        here::here("Outputs", "fe_vcov.csv"),
+        here::here("Outputs_DAC", "fe_vcov.csv"),
         row.names = 1
     ))
     colnames(fe_V) <- rownames(fe_V) # read.csv mangles column names
@@ -1176,7 +1176,7 @@ if (length(missing_outputs) > 0L) {
 
     #### Clean up maps ####
     # get prism vars for map
-    aux_data <- readRDS(here::here("Data", "auxiliary_data.rds"))
+    aux_data <- readRDS(here::here("data", "auxiliary_data.rds"))
     census_shapefile <- aux_data$census_ca
     county_shapefile <- aux_data$county_ca
 
@@ -1191,7 +1191,7 @@ if (length(missing_outputs) > 0L) {
 
     # load anxiety by country
     county_result_year <- utils::read.csv(here::here(
-        "Outputs",
+        "Outputs_DAC",
         "climiate_anxiety_map_data.csv"
     ))
 
@@ -1304,6 +1304,9 @@ if (length(missing_outputs) > 0L) {
         facet_wrap(~year, ncol = 2) +
         theme(legend.box = "horizontal")
 
+    # building the grobs needs an open device; a null one keeps Rplots.pdf
+    # from being written
+    pdf(NULL)
     final_tmax_plot <- fix_reposition_legend(
         county_plot_year_tmax,
         position = "center",
@@ -1317,17 +1320,18 @@ if (length(missing_outputs) > 0L) {
         panel = "panel-2-2",
         plot = FALSE
     )
+    dev.off()
 
-    pdf(here::here("Figures", "heatwave_map2.pdf"), width = 6, height = 6)
+    pdf(here::here(fig_dir, "heatwave_map2.pdf"), width = 6, height = 6)
     grid::grid.draw(final_heatwave_plot)
     dev.off()
 
-    pdf(here::here("Figures", "tmax_map2.pdf"), width = 6, height = 6)
+    pdf(here::here(fig_dir, "tmax_map2.pdf"), width = 6, height = 6)
     grid::grid.draw(final_tmax_plot)
     dev.off()
 
     png(
-        here::here("Figures", "heatwave_map2.png"),
+        here::here(fig_dir, "heatwave_map2.png"),
         width = 6 * 600,
         height = 6 * 600,
         res = 600
@@ -1336,7 +1340,7 @@ if (length(missing_outputs) > 0L) {
     dev.off()
 
     png(
-        here::here("Figures", "tmax_map2.png"),
+        here::here(fig_dir, "tmax_map2.png"),
         width = 6 * 600,
         height = 6 * 600,
         res = 600

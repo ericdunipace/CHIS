@@ -1,4 +1,4 @@
-library(dplyr) # Data manipulation
+library(dplyr) # data manipulation
 library(survey) # Survey data analysis
 library(gtsummary) # for summary tables
 library(stringr)
@@ -9,7 +9,8 @@ library(scales)
 library(emmeans)
 
 source(here::here("R", "Functions.R"))
-puf_file <- here::here("Data", "chis_puf_combined.Rds")
+dir.create(here::here("Outputs", "tables"), showWarnings = FALSE, recursive = TRUE)
+puf_file <- here::here("data", "chis_puf_combined.Rds")
 
 if (!file.exists(puf_file)) {
   message(
@@ -18,20 +19,20 @@ if (!file.exists(puf_file)) {
     ". See README for how to obtain it."
   )
 } else {
-  chis <- readRDS(here::here("Data", "chis_puf_combined.Rds"))
+  chis <- readRDS(here::here("data", "chis_puf_combined.Rds"))
 
-  # aux_data <- readRDS(here::here("Data", "auxiliary_data.rds"))
+  # aux_data <- readRDS(here::here("data", "auxiliary_data.rds"))
 
   if (
-    file.exists(tmax_file <- here::here("Data", "tmax_annual_ca_youth.rds"))
+    file.exists(tmax_file <- here::here("data", "tmax_annual_ca_youth.rds"))
   ) {
     tmax_annual_ca <- readRDS(tmax_file)
   } else {
-    stop("You must run `get_adolescent_pop.R` in the 'data-raw/' folder first")
+    stop("You must run data-raw/05_adolescent_tmax.R first")
   }
 
   # extract covariate values from baseline table
-  tab1_long <- utils::read.csv(here::here("Outputs", "table1.csv")) |>
+  tab1_long <- utils::read.csv(here::here("Outputs_DAC", "table1.csv")) |>
     mutate(variable = if_else(variable == "Age*", "Age", variable)) |>
     filter(status != "Total") |>
     group_by(variable, label, year) |>
@@ -53,17 +54,17 @@ if (!file.exists(puf_file)) {
     ) |>
     ungroup()
 
-  suf_stat <- read.csv(here::here("Outputs", "glm_suf_stat.csv"))
+  suf_stat <- read.csv(here::here("Outputs_DAC", "glm_suf_stat.csv"))
 
   #coef
   glm_est <- utils::read.csv(
-    file = here::here("Outputs", "glm_model_summary.csv")
+    file = here::here("Outputs_DAC", "glm_model_summary.csv")
   )
   beta <- glm_est$Estimate
 
   # vcov for predictions
   V <- utils::read.csv(
-    file = here::here("Outputs", "glm_vcov.csv"),
+    file = here::here("Outputs_DAC", "glm_vcov.csv"),
     row.names = 1
   )
   #### Clean and combine CHIS data ####
@@ -365,8 +366,8 @@ if (!file.exists(puf_file)) {
     )
 
   change_df_raw |>
-    saveRDS(here::here("Documents", "post_hoc_change.rds"))
+    saveRDS(here::here("Outputs", "tables", "post_hoc_change.rds"))
 
   change_df |>
-    saveRDS(here::here("Documents", "post_hoc_change_table.rds"))
+    saveRDS(here::here("Outputs", "tables", "post_hoc_change_table.rds"))
 }

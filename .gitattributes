@@ -1,0 +1,4 @@
+# Keep released DAC outputs byte-for-byte so their checksums in
+# Outputs_DAC/RELEASE.md match on every platform (Windows checkouts would
+# otherwise convert line endings)
+Outputs_DAC/** -text
