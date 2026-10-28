@@ -673,6 +673,7 @@ prism_to_map <- function(
     ann_stack_t <- terra::rast(ann_stack_r) %>% terra::project(cal_admin)
     ann_mask_ca <- terra::mask(terra::crop(ann_stack_t, cal_admin), cal_admin)
     clim_rasters[[i]] <- terra::app(ann_mask_ca, mean, na.rm = TRUE)
+    if (var == "ppt") clim_rasters[[i]] <- clim_rasters[[i]] / 365.25
   }
 
   zonal <- dplyr::bind_rows(
