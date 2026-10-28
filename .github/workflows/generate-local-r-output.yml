@@ -47,7 +47,7 @@ jobs:
           libpng-dev libtiff5-dev libjpeg-dev \
           libudunits2-dev libgdal-dev gdal-bin \
           libgeos-dev libproj-dev libgettextpo-dev gettext \
-          libx11-dev
+          libx11-dev libnode-dev cmake libcairo2-dev libfontconfig1-dev pandoc
 
     # .Rprofile activates renv, which bootstraps itself; restore installs the
     # versions locked in renv/profiles/local/renv.lock

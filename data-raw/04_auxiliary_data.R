@@ -35,4 +35,4 @@ aux_data <- list(
 )
 
 # save auxiliary data
-saveRDS(aux_data, file = here::here("data", "auxiliary_data.rds"))
+saveRDS(aux_data, file = here::here("data", "auxiliary_data.rds"), compress = "xz")
