@@ -43,7 +43,7 @@ library(forcats) # Factor manipulation
 library(dplyr) # data manipulation
 library(grid) # for repositioning legends
 
-if (getRversion() == "4.2.3") {
+if (getRversion() != "4.2.3") {
   warning(sprintf(
     "This code was tested for R version 4.2.3. R version %s was found.",
     getRversion()
