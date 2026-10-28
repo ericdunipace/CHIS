@@ -71,7 +71,7 @@ project:
   type: default
   execute-dir: project
   resources:
-    - ../../Figures/
+    - ../Outputs/figures/
 # docx and pdf settings are shared with the supplement and tables documents
 metadata-files:
   - _format.yml
@@ -82,7 +82,7 @@ format:
 filters:
   - authors-block
 bibliography: CHIS.bib
-csl: https://www.zotero.org/styles/the-lancet
+csl: the-lancet.csl
 ---
 <!-- cspell:language en-GB -->
 
@@ -91,11 +91,11 @@ csl: https://www.zotero.org/styles/the-lancet
 ```{r load-tabs, echo = FALSE, message = FALSE, warning = FALSE}
 N_obs <- c("2021" = 1169, "2022" = 985 , "2023" = 968)
 
-tab1_long <- utils::read.csv(here::here("Outputs", "table1.csv"))
+tab1_long <- utils::read.csv(here::here("Outputs_DAC", "table1.csv"))
 
 ```
 ``` {r load-glm, echo = FALSE, message = FALSE, warning = FALSE}
-glm_results <- readRDS(here::here("Documents", "glm_lor_table.rds"))
+glm_results <- readRDS(here::here("Outputs", "tables", "glm_lor_table.rds"))
 
 ```
 ```{r prevalence-data}
@@ -103,20 +103,20 @@ glm_results <- readRDS(here::here("Documents", "glm_lor_table.rds"))
 #| message: false
 #| warning: false
 overal_prev <- readRDS(
-    here::here("Documents", "prevalence_overall.rds")
+    here::here("Outputs", "tables", "prevalence_overall.rds")
 )
 
 prev <- readRDS(
-    here::here("Documents",
+    here::here("Outputs", "tables", 
     "prevalence.rds")
 )
 
 clim_anx_change <-  (prev$anx_2021_2022[1] - prev$anx[prev$year == "2023"])*100
 
-prev_sigs <- readRDS(here::here("Documents", "prev_sig_tests.rds"))
+prev_sigs <- readRDS(here::here("Outputs", "tables", "prev_sig_tests.rds"))
 
 
-clim_pval <- here::here("Documents", "climate_vars_pvalue.rds") |> readRDS()
+clim_pval <- here::here("Outputs", "tables", "climate_vars_pvalue.rds") |> readRDS()
 
 ```
 # Summary
@@ -228,8 +228,8 @@ Among California adolescents aged 12--17, the pooled prevalence of climate chang
 #| warning: false
 #| output: asis
 
-img_html <- "../../Figures/prevalence.png"
-img_docx <- "../../Figures/prevalence.png"
+img_html <- "../Outputs/figures/prevalence.png"
+img_docx <- "../Outputs/figures/prevalence.png"
 img_pdf  <- "prevalence.pdf"
 
 width <- "4in"
@@ -261,8 +261,8 @@ cat(':::\n')
 #| echo: false
 #| output: asis
 
-img_html <- "../../Figures/heatwave_map2.png"
-img_docx <- "../../Figures/heatwave_map2.png"
+img_html <- "../Outputs/figures/heatwave_map2.png"
+img_docx <- "../Outputs/figures/heatwave_map2.png"
 img_pdf  <- "heatwave_map2.png"
 
 width <- '"6in"'
@@ -293,8 +293,8 @@ cat(':::\n')
 #| echo: false
 #| output: asis
 
-img_html <- "../../Figures/tmax_map2.png"
-img_docx <- "../../Figures/tmax_map2.png"
+img_html <- "../Outputs/figures/tmax_map2.png"
+img_docx <- "../Outputs/figures/tmax_map2.png"
 img_pdf  <- "tmax_map2.png"
 
 width <- '"6in"'
@@ -337,8 +337,8 @@ Other variables had large effect sizes but a great deal of uncertainty. An adole
 #| warning: false
 #| output: asis
 
-img_html <- "../../Figures/forest_plots.png"
-img_docx <- "../../Figures/forest_plots.png"
+img_html <- "../Outputs/figures/forest_plots.png"
+img_docx <- "../Outputs/figures/forest_plots.png"
 img_pdf  <- "forest_plots.pdf"
 
 width <- "4in"
@@ -369,11 +369,11 @@ cat(':::\n')
 #| echo: false
 #| message: false
 #| warning: false
-cares <- readRDS(here::here("Documents", "cares_about_community.rds"))
+cares <- readRDS(here::here("Outputs", "tables", "cares_about_community.rds"))
 
 decline_in_care_about_community <- (cares$cares[cares$year == "2022"] - cares$cares[cares$year == "2023"]) * 100
 
-distress <- readRDS(here::here("Documents", "psych_distress.rds"))
+distress <- readRDS(here::here("Outputs", "tables", "psych_distress.rds"))
 
 psych_dist_change <- 100 * (distress$distress[distress$year == "2023"] - distress$distress[distress$year == "2022"])
 
@@ -384,7 +384,7 @@ psych_dist_change <- 100 * (distress$distress[distress$year == "2023"] - distres
 #| message: false
 #| warning: false
 
-change_df <- readRDS(here::here("Documents", "post_hoc_change.rds"))
+change_df <- readRDS(here::here("Outputs", "tables", "post_hoc_change.rds"))
 
 fmt_pp <- function(x, plus = FALSE) {
   out <- sprintf("%.1f", x)
@@ -420,8 +420,8 @@ Given the decline in the prevalence of climate anxiety between 2022 and 2023, we
 #| message: false
 #| warning: false
 
-year_chg <- here::here("Documents", "year_sens_change.rds") |> readRDS()
-glm_est <- here::here("Documents", "glm_lor_table.rds") |> readRDS() |> 
+year_chg <- here::here("Outputs", "tables", "year_sens_change.rds") |> readRDS()
+glm_est <- here::here("Outputs", "tables", "glm_lor_table.rds") |> readRDS() |> 
     filter(!is.na(orig_term)) |> 
     mutate(flip = orig_term %in% c("tl50No", "tl10No", "lnghmt_binaryNon-English")) |> 
     mutate(estimate = ifelse(flip, -estimate, estimate),
@@ -430,7 +430,7 @@ glm_est <- here::here("Documents", "glm_lor_table.rds") |> readRDS() |>
        lwr = lwr_new) |>
 select(-lwr_new)
 
-fe_est <- readRDS(here::here("Documents","fe_tab.rds"))
+fe_est <- readRDS(here::here("Outputs", "tables", "fe_tab.rds"))
 
 fe_temp <- glm_est |> 
     select(label, term, estimate, lwr, upr, orig_term) |> 

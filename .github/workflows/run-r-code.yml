@@ -22,6 +22,7 @@ jobs:
       RENV_ROBOCOPY_SAFETY: false
       RENV_CONFIG_VERBOSE: TRUE
       RENV_CONFIG_PACKAGE_TYPE: binary
+      RENV_PROFILE: local
 
     steps:
     - name: Checkout code
@@ -29,7 +30,9 @@ jobs:
 
     - name: Set up R
       uses: r-lib/actions/setup-r@v2
-        
+      with:
+        r-version: '4.6.1'  # version in renv/profiles/local/renv.lock
+
     - name: Install system dependencies (mac)
       if: runner.os == 'macOS'
       run: |
@@ -46,20 +49,21 @@ jobs:
           libpng-dev libtiff5-dev libjpeg-dev \
           libudunits2-dev libgdal-dev gdal-bin \
           libgeos-dev libproj-dev libgettextpo-dev gettext \
-          libx11-dev
+          libx11-dev libnode-dev cmake libcairo2-dev libfontconfig1-dev pandoc
           
-    - name: Extract package names from renv.lock and install
+    # .Rprofile activates renv, which bootstraps itself; restore installs the
+    # versions locked in renv/profiles/local/renv.lock
+    - name: Restore the local renv library
       shell: Rscript {0}
       run: |
-        options(repos = c(REPO = "https://packagemanager.posit.co/cran/latest"))
-        install.packages("jsonlite")
-        # local (R >= 4.3) lockfile; renv.lock is the R 4.2.3 DAC lockfile
-        pkgs <- names(jsonlite::fromJSON("renv/profiles/local/renv.lock")$Packages)
-        # base and recommended packages ship with R and have no P3M binaries
-        pkgs <- setdiff(pkgs, rownames(installed.packages(priority = c("base", "recommended"))))
-        install.packages(pkgs)
-    
+        renv::restore(prompt = FALSE)
+
+    # testthat comes from the lockfile; installing it separately would put the
+    # library out of sync with it
     - name: Run testthat tests
-      run: |
-        Rscript -e 'install.packages("testthat", repos = "https://cloud.r-project.org")'
-        Rscript tests/testthat.R
+      run: Rscript tests/testthat.R
+
+    # CI cannot have the CHIS PUF, so the PUF scripts skip themselves and
+    # nothing is rendered
+    - name: Run the local pipeline
+      run: Rscript run_local.R
