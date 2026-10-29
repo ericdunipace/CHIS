@@ -5,7 +5,7 @@
 
 library(here)
 
-here::i_am("data-raw/04_auxiliary_data.R")
+here::i_am("data-raw/05_auxiliary_data.R")
 
 # approved variable list (varnames_teeny) and Stata value labels for SAS inputs
 source(here::here("tools", "approved_var_select.R"))

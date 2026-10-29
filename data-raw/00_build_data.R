@@ -20,10 +20,12 @@ if (
 ) {
   callr::rscript("data-raw/03_prism.R")
 }
-callr::rscript("data-raw/04_auxiliary_data.R")
 
 # 2. data/tmax_annual_ca_youth.rds (needs a Census API key in CENSUS_API_KEY)
-callr::rscript("data-raw/05_adolescent_tmax.R")
+callr::rscript("data-raw/04_adolescent_tmax.R")
+
+
+callr::rscript("data-raw/05_auxiliary_data.R")
 
 # 3. data/chis_puf_combined.Rds (needs the CHIS teen PUF .dta files in data/;
 #    skips itself if the file already exists)

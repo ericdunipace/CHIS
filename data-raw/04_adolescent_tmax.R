@@ -188,7 +188,11 @@ if (!file.exists(here::here("data-raw", "ca_youth_2010.rds"))) {
     ) |>
     print()
 
-  saveRDS(ca_youth_2010, file = here::here("data-raw", "ca_youth_2010.rds"))
+  saveRDS(
+    ca_youth_2010,
+    file = here::here("data-raw", "ca_youth_2010.rds"),
+    compress = "xz"
+  )
 } else {
   ca_youth_2010 <- readRDS(file = here::here("data-raw", "ca_youth_2010.rds"))
 }
@@ -280,4 +284,8 @@ tmax_annual_ca <- tract_annual |>
   full_join(county_annual, by = "year") |>
   arrange(year)
 
-saveRDS(tmax_annual_ca, here::here("data", "tmax_annual_ca_youth.rds"))
+saveRDS(
+  tmax_annual_ca,
+  here::here("data", "tmax_annual_ca_youth.rds"),
+  compress = "xz"
+)
