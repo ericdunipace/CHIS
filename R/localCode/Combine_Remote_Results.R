@@ -50,7 +50,10 @@ if (length(missing_outputs) > 0L) {
     )
 } else {
     #### load table 1 information ####
-    tabl_1_long <- utils::read.csv(here::here("Outputs_DAC", "table1_basic.csv"))
+    tabl_1_long <- utils::read.csv(here::here(
+        "Outputs_DAC",
+        "table1_basic.csv"
+    ))
     tab1_long <- utils::read.csv(here::here("Outputs_DAC", "table1.csv")) |>
         mutate(variable = if_else(variable == "Age*", "Age", variable))
     check_table1_long_sums(tabl_1_long)
@@ -61,7 +64,10 @@ if (length(missing_outputs) > 0L) {
         "Outputs_DAC",
         "table1_raw_basic.csv"
     ))
-    tab1_long_raw <- utils::read.csv(here::here("Outputs_DAC", "table1_raw.csv"))
+    tab1_long_raw <- utils::read.csv(here::here(
+        "Outputs_DAC",
+        "table1_raw.csv"
+    ))
     check_table1_long_sums(tabl_1_long_raw)
     check_table1_sums(tab1_long_raw)
 
@@ -303,6 +309,188 @@ if (length(missing_outputs) > 0L) {
         "tl10"               , "Civic engagement"             , #"Participated in clubs in last year"
         "tq15_pos"           , "Civic engagement" # "Often Felt A Sense of Belonging at School"
     )
+    label_map <- c(
+        "Intercept" = "(Intercept)",
+        "Age group" = "age_group15-17",
+        "Gender" = "srsexFemale",
+        "Race/ethnicity" = "ombsrreoWhite",
+        "Race/ethnicity" = "ombsrreoAfrican American",
+        "Race/ethnicity" = "ombsrreoAsian/Pacific Islander",
+        "Race/ethnicity" = "ombsrreoHispanic",
+        # "Race/ethnicity" = "ombsrreoAsian",
+        "Race/ethnicity" = "ombsrreoMultiracial and Other",
+        "School type" = "sch_typOther",
+        "School type" = "sch_typPublic School",
+        "School type" = "sch_typPrivate School",
+        # "School type" = "sch_typOther",
+        "Parents' educational attainment" = "ahedtc_binaryCollege or more",
+        "Federal poverty level (FPL)" = "povll_binary300% FPL And Above",
+        "Language spoken at home" = "lnghmt_binaryNon-English",
+        "Language spoken at home" = "lnghmt_binaryEnglish",
+        "Rural/urban residence" = "ur_clrt2Rural",
+        "Civic engagement" = "tl25_posYes", #"Cares Deeply About Community Issues"
+        "Civic engagement" = "tl27_posYes", #"Believes Can Make a Difference"
+        "Civic engagement" = "tl50No", #"Volunteered to solve community problem" # note we flipped the sign above
+        "Civic engagement" = "tl50Yes", #"Volunteered to solve community problem" # note we flipped the sign above
+        "Civic engagement" = "tl53_posYes", #"Can Contact Gov't to Solve Problem"
+        "Civic engagement" = "tq10_posYes", #"Able to Talk to Family About Feelings"
+        "Civic engagement" = "tq11_posYes", #"Felt Supported by Family"
+        "Civic engagement" = "tq14_posYes", #"Felt Supported by Friends"
+        "Civic engagement" = "tq16_posYes",
+        "Access to care" = "uninsuredYes",
+        "Access to care" = "health_officePrimary care office",
+        "Access to care" = "tf9No", #"Did Not Delay Medical Care"
+        "School attendance/engagement" = "school_last_weekYes",
+        # "Civic engagement" = "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)",
+        "School attendance/engagement" = "health_missed_days",
+        "Civic engagement" = "tl10No", #"Participated in clubs in last year"
+        "Civic engagement" = "tl10Yes", #"Participated in clubs in last year"
+        "Civic engagement" = "tq15_posYes", # "Often Felt A Sense of Belonging at School"
+        "Tract deviation from county‡" = "tmax_tract10_prior_90_days_count32_delta",
+        "Tract deviation from county‡" = "tmax_tract10_prior_90_days_mean_delta",
+        "Tract deviation from county‡" = "tmax_tract10_prior_yr_mean_delta",
+        "Tract deviation from county‡" = "tmax_tract10_prior_yr_count32_delta",
+        "County-average temperature‡" = "tmax_county_prior_90_days_count32_delta",
+        "County-average temperature‡" = "tmax_county_prior_90_days_mean_delta",
+        "County-average temperature‡" = "tmax_county_prior_yr_mean_delta",
+        "County-average temperature‡" = "tmax_county_prior_yr_count32_delta"
+    )
+    term_map <- c(
+        " " = "(Intercept)",
+        "15–17" = "age_group15-17",
+        "Female" = "srsexFemale",
+        "African American" = "ombsrreoAfrican American",
+        # "Native American" = "ombsrreoAmerican Indian",
+        # "Pacific Islander" = "ombsrreoPacific Islander",
+        "Asian/Pacific Islander" = "ombsrreoAsian/Pacific Islander",
+        "Hispanic" = "ombsrreoHispanic",
+        "Multiracial and other" = "ombsrreoMultiracial and Other",
+        "White" = "ombsrreoWhite",
+        "Other" = "sch_typOther",
+        "Public" = "sch_typPublic School",
+        "Private" = "sch_typPrivate School",
+        # "Other" = "sch_typOther",
+        "Attended college" = "ahedtc_binaryCollege or more",
+        "≥300% FPL" = "povll_binary300% FPL And Above",
+        "Other" = "lnghmt_binaryNon-English",
+        "English" = "lnghmt_binaryEnglish",
+        "Rural" = "ur_clrt2Rural",
+        "Cares deeply about community issues" = "tl25_posYes",
+        "Believes can make a difference" = "tl27_posYes",
+        "Did not volunteer to solve community problem" = "tl50No", # note we flip the sign above
+        "Volunteered to solve community problem" = "tl50Yes", # note we flip the sign above
+        "Can contact government to solve problem" = "tl53_posYes",
+        "Able to talk to family about feelings" = "tq10_posYes",
+        "Felt supported by family" = "tq11_posYes",
+        "Felt supported by friends" = "tq14_posYes",
+        "Enjoyed community traditions" = "tq16_posYes",
+        "Uninsured" = "uninsuredYes",
+        "Goes to primary care for health care" = "health_officePrimary care office",
+        "Did not delay medical care" = "tf9No",
+        "Attended school last week" = "school_last_weekYes",
+        # "Number School Days Missed for Health (normalized)" = "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)",
+        "Number of school days missed for health" = "health_missed_days",
+        "Did not participate in clubs in last year" = "tl10No", #note flip sign above
+        "Participated in clubs in last year" = "tl10Yes", #note flipped sign above
+        "Often felt a sense of belonging at school" = "tq15_posYes",
+        "Heatwave anomalies (prev 90 days)" = "tmax_tract10_prior_90_days_count32_delta",
+        "Average temp anomalies (prev 90 days)" = "tmax_tract10_prior_90_days_mean_delta",
+        "Heatwave anomalies (prev year)" = "tmax_tract10_prior_yr_count32_delta",
+        "Average temp anomalies (prev year)" = "tmax_tract10_prior_yr_mean_delta",
+        "Heatwave anomalies (prev 90 days)" = "tmax_county_prior_90_days_count32_delta",
+        "Average temp anomalies (prev 90 days)" = "tmax_county_prior_90_days_mean_delta",
+        "Heatwave anomalies (prev year)" = "tmax_county_prior_yr_count32_delta",
+        "Average temp anomalies (prev year)" = "tmax_county_prior_yr_mean_delta"
+    )
+    term_order <- c(
+        "(Intercept)",
+        "age_group15-17",
+        "srsexFemale",
+        "ombsrreoAfrican American",
+        "ombsrreoAsian/Pacific Islander",
+        "ombsrreoHispanic",
+        "ombsrreoMultiracial and Other",
+        "ombsrreoWhite",
+        "sch_typPublic School",
+        "sch_typPrivate School",
+        "sch_typOther",
+        # "sch_typOther", #now in reference
+        "ahedtc_binaryCollege or more",
+        "povll_binary300% FPL And Above",
+        "lnghmt_binaryNon-English",
+        "ur_clrt2Rural",
+        "uninsuredYes",
+        "health_officePrimary care office",
+        "tf9No", #"Did Not Delay Medical Care"
+        "tl25_posYes", #"Cares Deeply About Community Issues"
+        "tl27_posYes", #"Believes Can Make a Difference"
+        "tl50No", #"Volunteered to solve community problem"
+        "tl50Yes", #"Volunteered to solve community problem"
+        "tl53_posYes", #"Can Contact Gov't to Solve Problem"
+        "tq10_posYes", #"Able to Talk to Family About Feelings"
+        "tq11_posYes", #"Felt Supported by Family"
+        "tq14_posYes", #"Felt Supported by Friends"
+        "tq16_posYes",
+        "tl10No", #"Participated in clubs in last year"
+        "tl10Yes",
+        "school_last_weekYes",
+        "health_missed_days",
+        # "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)",
+        "tq15_posYes", # "Often Felt A Sense of Belonging at School"
+        "tmax_tract10_prior_90_days_count32_delta",
+        "tmax_tract10_prior_90_days_mean_delta",
+        "tmax_tract10_prior_yr_count32_delta",
+        "tmax_tract10_prior_yr_mean_delta",
+        "tmax_county_prior_90_days_count32_delta",
+        "tmax_county_prior_90_days_mean_delta",
+        "tmax_county_prior_yr_count32_delta",
+        "tmax_county_prior_yr_mean_delta"
+    )
+    reparam_climate <- list(
+        pos = c(
+            tmax_county_prior_90_days_count32_delta = "tmax_tract10_prior_90_days_count32_delta",
+            tmax_county_prior_90_days_mean_delta = "tmax_tract10_prior_90_days_mean_delta",
+            tmax_county_prior_yr_count32_delta = "tmax_tract10_prior_yr_count32_delta",
+            tmax_county_prior_yr_mean_delta = "tmax_tract10_prior_yr_mean_delta"
+        )
+    )
+    reparam_ref_cat <- list(
+        pos = c(
+            "(Intercept)" = "ombsrreoWhite",
+            "(Intercept)" = "sch_typPublic School"
+        ),
+        neg = c(
+            "ombsrreoAfrican American" = "ombsrreoWhite",
+            "ombsrreoMultiracial and Other" = "ombsrreoWhite",
+            "ombsrreoAsian/Pacific Islander" = "ombsrreoWhite",
+            "ombsrreoWhite" = "ombsrreoWhite",
+            "sch_typPrivate School" = "sch_typPublic School",
+            "sch_typPublic School" = "sch_typPublic School"
+        ),
+        renames = c(
+            "ombsrreoHispanic" = "ombsrreoWhite",
+            "sch_typOther" = "sch_typPublic School"
+        )
+    )
+    reparam_flip <- list(
+        pos = c(
+            "(Intercept)" = "tl50No",
+            "(Intercept)" = "tl10No"
+        ),
+        neg = c(
+            "tl50No" = "tl50No",
+            "tl10No" = "tl10No"
+        ),
+        renames = c(
+            "tl50Yes" = "tl50No",
+            "tl10Yes" = "tl10No"
+        )
+    )
+    reparam_steps <- if (isTRUE(linear.combo.flag)) {
+        list(reparam_climate, reparam_ref_cat, reparam_flip)
+    } else {
+        list(reparam_flip)
+    }
     glm_lor_table <- glm_coef |>
         rename(
             term = X,
@@ -315,42 +503,8 @@ if (length(missing_outputs) > 0L) {
             df = sapply(1:n(), function(i) {
                 recover_df(statistic[i], p.value[i])
             })
-        ) %>%
-        {
-            if (isTRUE(linear.combo.flag)) {
-                V <- as.matrix(glm_vcov)
-                colnames(V) <- rownames(V)
-
-                combo <- c(
-                    tmax_county_prior_90_days_count32_delta = "tmax_tract10_prior_90_days_count32_delta",
-                    tmax_county_prior_90_days_mean_delta = "tmax_tract10_prior_90_days_mean_delta",
-                    tmax_county_prior_yr_count32_delta = "tmax_tract10_prior_yr_count32_delta",
-                    tmax_county_prior_yr_mean_delta = "tmax_tract10_prior_yr_mean_delta"
-                )
-                stopifnot(
-                    identical(.$term, rownames(V)), # same order as vcov
-                    all(c(names(combo), combo) %in% rownames(V)),
-                    isTRUE(all.equal(
-                        sqrt(diag(V)),
-                        .$std.error,
-                        check.attributes = FALSE
-                    )) # vcov matches summary
-                )
-                A <- diag(nrow(V))
-                dimnames(A) <- dimnames(V)
-                A[cbind(names(combo), combo)] <- 1
-
-                . |>
-                    mutate(
-                        estimate = drop(A %*% estimate),
-                        std.error = sqrt(diag(A %*% V %*% t(A))),
-                        statistic = estimate / std.error,
-                        p.value = 2 * pt(-abs(statistic), df)
-                    )
-            } else {
-                .
-            }
-        } %>%
+        ) |>
+        apply_reparam(glm_vcov, reparam_steps) |>
         # note: all df are currently the same so not combining
         mutate(
             lwr = estimate - std.error * qt(.975, df = df),
@@ -359,147 +513,15 @@ if (length(missing_outputs) > 0L) {
             e_lwr = exp(lwr),
             e_upr = exp(upr),
             term = factor(term) |>
-                forcats::fct_relevel(
-                    "(Intercept)",
-                    "age_group15-17",
-                    "srsexFemale",
-                    "ombsrreoAfrican American",
-                    "ombsrreoAsian/Pacific Islander",
-                    # "ombsrreoAsian",
-                    "ombsrreoMultiracial and Other",
-                    "ombsrreoWhite",
-                    "sch_typPublic School",
-                    "sch_typPrivate School",
-                    # "sch_typOther", #now in reference
-                    "ahedtc_binaryCollege or more",
-                    "povll_binary300% FPL And Above",
-                    "lnghmt_binaryNon-English",
-                    "ur_clrt2Rural",
-                    "uninsuredYes",
-                    "health_officePrimary care office",
-                    "tf9No", #"Did Not Delay Medical Care"
-                    "tl25_posYes", #"Cares Deeply About Community Issues"
-                    "tl27_posYes", #"Believes Can Make a Difference"
-                    "tl50No", #"Volunteered to solve community problem"
-                    "tl53_posYes", #"Can Contact Gov't to Solve Problem"
-                    "tq10_posYes", #"Able to Talk to Family About Feelings"
-                    "tq11_posYes", #"Felt Supported by Family"
-                    "tq14_posYes", #"Felt Supported by Friends"
-                    "tq16_posYes",
-                    "tl10No", #"Participated in clubs in last year"
-                    "school_last_weekYes",
-                    "health_missed_days",
-                    # "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)",
-                    "tq15_posYes", # "Often Felt A Sense of Belonging at School"
-                    "tmax_tract10_prior_90_days_count32_delta",
-                    "tmax_tract10_prior_90_days_mean_delta",
-                    "tmax_tract10_prior_yr_count32_delta",
-                    "tmax_tract10_prior_yr_mean_delta",
-                    "tmax_county_prior_90_days_count32_delta",
-                    "tmax_county_prior_90_days_mean_delta",
-                    "tmax_county_prior_yr_count32_delta",
-                    "tmax_county_prior_yr_mean_delta"
-                ),
+                forcats::fct_relevel(\(lv) intersect(term_order, lv)),
             orig_term = term,
             label = term,
-            label = forcats::fct_recode(
-                label,
-                "Intercept" = "(Intercept)",
-                "Age group" = "age_group15-17",
-                "Gender" = "srsexFemale",
-                "Race/ethnicity" = "ombsrreoWhite",
-                "Race/ethnicity" = "ombsrreoAfrican American",
-                "Race/ethnicity" = "ombsrreoAsian/Pacific Islander",
-                # "Race/ethnicity" = "ombsrreoAsian",
-                "Race/ethnicity" = "ombsrreoMultiracial and Other",
-                "School type" = "sch_typPublic School",
-                "School type" = "sch_typPrivate School",
-                # "School type" = "sch_typOther",
-                "Parents' educational attainment" = "ahedtc_binaryCollege or more",
-                "Federal poverty level (FPL)" = "povll_binary300% FPL And Above",
-                "Language spoken at home" = "lnghmt_binaryNon-English", # note we flip sign below
-                "Rural/urban residence" = "ur_clrt2Rural",
-                "Civic engagement" = "tl25_posYes", #"Cares Deeply About Community Issues"
-                "Civic engagement" = "tl27_posYes", #"Believes Can Make a Difference"
-                "Civic engagement" = "tl50No", #"Volunteered to solve community problem" # note we flip the sign below
-                "Civic engagement" = "tl53_posYes", #"Can Contact Gov't to Solve Problem"
-                "Civic engagement" = "tq10_posYes", #"Able to Talk to Family About Feelings"
-                "Civic engagement" = "tq11_posYes", #"Felt Supported by Family"
-                "Civic engagement" = "tq14_posYes", #"Felt Supported by Friends"
-                "Civic engagement" = "tq16_posYes",
-                "Access to care" = "uninsuredYes",
-                "Access to care" = "health_officePrimary care office",
-                "Access to care" = "tf9No", #"Did Not Delay Medical Care"
-                "School attendance/engagement" = "school_last_weekYes",
-                # "Civic engagement" = "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)",
-                "School attendance/engagement" = "health_missed_days",
-
-                "Civic engagement" = "tl10No", #"Participated in clubs in last year"
-                "Civic engagement" = "tq15_posYes", # "Often Felt A Sense of Belonging at School"
-                "Tract deviation from county‡" = "tmax_tract10_prior_90_days_count32_delta",
-                "Tract deviation from county‡" = "tmax_tract10_prior_90_days_mean_delta",
-                "Tract deviation from county‡" = "tmax_tract10_prior_yr_mean_delta",
-                "Tract deviation from county‡" = "tmax_tract10_prior_yr_count32_delta",
-                "County-average temperature‡" = "tmax_county_prior_90_days_count32_delta",
-                "County-average temperature‡" = "tmax_county_prior_90_days_mean_delta",
-                "County-average temperature‡" = "tmax_county_prior_yr_mean_delta",
-                "County-average temperature‡" = "tmax_county_prior_yr_count32_delta"
-            ),
-            term = forcats::fct_recode(
-                term,
-                " " = "(Intercept)",
-                "15–17" = "age_group15-17",
-                "Female" = "srsexFemale",
-                "African American" = "ombsrreoAfrican American",
-                # "Native American" = "ombsrreoAmerican Indian",
-                # "Pacific Islander" = "ombsrreoPacific Islander",
-                "Asian/Pacific Islander" = "ombsrreoAsian/Pacific Islander",
-                "Multiracial and other" = "ombsrreoMultiracial and Other",
-                "White" = "ombsrreoWhite",
-                "Public" = "sch_typPublic School",
-                "Private" = "sch_typPrivate School",
-                # "Other" = "sch_typOther",
-                "Attended college" = "ahedtc_binaryCollege or more",
-                "≥300% FPL" = "povll_binary300% FPL And Above",
-                "English" = "lnghmt_binaryNon-English",
-                "Rural" = "ur_clrt2Rural",
-                "Cares deeply about community issues" = "tl25_posYes",
-                "Believes can make a difference" = "tl27_posYes",
-                "Volunteered to solve community problem" = "tl50No", # note we flip the sign below
-                "Can contact government to solve problem" = "tl53_posYes",
-                "Able to talk to family about feelings" = "tq10_posYes",
-                "Felt supported by family" = "tq11_posYes",
-                "Felt supported by friends" = "tq14_posYes",
-                "Enjoyed community traditions" = "tq16_posYes",
-                "Uninsured" = "uninsuredYes",
-                "Goes to primary care for health care" = "health_officePrimary care office",
-                "Did not delay medical care" = "tf9No",
-                "Attended school last week" = "school_last_weekYes",
-                # "Number School Days Missed for Health (normalized)" = "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)",
-                "Number of school days missed for health" = "health_missed_days",
-                "Participated in clubs in last year" = "tl10No", #note flip sign below
-                "Often felt a sense of belonging at school" = "tq15_posYes",
-                "Heatwave anomalies (prev 90 days)" = "tmax_tract10_prior_90_days_count32_delta",
-                "Average temp anomalies (prev 90 days)" = "tmax_tract10_prior_90_days_mean_delta",
-                "Heatwave anomalies (prev year)" = "tmax_tract10_prior_yr_count32_delta",
-                "Average temp anomalies (prev year)" = "tmax_tract10_prior_yr_mean_delta",
-                "Heatwave anomalies (prev 90 days)" = "tmax_county_prior_90_days_count32_delta",
-                "Average temp anomalies (prev 90 days)" = "tmax_county_prior_90_days_mean_delta",
-                "Heatwave anomalies (prev year)" = "tmax_county_prior_yr_count32_delta",
-                "Average temp anomalies (prev year)" = "tmax_county_prior_yr_mean_delta"
-            )
+            label = recode_present(label, label_map),
+            term = recode_present(term, term_map)
         ) |>
         mutate(
-            flip = term %in%
-                c(
-                    "Volunteered to solve community problem",
-                    "English",
-                    "Participated in clubs in last year"
-                )
+            flip = FALSE
         ) |>
-        mutate(e_est = ifelse(flip, exp(-estimate), e_est)) |>
-        mutate(e_lwr = ifelse(flip, exp(-upr), e_lwr)) |>
-        mutate(e_upr = ifelse(flip, exp(-lwr), e_upr)) |>
         mutate(
             bh_pvalue = {
                 out <- p.value
@@ -524,7 +546,15 @@ if (length(missing_outputs) > 0L) {
         mutate(
             term = as.character(term),
             label = as.character(label)
-        )
+        ) %>%
+        {
+            stopifnot(
+                all(levels(.$orig_term) %in% term_order),
+                all(levels(.$orig_term) %in% label_map),
+                all(levels(.$orig_term) %in% term_map)
+            )
+            .
+        }
     age_before <- which(glm_lor_table$label == "Age group")[1]
     glm_lor_table <- tibble::add_row(
         glm_lor_table,
@@ -568,7 +598,7 @@ if (length(missing_outputs) > 0L) {
     race_before <- which(glm_lor_table$label == "Race/ethnicity")[1]
     glm_lor_table <- tibble::add_row(
         glm_lor_table,
-        term = "Hispanic (ref)",
+        term = "White (ref)",
         label = "Race/ethnicity",
         estimate = NA_real_,
         std.error = NA_real_,
@@ -591,7 +621,7 @@ if (length(missing_outputs) > 0L) {
     )[1]
     glm_lor_table <- tibble::add_row(
         glm_lor_table,
-        term = "Other (ref)",
+        term = "Public (ref)",
         label = "School type",
         estimate = NA_real_,
         std.error = NA_real_,
@@ -659,7 +689,7 @@ if (length(missing_outputs) > 0L) {
     )[1]
     glm_lor_table <- tibble::add_row(
         glm_lor_table,
-        term = "Other (ref)",
+        term = "English (ref)",
         label = "Language spoken at home",
         estimate = NA_real_,
         std.error = NA_real_,
@@ -859,6 +889,10 @@ if (length(missing_outputs) > 0L) {
         saveRDS(file = here::here(doc_dir, "glm_tab_notes.rds"))
 
     # adding in fixed effects as sensitivity
+    fe_V <- as.matrix(utils::read.csv(
+        here::here("Outputs_DAC", "fe_vcov.csv"),
+        row.names = 1
+    ))
     fe_est <- utils::read.csv(
         file = here::here("Outputs_DAC", "fe_model_summary.csv")
     ) |>
@@ -876,54 +910,13 @@ if (length(missing_outputs) > 0L) {
             # one shared design df; recover it where |t| is largest, since
             # recover_df() is unstable when |t| is near zero
             df = df[which.max(abs(statistic))]
-        )
-
-    # match the main table: county rows become county-average effects
-    # (tract + county), tract rows stay as the deviation from county
-    fe_V <- as.matrix(utils::read.csv(
-        here::here("Outputs_DAC", "fe_vcov.csv"),
-        row.names = 1
-    ))
-    colnames(fe_V) <- rownames(fe_V) # read.csv mangles column names
-    fe_combo <- c(
-        tmax_county_prior_90_days_count32_delta = "tmax_tract10_prior_90_days_count32_delta",
-        tmax_county_prior_90_days_mean_delta = "tmax_tract10_prior_90_days_mean_delta",
-        tmax_county_prior_yr_count32_delta = "tmax_tract10_prior_yr_count32_delta",
-        tmax_county_prior_yr_mean_delta = "tmax_tract10_prior_yr_mean_delta"
-    )
-    stopifnot(
-        identical(fe_est$orig_term, rownames(fe_V)),
-        all(c(names(fe_combo), fe_combo) %in% rownames(fe_V)),
-        isTRUE(all.equal(
-            sqrt(diag(fe_V)),
-            fe_est$std.error,
-            check.attributes = FALSE
-        ))
-    )
-    fe_A <- diag(nrow(fe_V))
-    dimnames(fe_A) <- dimnames(fe_V)
-    fe_A[cbind(names(fe_combo), fe_combo)] <- 1
-
-    fe_est <- fe_est |>
+        ) |>
+        apply_reparam(fe_V, reparam_steps, term_col = "orig_term") |>
         mutate(
-            estimate = drop(fe_A %*% estimate),
-            std.error = sqrt(diag(fe_A %*% fe_V %*% t(fe_A))),
-            statistic = estimate / std.error,
-            p.value = 2 * pt(-abs(statistic), df),
+            flip = FALSE,
             lwr = estimate - std.error * qt(.975, df = df),
             upr = estimate + std.error * qt(.975, df = df)
         ) |>
-        mutate(
-            flip = orig_term %in%
-                c("tl50No", "tl10No", "lnghmt_binaryNon-English")
-        ) |>
-        mutate(
-            estimate = ifelse(flip, -estimate, estimate),
-            lwr_new = ifelse(flip, -upr, lwr),
-            upr = ifelse(flip, -lwr, upr), # still the original lwr here
-            lwr = lwr_new
-        ) |>
-        select(-lwr_new) |>
         mutate(
             FE = lancet_signs(midline_decimal(fix_zero(sprintf(
                 "%.2f (%.2f to %.2f)",

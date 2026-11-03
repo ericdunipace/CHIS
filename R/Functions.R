@@ -3729,3 +3729,56 @@ lancet_signs <- function(x) {
 
 # -0.00 -> 0.00, run before lancet_signs()
 fix_zero <- function(x) gsub("[+-](0[.\u00b7]0+)\\b", "\\1", x)
+
+apply_reparam <- function(est, V, steps, term_col = "term") {
+  V <- as.matrix(V)
+  colnames(V) <- rownames(V) # read.csv mangles column names
+  stopifnot(
+    identical(as.character(est[[term_col]]), rownames(V)), # same order as vcov
+    isTRUE(all.equal(
+      sqrt(diag(V)),
+      est$std.error,
+      check.attributes = FALSE
+    )) # vcov matches summary
+  )
+
+  cur <- rownames(V) # current term names, updated by renames
+  A_total <- diag(length(cur))
+  dimnames(A_total) <- list(cur, cur)
+
+  for (s in steps) {
+    pos <- if (is.null(s$pos)) character() else s$pos
+    neg <- if (is.null(s$neg)) character() else s$neg
+    renames <- if (is.null(s$renames)) character() else s$renames
+    stopifnot(all(c(names(pos), pos, names(neg), neg) %in% cur))
+
+    A <- diag(length(cur))
+    dimnames(A) <- list(cur, cur)
+    if (length(pos)) {
+      A[cbind(names(pos), pos)] <- 1
+    }
+    if (length(neg)) {
+      A[cbind(names(neg), neg)] <- -1
+    } # after pos: can overwrite diagonal
+    A_total <- A %*% A_total
+
+    if (length(renames)) {
+      idx <- match(cur, renames)
+      hit <- !is.na(idx)
+      cur[hit] <- names(renames)[idx[hit]]
+    }
+    rownames(A_total) <- cur
+  }
+
+  V_new <- A_total %*% V %*% t(A_total)
+  est$estimate <- drop(A_total %*% est$estimate)
+  est$std.error <- sqrt(diag(V_new))
+  est$statistic <- est$estimate / est$std.error
+  est$p.value <- 2 * pt(-abs(est$statistic), est$df)
+  est[[term_col]] <- cur
+  est
+}
+
+recode_present <- function(f, map) {
+  forcats::fct_recode(f, !!!map[map %in% levels(f)])
+}

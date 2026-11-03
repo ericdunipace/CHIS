@@ -422,13 +422,7 @@ Given the decline in the prevalence of climate anxiety between 2022 and 2023, we
 
 year_chg <- here::here("Outputs", "tables", "year_sens_change.rds") |> readRDS()
 glm_est <- here::here("Outputs", "tables", "glm_lor_table.rds") |> readRDS() |> 
-    filter(!is.na(orig_term)) |> 
-    mutate(flip = orig_term %in% c("tl50No", "tl10No", "lnghmt_binaryNon-English")) |> 
-    mutate(estimate = ifelse(flip, -estimate, estimate),
-       lwr_new = ifelse(flip, -upr, lwr),
-       upr = ifelse(flip, -lwr, upr),   # still the original lwr here
-       lwr = lwr_new) |>
-select(-lwr_new)
+    filter(!is.na(orig_term)) 
 
 fe_est <- readRDS(here::here("Outputs", "tables", "fe_tab.rds"))
 
