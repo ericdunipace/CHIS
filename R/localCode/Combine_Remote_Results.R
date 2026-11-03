@@ -300,9 +300,9 @@ if (length(missing_outputs) > 0L) {
         "tq11_pos"           , "Civic engagement"             , #"Felt Supported by Family"
         "tq14_pos"           , "Civic engagement"             , #"Felt Supported by Friends"
         "tq16_pos"           , "Civic engagement"             , #"Enjoyed Community Traditions"
-        "uninsured"          , "Access to care"               ,
-        "health_office"      , "Access to care"               ,
-        "tf9"                , "Access to care"               , #"Did Not Delay Medical Care"
+        "uninsured"          , "Access to healthcare"         ,
+        "health_office"      , "Access to healthcare"         ,
+        "tf9"                , "Access to healthcare"         , #"Did Not Delay Medical Care"
         "school_last_week"   , "School attendance/engagement" ,
         # "scale(I(as.numeric(school_last_week ==  'Yes')) * tb4)",
         "health_missed_days" , "School attendance/engagement" ,
@@ -385,7 +385,7 @@ if (length(missing_outputs) > 0L) {
         "Felt supported by friends" = "tq14_posYes",
         "Enjoyed community traditions" = "tq16_posYes",
         "Uninsured" = "uninsuredYes",
-        "Goes to primary care for health care" = "health_officePrimary care office",
+        "Goes to primary care for healthcare" = "health_officePrimary care office",
         "Did not delay medical care" = "tf9No",
         "Attended school last week" = "school_last_weekYes",
         # "Number School Days Missed for Health (normalized)" = "scale(I(as.numeric(school_last_week == \"Yes\")) * tb4)",
@@ -821,8 +821,8 @@ if (length(missing_outputs) > 0L) {
 
     glm_rows <- glm_lor_table |>
         dplyr::mutate(
-            is_ref = grepl("\\(Ref\\.\\)$", term),
-            term = sub("\\s*\\(Ref\\.\\)$", "", term),
+            is_ref = grepl("\\((ref|Ref\\.)\\)$", term),
+            term = sub("\\s*\\((ref|Ref\\.)\\)$", "", term),
             or_ci = dplyr::if_else(
                 is_ref,
                 "1.00 (ref)",

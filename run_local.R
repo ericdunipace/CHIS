@@ -1,5 +1,6 @@
-# Runs the local analysis, then renders the manuscript.
-# Run from the repository root: Rscript run_local.R
+# Runs local analyses and then builds the manuscript
+# If you need to rebuild some of the intermediate data
+# see the README.md
 
 # 1. analysis scripts (the two CHIS PUF scripts skip themselves if the PUF is missing)
 callr::rscript("R/localCode/Combine_Remote_Results.R")
