@@ -12,6 +12,13 @@ if (file.exists("data/chis_puf_combined.Rds")) {
   # Quarto starts R in manuscript/, so point it at the project's renv library
   Sys.setenv(
     RENV_PROJECT = getwd(),
+    RENV_PROFILE = if (nzchar(Sys.getenv("RENV_PROFILE"))) {
+      Sys.getenv("RENV_PROFILE")
+    } else if (getRversion() < "4.3") {
+      "default"
+    } else {
+      "local"
+    },
     R_PROFILE_USER = normalizePath("renv/activate.R"),
     QUARTO_R = R.home("bin")
   )
